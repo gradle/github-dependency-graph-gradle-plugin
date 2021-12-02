@@ -16,5 +16,20 @@
       <option name="name" value="MavenRepo" />
       <option name="url" value="https://repo.maven.apache.org/maven2/" />
     </remote-repository>
+    <remote-repository>
+      <option name="id" value="Gradle public repository" />
+      <option name="name" value="Gradle public repository" />
+      <option name="url" value="https://repo.gradle.org/gradle/public" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="Google" />
+      <option name="name" value="Google" />
+      <option name="url" value="https://dl.google.com/dl/android/maven2/" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="CHAMP libs" />
+      <option name="name" value="CHAMP libs" />
+      <option name="url" value="https://releases.usethesource.io/maven/" />
+    </remote-repository>
   </component>
 </project>

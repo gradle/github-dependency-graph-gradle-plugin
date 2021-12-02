@@ -8,18 +8,13 @@ plugins {
     id("com.github.johnrengelman.shadow")
 }
 
-repositories {
-    // Use Maven Central for resolving dependencies.
-    mavenCentral()
-}
-
 val jettyVersion = "9.4.36.v20210114"
 
 dependencies {
     compileOnly(kotlin("stdlib-jdk8"))
-    implementation(platform("com.fasterxml.jackson:jackson-bom:2.13.0"))
-    implementation("com.fasterxml.jackson.core:jackson-databind")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation(platform(libs.jackson.platform))
+    implementation(libs.jackson.databind)
+    implementation(libs.jackson.kotlin)
     implementation("com.github.package-url:packageurl-java:1.4.1")
     // Use JUnit Jupiter for testing.
     testImplementation("org.junit.jupiter:junit-jupiter:5.8.1")

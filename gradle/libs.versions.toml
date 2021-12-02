@@ -1,0 +1,7 @@
+[libraries]
+jackson-platform = { group = "com.fasterxml.jackson", name = "jackson-bom", version = "2.13.0" }
+jackson-databind = { group = "com.fasterxml.jackson.core", name = "jackson-databind" }
+jackson-parameter-names = { group = "com.fasterxml.jackson.module", name = "jackson-module-parameter-names" }
+jackson-kotlin = { group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin" }
+
+spock_core = { group = "org.spockframework", name = "spock-core", version = "2.0-groovy-3.0" }

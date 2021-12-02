@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="configuration-cache-report">
+    <output-path>$PROJECT_DIR$/../gradle/subprojects/configuration-cache-report/build/libs</output-path>
+    <root id="archive" name="configuration-cache-report.jar">
+      <element id="module-output" name="gradle.configuration-cache-report.main" />
+    </root>
+  </artifact>
+</component>

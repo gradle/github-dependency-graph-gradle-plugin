@@ -46,6 +46,6 @@ public class ConfigurationToManifestTransformer {
                         .stream()
                         .map(child -> createPurl(child).toString())
                         .collect(Collectors.toList());
-        return new GitHubDependency(createPurl(resolvedDependency), relationship, dependencies);
+        return new GitHubDependency(createPurl(resolvedDependency).toString(), relationship, dependencies);
     }
 }

@@ -72,7 +72,7 @@ abstract class DependencyExtractorService :
                     GitHubDependency(
                         purl = moduleVersion.toPurl(),
                         relationship = relationship,
-                        dependencies = transitives.map { it.purl.toString() }
+                        dependencies = transitives.map { it.purl }
                     )
                 )
                 dependencies.addAll(transitives)

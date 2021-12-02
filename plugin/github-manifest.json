@@ -1,0 +1,29 @@
+{
+  "manifests" : {
+    "classpath" : {
+      "name" : "classpath",
+      "file" : {
+        "source_location" : "build.gradle.kts"
+      },
+      "resolved" : { }
+    },
+    ":runtimeClasspath" : {
+      "name" : ":runtimeClasspath",
+      "file" : {
+        "source_location" : "build.gradle.kts"
+      },
+      "resolved" : {
+        "pkg:maven/junit/junit@4.13" : {
+          "purl" : "pkg:maven/junit/junit@4.13",
+          "relationship" : "direct",
+          "dependencies" : [ "pkg:maven/org.hamcrest/hamcrest-core@1.3" ]
+        },
+        "pkg:maven/org.hamcrest/hamcrest-core@1.3" : {
+          "purl" : "pkg:maven/org.hamcrest/hamcrest-core@1.3",
+          "relationship" : "indirect",
+          "dependencies" : [ ]
+        }
+      }
+    }
+  }
+}

@@ -56,31 +56,6 @@ abstract class DependencyExtractorService :
         )
     }
 
-    private fun extractDependenciesFromResolvedComponentResult(
-        resolvedComponentResult: ResolvedComponentResult,
-        relationship: GitHubDependency.Relationship
-    ): List<GitHubDependency> {
-        val dependencies = mutableListOf<GitHubDependency>()
-        resolvedComponentResult.dependencies.forEach { dependency ->
-            if (dependency is ResolvedDependencyResult) {
-                val moduleVersion = dependency.selected.moduleVersion!!
-                val transitives = extractDependenciesFromResolvedComponentResult(
-                    dependency.selected,
-                    GitHubDependency.Relationship.indirect
-                )
-                dependencies.add(
-                    GitHubDependency(
-                        purl = moduleVersion.toPurl(),
-                        relationship = relationship,
-                        dependencies = transitives.map { it.purl }
-                    )
-                )
-                dependencies.addAll(transitives)
-            }
-        }
-        return dependencies
-    }
-
     private fun extractRepositories(
         details: ResolveConfigurationDependenciesBuildOperationType.Details,
         result: ResolveConfigurationDependenciesBuildOperationType.Result
@@ -108,15 +83,6 @@ abstract class DependencyExtractorService :
         extractRepositories(details, result)
     }
 
-    private fun ModuleVersionIdentifier.toPurl() =
-        PackageURLBuilder
-            .aPackageURL()
-            .withType("maven")
-            .withNamespace(group)
-            .withName(name)
-            .withVersion(version)
-            .build()
-
     /**
      * Collects all the dependencies on a specific configuration.
      */
@@ -128,5 +94,43 @@ abstract class DependencyExtractorService :
     override fun close() {
         // Generate JSON
         File("github-manifest.json").writeText(JacksonJsonSerializer.serializeToJson(gitHubDependencyGraphBuilder.build()))
+    }
+
+    companion object {
+
+        @JvmStatic
+        fun extractDependenciesFromResolvedComponentResult(
+            resolvedComponentResult: ResolvedComponentResult,
+            relationship: GitHubDependency.Relationship
+        ): List<GitHubDependency> {
+            val dependencies = mutableListOf<GitHubDependency>()
+            resolvedComponentResult.dependencies.forEach { dependency ->
+                if (dependency is ResolvedDependencyResult) {
+                    val moduleVersion = dependency.selected.moduleVersion!!
+                    val transitives = extractDependenciesFromResolvedComponentResult(
+                        dependency.selected,
+                        GitHubDependency.Relationship.indirect
+                    )
+                    dependencies.add(
+                        GitHubDependency(
+                            purl = moduleVersion.toPurl(),
+                            relationship = relationship,
+                            dependencies = transitives.map { it.purl }
+                        )
+                    )
+                    dependencies.addAll(transitives)
+                }
+            }
+            return dependencies
+        }
+
+        private fun ModuleVersionIdentifier.toPurl() =
+            PackageURLBuilder
+                .aPackageURL()
+                .withType("maven")
+                .withNamespace(group)
+                .withName(name)
+                .withVersion(version)
+                .build()
     }
 }

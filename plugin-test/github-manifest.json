@@ -1,0 +1,22 @@
+{
+  "manifests" : {
+    ":runtimeClasspath" : {
+      "name" : ":runtimeClasspath",
+      "file" : {
+        "source_location" : "build.gradle.kts"
+      },
+      "resolved" : {
+        "pkg:maven/org.test/foo@1.0" : {
+          "purl" : "pkg:maven/org.test/foo@1.0",
+          "relationship" : "direct",
+          "dependencies" : [ ]
+        },
+        "pkg:maven/org.test/bar@1.0" : {
+          "purl" : "pkg:maven/org.test/bar@1.0",
+          "relationship" : "direct",
+          "dependencies" : [ ]
+        }
+      }
+    }
+  }
+}

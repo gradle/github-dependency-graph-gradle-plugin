@@ -17,15 +17,12 @@ class DependencyExtractorServiceTest extends Specification {
         project.getDependencies().add(testConfiguration.getName(), "junit:junit:4.12")
         when:
         ResolvedConfiguration resolvedConfiguration = testConfiguration.getResolvedConfiguration()
-        DependencyExtractorService.extractDependenciesFromResolvedComponentResult(
+        def gitHubDependencies = DependencyExtractorService.extractDependenciesFromResolvedComponentResult(
                 testConfiguration.incoming.resolutionResult.root,
                 GitHubDependency.Relationship.direct
         )
-        def moduleDependencies = resolvedConfiguration.firstLevelModuleDependencies
-        assert moduleDependencies.size() == 1
-        def gitHubDependency =
-                ConfigurationToManifestTransformer
-                        .transformToGitHubDependency(moduleDependencies[0], GitHubDependency.Relationship.direct)
+        assert gitHubDependencies.size() == 2
+        def gitHubDependency = gitHubDependencies.get(0)
         then:
         gitHubDependency.purl.toString() == "pkg:maven/junit/junit@4.12"
         gitHubDependency.relationship == GitHubDependency.Relationship.direct

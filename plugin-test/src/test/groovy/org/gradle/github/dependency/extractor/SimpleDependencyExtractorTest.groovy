@@ -118,4 +118,115 @@ class SimpleDependencyExtractorTest extends BaseExtractorTest {
             dependencies == []
         }
     }
+
+    def "build with one dependency and one transitive when multiple configurations are resolved"() {
+        given:
+        def bar = mavenRepo.module("org.test", "bar", "1.0").publish()
+        mavenRepo.module("org.test", "foo", "1.0").dependsOn(bar).publish()
+        singleProjectBuildWithDependencies """
+        dependencies {
+            implementation "org.test:foo:1.0"
+        }
+        """
+        javaTestSourceFile """
+        public class Test {}
+        """
+        when:
+        succeeds("build")
+
+        then:
+        def manifest = jsonManifest() as Map
+        def manifests = manifest.manifests as Map
+        [":compileClasspath", ":testCompileClasspath"].forEach {
+            def classpathManifest = manifests[it] as Map
+            classpathManifest.name == it
+            def file = classpathManifest.file as Map
+            file.source_location == "build.gradle.kts"
+            def resolved = classpathManifest.resolved as Map
+            def testFoo = resolved["pkg:maven/org.test/foo@1.0"] as Map
+            verifyAll(testFoo) {
+                purl == "pkg:maven/org.test/foo@1.0"
+                relationship == "direct"
+                dependencies == ["pkg:maven/org.test/bar@1.0"]
+            }
+            def testBar = resolved["pkg:maven/org.test/bar@1.0"] as Map
+            verifyAll(testBar) {
+                purl == "pkg:maven/org.test/bar@1.0"
+                relationship == "indirect"
+                dependencies == []
+            }
+        }
+    }
+
+    def "build with dependency updated transitively"() {
+        given:
+        mavenRepo.module("org.test", "bar", "1.0").publish()
+        def barNewer = mavenRepo.module("org.test", "bar", "1.1").publish()
+        mavenRepo.module("org.test", "foo", "1.0").dependsOn(barNewer).publish()
+        singleProjectBuildWithDependencies """
+        dependencies {
+            implementation "org.test:bar:1.0" // Direct dependency upon older version
+            implementation "org.test:foo:1.0" // Transitive dependency upon older version
+        }
+        """
+        when:
+        succeeds("dependencies", "--configuration", "runtimeClasspath")
+
+        then:
+        def manifest = jsonManifest() as Map
+        def manifests = manifest.manifests as Map
+        def runtimeClasspathManifest = manifests[":runtimeClasspath"] as Map
+        runtimeClasspathManifest.name == ":runtimeClasspath"
+        def file = runtimeClasspathManifest.file as Map
+        file.source_location == "build.gradle.kts"
+        def resolved = runtimeClasspathManifest.resolved as Map
+        def testFoo = resolved["pkg:maven/org.test/foo@1.0"] as Map
+        verifyAll(testFoo) {
+            purl == "pkg:maven/org.test/foo@1.0"
+            relationship == "direct"
+            dependencies == ["pkg:maven/org.test/bar@1.1"]
+        }
+        def testBar = resolved["pkg:maven/org.test/bar@1.1"] as Map
+        verifyAll(testBar) {
+            purl == "pkg:maven/org.test/bar@1.1"
+            relationship == "direct"
+            dependencies == []
+        }
+    }
+
+    def "build with transitive dependency updated directly"() {
+        given:
+        def barOlder = mavenRepo.module("org.test", "bar", "1.0").publish()
+        mavenRepo.module("org.test", "bar", "1.1").publish()
+        mavenRepo.module("org.test", "foo", "1.0").dependsOn(barOlder).publish()
+        singleProjectBuildWithDependencies """
+        dependencies {
+            implementation "org.test:bar:1.1"
+            implementation "org.test:foo:1.0"
+        }
+        """
+        when:
+        succeeds("dependencies", "--configuration", "runtimeClasspath")
+
+        then:
+        def manifest = jsonManifest() as Map
+        def manifests = manifest.manifests as Map
+        def runtimeClasspathManifest = manifests[":runtimeClasspath"] as Map
+        runtimeClasspathManifest.name == ":runtimeClasspath"
+        def file = runtimeClasspathManifest.file as Map
+        file.source_location == "build.gradle.kts"
+        def resolved = runtimeClasspathManifest.resolved as Map
+        def testFoo = resolved["pkg:maven/org.test/foo@1.0"] as Map
+        verifyAll(testFoo) {
+            purl == "pkg:maven/org.test/foo@1.0"
+            relationship == "direct"
+            dependencies == ["pkg:maven/org.test/bar@1.1"]
+        }
+        def testBarIndirect = resolved["pkg:maven/org.test/bar@1.1"] as Map
+        verifyAll(testBarIndirect) {
+            purl == "pkg:maven/org.test/bar@1.1"
+            relationship == "direct"
+            dependencies == []
+        }
+    }
 }

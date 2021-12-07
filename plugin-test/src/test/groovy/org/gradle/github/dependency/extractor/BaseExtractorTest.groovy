@@ -76,7 +76,10 @@ abstract class BaseExtractorTest extends AbstractIntegrationSpec {
             args.remove("--no-daemon")
             runner.withArguments(args)
             runner.withPluginClasspath(pluginClasspath)
-            runner.withEnvironment(environmentVars)
+            if (!environmentVars.isEmpty()) {
+                runner.withEnvironment(environmentVars)
+            }
+            runner.withDebug(debug)
             runner.forwardOutput()
             runner
         }

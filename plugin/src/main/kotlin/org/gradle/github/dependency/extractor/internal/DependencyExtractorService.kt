@@ -1,5 +1,6 @@
 package org.gradle.github.dependency.extractor.internal
 
+import com.github.packageurl.PackageURL
 import com.github.packageurl.PackageURLBuilder
 import org.gradle.api.artifacts.ModuleVersionIdentifier
 import org.gradle.api.artifacts.result.ResolvedComponentResult
@@ -42,7 +43,6 @@ abstract class DependencyExtractorService :
                 result.rootComponent,
                 GitHubDependency.Relationship.direct
             )
-        // (result.rootComponent.dependencies.first() as ResolvedDependencyResult).selected.dependencies
 
         val name = (details.projectPath ?: "") + details.configurationName
         gitHubDependencyGraphBuilder.addManifest(
@@ -83,17 +83,60 @@ abstract class DependencyExtractorService :
         extractRepositories(details, result)
     }
 
+    override fun close() {
+        // Generate JSON
+        File("github-manifest.json").writeText(JacksonJsonSerializer.serializeToJson(gitHubDependencyGraphBuilder.build()))
+    }
+
     /**
      * Collects all the dependencies on a specific configuration.
      */
     class ConfigurationDependencyCollector {
-        fun addDependency() {
-        }
-    }
 
-    override fun close() {
-        // Generate JSON
-        File("github-manifest.json").writeText(JacksonJsonSerializer.serializeToJson(gitHubDependencyGraphBuilder.build()))
+        private val dependencies: MutableMap<PackageURL, GitHubDependency> = mutableMapOf()
+
+        fun walkResolveComponentResults(
+            resolvedComponentResult: ResolvedComponentResult,
+            relationship: GitHubDependency.Relationship
+        ): List<PackageURL> {
+            val dependencyPurls = mutableListOf<PackageURL>()
+            resolvedComponentResult.dependencies.forEach { dependency ->
+                // We only care about resolve dependencies
+                if (dependency is ResolvedDependencyResult) {
+                    val moduleVersion = dependency.selected.moduleVersion!!
+                    val transitives = walkResolveComponentResults(
+                        dependency.selected,
+                        GitHubDependency.Relationship.indirect
+                    )
+                    val thisPurl = moduleVersion.toPurl()
+                    addDependency(
+                        GitHubDependency(
+                            thisPurl,
+                            relationship,
+                            transitives.map { it.toString() }
+                        )
+                    )
+                    dependencyPurls.add(thisPurl)
+                }
+            }
+            return dependencyPurls
+        }
+
+        private fun addDependency(ghDependency: GitHubDependency) {
+            val purl = ghDependency.purl
+            val existing = dependencies[purl]
+            if (existing != null) {
+                if (existing.relationship != GitHubDependency.Relationship.direct) {
+                    dependencies[purl] = ghDependency
+                }
+            } else {
+                dependencies[purl] = ghDependency
+            }
+        }
+
+        fun dependencies(): List<GitHubDependency> {
+            return dependencies.values.toList()
+        }
     }
 
     companion object {
@@ -103,25 +146,11 @@ abstract class DependencyExtractorService :
             resolvedComponentResult: ResolvedComponentResult,
             relationship: GitHubDependency.Relationship
         ): List<GitHubDependency> {
-            val dependencies = mutableListOf<GitHubDependency>()
-            resolvedComponentResult.dependencies.forEach { dependency ->
-                if (dependency is ResolvedDependencyResult) {
-                    val moduleVersion = dependency.selected.moduleVersion!!
-                    val transitives = extractDependenciesFromResolvedComponentResult(
-                        dependency.selected,
-                        GitHubDependency.Relationship.indirect
-                    )
-                    dependencies.add(
-                        GitHubDependency(
-                            purl = moduleVersion.toPurl(),
-                            relationship = relationship,
-                            dependencies = transitives.map { it.purl }
-                        )
-                    )
-                    dependencies.addAll(transitives)
+            return ConfigurationDependencyCollector()
+                .apply {
+                    walkResolveComponentResults(resolvedComponentResult, relationship)
                 }
-            }
-            return dependencies
+                .dependencies()
         }
 
         private fun ModuleVersionIdentifier.toPurl() =

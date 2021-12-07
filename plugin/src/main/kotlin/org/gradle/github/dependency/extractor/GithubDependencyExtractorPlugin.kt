@@ -4,15 +4,11 @@
 package org.gradle.github.dependency.extractor
 
 import org.gradle.BuildResult
-import org.gradle.api.Action
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.internal.GradleInternal
 import org.gradle.api.invocation.Gradle
-import org.gradle.api.services.BuildServiceSpec
-import org.gradle.github.dependency.extractor.ExtractorDependencyResolutionListener
 import org.gradle.github.dependency.extractor.internal.DependencyExtractorService
 import org.gradle.internal.build.event.BuildEventListenerRegistryInternal
 
@@ -21,17 +17,6 @@ import org.gradle.internal.build.event.BuildEventListenerRegistryInternal
  */
 class GithubDependencyExtractorPlugin : Plugin<Gradle> {
     override fun apply(gradle: Gradle) {
-        // Register a task
-        gradle.allprojects { project: Project ->
-            project.tasks.register("greeting") { task: Task ->
-                task.doLast { s: Task? ->
-                    println(
-                        "Hello from plugin 'org.gradle.github.dependency.extractor.greeting'"
-                    )
-                }
-            }
-        }
-        gradle.addListener(ExtractorDependencyResolutionListener())
         val extractorPluginProvider = gradle.sharedServices.registerIfAbsent(
             "dependencyExtractorService",
             DependencyExtractorService::class.java,

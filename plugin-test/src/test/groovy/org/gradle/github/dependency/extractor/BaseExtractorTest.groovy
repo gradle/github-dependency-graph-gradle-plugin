@@ -37,6 +37,11 @@ abstract class BaseExtractorTest extends AbstractIntegrationSpec {
         return jsonSlurper.parse(manifestFile)
     }
 
+    protected Map jsonManifests() {
+        def json = jsonManifest()
+        return json.manifests as Map
+    }
+
     @Override
     GradleExecuter createExecuter() {
         def testKitDir = file("test-kit")

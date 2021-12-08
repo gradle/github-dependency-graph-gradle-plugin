@@ -43,8 +43,11 @@ abstract class DependencyExtractorService :
                 result.rootComponent,
                 GitHubDependency.Relationship.direct
             )
-
-        val name = (details.projectPath ?: "") + details.configurationName
+        // TODO: Remove this debug logging, potentially add it as meta-data to the JSON output
+        println("Project Path: ${details.projectPath}")
+        println("Configuration: ${details.configurationName}")
+        println("Build Path: ${details.buildPath}")
+        val name = (details.projectPath ?: "") + ':' + details.configurationName
         gitHubDependencyGraphBuilder.addManifest(
             name, GitHubManifest(
                 name = name,

@@ -1,3 +1,5 @@
+import org.gradle.api.internal.FeaturePreviews
+
 pluginManagement {
     plugins {
         id("org.jetbrains.kotlin.jvm") version "1.5.21"
@@ -62,4 +64,10 @@ if (gradleDirectory.exists()) {
         }
     }
     include("plugin-test")
+}
+
+FeaturePreviews.Feature.values().forEach { feature ->
+    if (feature.isActive) {
+        enableFeaturePreview(feature.name)
+    }
 }

@@ -27,14 +27,5 @@ class GithubDependencyExtractorPlugin : Plugin<Gradle> {
             .get(BuildEventListenerRegistryInternal::class.java)
             .onOperationCompletion(extractorPluginProvider)
 
-        gradle.buildFinished { result: BuildResult? ->
-            gradle.allprojects { project: Project ->
-                project.configurations.all { configuration: Configuration ->
-                    if (configuration.isCanBeResolved) {
-                        // transformer.transformToGitHubDependency(configuration)
-                    }
-                }
-            }
-        }
     }
 }

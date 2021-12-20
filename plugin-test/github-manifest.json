@@ -1,0 +1,43 @@
+{
+  "manifests" : {
+    "::runtimeClasspath" : {
+      "name" : "::runtimeClasspath",
+      "file" : {
+        "source_location" : "build.gradle.kts"
+      },
+      "resolved" : {
+        "pkg:maven/org.test/foo@1.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2F3xeyg%2Fmaven-repo%2F" : {
+          "purl" : "pkg:maven/org.test/foo@1.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2F3xeyg%2Fmaven-repo%2F",
+          "relationship" : "direct",
+          "dependencies" : [ ]
+        }
+      }
+    },
+    ":a:runtimeClasspath" : {
+      "name" : ":a:runtimeClasspath",
+      "file" : {
+        "source_location" : "build.gradle.kts"
+      },
+      "resolved" : {
+        "pkg:maven/org.test/foo@1.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2F3xeyg%2Fmaven-repo%2F" : {
+          "purl" : "pkg:maven/org.test/foo@1.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2F3xeyg%2Fmaven-repo%2F",
+          "relationship" : "direct",
+          "dependencies" : [ ]
+        }
+      }
+    },
+    ":b:runtimeClasspath" : {
+      "name" : ":b:runtimeClasspath",
+      "file" : {
+        "source_location" : "build.gradle.kts"
+      },
+      "resolved" : {
+        "pkg:maven/org.test/foo@1.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2F3xeyg%2Fmaven-repo%2F" : {
+          "purl" : "pkg:maven/org.test/foo@1.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2F3xeyg%2Fmaven-repo%2F",
+          "relationship" : "direct",
+          "dependencies" : [ ]
+        }
+      }
+    }
+  }
+}

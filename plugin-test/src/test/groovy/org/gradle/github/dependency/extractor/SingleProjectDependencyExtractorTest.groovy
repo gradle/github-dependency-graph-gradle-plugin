@@ -38,7 +38,8 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
 
     def "build with single dependency"() {
         given:
-        mavenRepo.module("org.test", "foo", "1.0").publish()
+        def foo = mavenRepo.module("org.test", "foo", "1.0").publish()
+        def fooPurl = purlFor(foo)
         singleProjectBuildWithDependencies """
         dependencies {
             implementation "org.test:foo:1.0"
@@ -54,10 +55,10 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         def file = runtimeClasspathManifest.file as Map
         file.source_location == "build.gradle.kts"
         def resolved = runtimeClasspathManifest.resolved as Map
-        def testFoo = resolved["pkg:maven/org.test/foo@1.0"]
+        def testFoo = resolved[fooPurl]
         testFoo instanceof Map
         verifyAll(testFoo as Map) {
-            purl == "pkg:maven/org.test/foo@1.0"
+            purl == fooPurl
             relationship == "direct"
             dependencies == []
         }
@@ -65,8 +66,10 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
 
     def "build with two dependencies"() {
         given:
-        mavenRepo.module("org.test", "foo", "1.0").publish()
-        mavenRepo.module("org.test", "bar", "1.0").publish()
+        def foo = mavenRepo.module("org.test", "foo", "1.0").publish()
+        def fooPurl = purlFor(foo)
+        def bar = mavenRepo.module("org.test", "bar", "1.0").publish()
+        def barPurl = purlFor(bar)
         singleProjectBuildWithDependencies """
         dependencies {
             implementation "org.test:foo:1.0"
@@ -83,15 +86,15 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         def file = runtimeClasspathManifest.file as Map
         file.source_location == "build.gradle.kts"
         def resolved = runtimeClasspathManifest.resolved as Map
-        def testFoo = resolved["pkg:maven/org.test/foo@1.0"] as Map
+        def testFoo = resolved[fooPurl] as Map
         verifyAll(testFoo) {
-            purl == "pkg:maven/org.test/foo@1.0"
+            purl == fooPurl
             relationship == "direct"
             dependencies == []
         }
-        def testBar = resolved["pkg:maven/org.test/bar@1.0"] as Map
+        def testBar = resolved[barPurl] as Map
         verifyAll(testBar) {
-            purl == "pkg:maven/org.test/bar@1.0"
+            purl == barPurl
             relationship == "direct"
             dependencies == []
         }
@@ -100,7 +103,9 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
     def "build with one dependency and one transitive"() {
         given:
         def bar = mavenRepo.module("org.test", "bar", "1.0").publish()
-        mavenRepo.module("org.test", "foo", "1.0").dependsOn(bar).publish()
+        def barPurl = purlFor(bar)
+        def foo = mavenRepo.module("org.test", "foo", "1.0").dependsOn(bar).publish()
+        def fooPurl = purlFor(foo)
         singleProjectBuildWithDependencies """
         dependencies {
             implementation "org.test:foo:1.0"
@@ -116,15 +121,15 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         def file = runtimeClasspathManifest.file as Map
         file.source_location == "build.gradle.kts"
         def resolved = runtimeClasspathManifest.resolved as Map
-        def testFoo = resolved["pkg:maven/org.test/foo@1.0"] as Map
+        def testFoo = resolved[fooPurl] as Map
         verifyAll(testFoo) {
-            purl == "pkg:maven/org.test/foo@1.0"
+            purl == fooPurl
             relationship == "direct"
-            dependencies == ["pkg:maven/org.test/bar@1.0"]
+            dependencies == [barPurl]
         }
-        def testBar = resolved["pkg:maven/org.test/bar@1.0"] as Map
+        def testBar = resolved[barPurl] as Map
         verifyAll(testBar) {
-            purl == "pkg:maven/org.test/bar@1.0"
+            purl == barPurl
             relationship == "indirect"
             dependencies == []
         }
@@ -133,7 +138,9 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
     def "build with one dependency and one transitive when multiple configurations are resolved"() {
         given:
         def bar = mavenRepo.module("org.test", "bar", "1.0").publish()
-        mavenRepo.module("org.test", "foo", "1.0").dependsOn(bar).publish()
+        def barPurl = purlFor(bar)
+        def foo = mavenRepo.module("org.test", "foo", "1.0").dependsOn(bar).publish()
+        def fooPurl = purlFor(foo)
         singleProjectBuildWithDependencies """
         dependencies {
             implementation "org.test:foo:1.0"
@@ -153,15 +160,15 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
             def file = classpathManifest.file as Map
             file.source_location == "build.gradle.kts"
             def resolved = classpathManifest.resolved as Map
-            def testFoo = resolved["pkg:maven/org.test/foo@1.0"] as Map
+            def testFoo = resolved[fooPurl] as Map
             verifyAll(testFoo) {
-                purl == "pkg:maven/org.test/foo@1.0"
+                purl == fooPurl
                 relationship == "direct"
-                dependencies == ["pkg:maven/org.test/bar@1.0"]
+                dependencies == [barPurl]
             }
-            def testBar = resolved["pkg:maven/org.test/bar@1.0"] as Map
+            def testBar = resolved[barPurl] as Map
             verifyAll(testBar) {
-                purl == "pkg:maven/org.test/bar@1.0"
+                purl == barPurl
                 relationship == "indirect"
                 dependencies == []
             }
@@ -172,7 +179,9 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         given:
         mavenRepo.module("org.test", "bar", "1.0").publish()
         def barNewer = mavenRepo.module("org.test", "bar", "1.1").publish()
-        mavenRepo.module("org.test", "foo", "1.0").dependsOn(barNewer).publish()
+        def barNewerPurl = purlFor(barNewer)
+        def foo = mavenRepo.module("org.test", "foo", "1.0").dependsOn(barNewer).publish()
+        def fooPurl = purlFor(foo)
         singleProjectBuildWithDependencies """
         dependencies {
             implementation "org.test:bar:1.0" // Direct dependency upon older version
@@ -189,15 +198,15 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         def file = runtimeClasspathManifest.file as Map
         file.source_location == "build.gradle.kts"
         def resolved = runtimeClasspathManifest.resolved as Map
-        def testFoo = resolved["pkg:maven/org.test/foo@1.0"] as Map
+        def testFoo = resolved[fooPurl] as Map
         verifyAll(testFoo) {
-            purl == "pkg:maven/org.test/foo@1.0"
+            purl == fooPurl
             relationship == "direct"
-            dependencies == ["pkg:maven/org.test/bar@1.1"]
+            dependencies == [barNewerPurl]
         }
-        def testBar = resolved["pkg:maven/org.test/bar@1.1"] as Map
+        def testBar = resolved[barNewerPurl] as Map
         verifyAll(testBar) {
-            purl == "pkg:maven/org.test/bar@1.1"
+            purl == barNewerPurl
             relationship == "direct"
             dependencies == []
         }
@@ -206,8 +215,10 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
     def "build with transitive dependency updated directly"() {
         given:
         def barOlder = mavenRepo.module("org.test", "bar", "1.0").publish()
-        mavenRepo.module("org.test", "bar", "1.1").publish()
-        mavenRepo.module("org.test", "foo", "1.0").dependsOn(barOlder).publish()
+        def bar = mavenRepo.module("org.test", "bar", "1.1").publish()
+        def barPurl = purlFor(bar)
+        def foo = mavenRepo.module("org.test", "foo", "1.0").dependsOn(barOlder).publish()
+        def fooPurl = purlFor(foo)
         singleProjectBuildWithDependencies """
         dependencies {
             implementation "org.test:bar:1.1" // Direct dependency upon newer version
@@ -215,6 +226,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         }
         """
         when:
+        executer.startBuildProcessInDebugger(true)
         succeeds("dependencies", "--configuration", "runtimeClasspath")
 
         then:
@@ -224,15 +236,15 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         def file = runtimeClasspathManifest.file as Map
         file.source_location == "build.gradle.kts"
         def resolved = runtimeClasspathManifest.resolved as Map
-        def testFoo = resolved["pkg:maven/org.test/foo@1.0"] as Map
+        def testFoo = resolved[fooPurl] as Map
         verifyAll(testFoo) {
-            purl == "pkg:maven/org.test/foo@1.0"
+            purl == fooPurl
             relationship == "direct"
-            dependencies == ["pkg:maven/org.test/bar@1.1"]
+            dependencies == [barPurl]
         }
-        def testBarIndirect = resolved["pkg:maven/org.test/bar@1.1"] as Map
+        def testBarIndirect = resolved[barPurl] as Map
         verifyAll(testBarIndirect) {
-            purl == "pkg:maven/org.test/bar@1.1"
+            purl == barPurl
             relationship == "direct"
             dependencies == []
         }
@@ -240,7 +252,8 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
 
     def "build with buildscript dependencies"() {
         given:
-        mavenRepo.module("org.test", "foo", "1.0").publish()
+        def foo = mavenRepo.module("org.test", "foo", "1.0").publish()
+        def fooPurl = purlFor(foo)
         singleProjectBuildWithBuildscript """
         dependencies {
             classpath "org.test:foo:1.0"
@@ -254,9 +267,9 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         def classpathManifest = manifests[":classpath"] as Map
         classpathManifest.name == ":classpath"
         def classpathResolved = classpathManifest.resolved as Map
-        def testFoo = classpathResolved["pkg:maven/org.test/foo@1.0"] as Map
+        def testFoo = classpathResolved[fooPurl] as Map
         verifyAll(testFoo) {
-            purl == "pkg:maven/org.test/foo@1.0"
+            purl == fooPurl
             relationship == "direct"
             dependencies == []
         }

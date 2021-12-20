@@ -18,6 +18,7 @@ import org.gradle.internal.operations.OperationIdentifier
 import org.gradle.internal.operations.OperationProgressEvent
 import org.gradle.internal.operations.OperationStartEvent
 import java.io.File
+import java.net.URI
 
 abstract class DependencyExtractorService :
     BuildService<BuildServiceParameters.None>,
@@ -38,10 +39,12 @@ abstract class DependencyExtractorService :
         details: ResolveConfigurationDependenciesBuildOperationType.Details,
         result: ResolveConfigurationDependenciesBuildOperationType.Result
     ) {
+        val repositoryLookup = RepositoryUrlLookup(details, result)
         val dependencies =
             extractDependenciesFromResolvedComponentResult(
                 result.rootComponent,
-                GitHubDependency.Relationship.direct
+                GitHubDependency.Relationship.direct,
+                repositoryLookup::doLookup
             )
         // TODO: Remove this debug logging, potentially add it as meta-data to the JSON output
         println("Project Path: ${details.projectPath}")
@@ -59,14 +62,28 @@ abstract class DependencyExtractorService :
         )
     }
 
-    private fun extractRepositories(
-        details: ResolveConfigurationDependenciesBuildOperationType.Details,
-        result: ResolveConfigurationDependenciesBuildOperationType.Result
+    private class RepositoryUrlLookup(
+        private val details: ResolveConfigurationDependenciesBuildOperationType.Details,
+        private val result: ResolveConfigurationDependenciesBuildOperationType.Result
     ) {
-        val repositoryId = result.getRepositoryId(result.rootComponent)
 
-        if (repositoryId != null) {
-//                moduleVersionToRepository.put(result.getRootComponent().getModuleVersion(), repositoryId);
+        private fun getRepositoryUrlForId(id: String): String? {
+            return details
+                .repositories
+                ?.find { it.id == id }
+                ?.properties
+                ?.let { it["URL"] as? URI }
+                ?.toURL()
+                ?.toString()
+        }
+
+        /**
+         * Looks up the repository for the given [ResolvedDependencyResult].
+         */
+        fun doLookup(resolvedDependencyResult: ResolvedDependencyResult): String? {
+            // Get the repository id from the result
+            val repositoryId = result.getRepositoryId(resolvedDependencyResult.selected)
+            return repositoryId?.let { getRepositoryUrlForId(it) }
         }
     }
 
@@ -83,7 +100,6 @@ abstract class DependencyExtractorService :
             throw IllegalStateException("buildOperation.details & finishedEvent.result were unexpected types")
         }
         extractDependencies(details, result)
-        extractRepositories(details, result)
     }
 
     override fun close() {
@@ -100,7 +116,8 @@ abstract class DependencyExtractorService :
 
         fun walkResolveComponentResults(
             resolvedComponentResult: ResolvedComponentResult,
-            relationship: GitHubDependency.Relationship
+            relationship: GitHubDependency.Relationship,
+            repositoryUrlLookup: (ResolvedDependencyResult) -> String?
         ): List<PackageURL> {
             val dependencyPurls = mutableListOf<PackageURL>()
             resolvedComponentResult.dependencies.forEach { dependency ->
@@ -109,9 +126,11 @@ abstract class DependencyExtractorService :
                     val moduleVersion = dependency.selected.moduleVersion!!
                     val transitives = walkResolveComponentResults(
                         dependency.selected,
-                        GitHubDependency.Relationship.indirect
+                        GitHubDependency.Relationship.indirect,
+                        repositoryUrlLookup
                     )
-                    val thisPurl = moduleVersion.toPurl()
+                    val repositoryUrl = repositoryUrlLookup(dependency)
+                    val thisPurl = moduleVersion.toPurl(repositoryUrl)
                     addDependency(
                         GitHubDependency(
                             thisPurl,
@@ -147,22 +166,28 @@ abstract class DependencyExtractorService :
         @JvmStatic
         fun extractDependenciesFromResolvedComponentResult(
             resolvedComponentResult: ResolvedComponentResult,
-            relationship: GitHubDependency.Relationship
+            relationship: GitHubDependency.Relationship,
+            repositoryUrlLookup: (ResolvedDependencyResult) -> String?
         ): List<GitHubDependency> {
             return ConfigurationDependencyCollector()
                 .apply {
-                    walkResolveComponentResults(resolvedComponentResult, relationship)
+                    walkResolveComponentResults(resolvedComponentResult, relationship, repositoryUrlLookup)
                 }
                 .dependencies()
         }
 
-        private fun ModuleVersionIdentifier.toPurl() =
+        private fun ModuleVersionIdentifier.toPurl(repositoryUrl: String?) =
             PackageURLBuilder
                 .aPackageURL()
                 .withType("maven")
                 .withNamespace(group)
                 .withName(name)
                 .withVersion(version)
+                .also {
+                    if (repositoryUrl != null) {
+                        it.withQualifier("repository_url", repositoryUrl)
+                    }
+                }
                 .build()
     }
 }

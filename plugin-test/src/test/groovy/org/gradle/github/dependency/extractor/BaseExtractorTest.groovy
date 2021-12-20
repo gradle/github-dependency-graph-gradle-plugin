@@ -42,6 +42,12 @@ abstract class BaseExtractorTest extends AbstractIntegrationSpec {
         return json.manifests as Map
     }
 
+    protected String purlFor(org.gradle.test.fixtures.Module module) {
+        // NOTE: Don't use this in production, this is purely for test code. The escaping here may be insufficient.
+        String repositoryUrlEscaped = URLEncoder.encode(mavenRepo.rootDir.toURI().toASCIIString(), "UTF-8")
+        return "pkg:maven/${module.group}/${module.module}@${module.version}?repository_url=$repositoryUrlEscaped"
+    }
+
     @Override
     GradleExecuter createExecuter() {
         def testKitDir = file("test-kit")

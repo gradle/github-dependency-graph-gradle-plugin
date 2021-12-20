@@ -9,7 +9,8 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
 
     def "multiple projects with single dependency each"() {
         given:
-        mavenRepo.module("org.test", "foo", "1.0").publish()
+        def foo = mavenRepo.module("org.test", "foo", "1.0").publish()
+        def fooPurl = purlFor(foo)
         List<String> subprojects = ["a", "b"]
         multiProjectBuild("parent", subprojects) {
             List<BuildTestFile> projects = subprojects.collect { project(it) }.plus(this)
@@ -44,9 +45,9 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
         def parentRuntimeClasspath = manifests["::runtimeClasspath"]
         parentRuntimeClasspath.name == "::runtimeClasspath"
         def parentClasspathResolved = parentRuntimeClasspath.resolved as Map
-        def parentTestFoo = parentClasspathResolved["pkg:maven/org.test/foo@1.0"] as Map
+        def parentTestFoo = parentClasspathResolved[fooPurl] as Map
         verifyAll(parentTestFoo) {
-            purl == "pkg:maven/org.test/foo@1.0"
+            purl == fooPurl
             relationship == "direct"
             dependencies == []
         }
@@ -54,9 +55,9 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
             def runtimeClasspath = manifests[":$name:runtimeClasspath"]
             runtimeClasspath.name == ":$name:runtimeClasspath"
             def classpathResolved = runtimeClasspath.resolved as Map
-            def testFoo = classpathResolved["pkg:maven/org.test/foo@1.0"] as Map
+            def testFoo = classpathResolved[fooPurl] as Map
             verifyAll(testFoo) {
-                purl == "pkg:maven/org.test/foo@1.0"
+                purl == fooPurl
                 relationship == "direct"
                 dependencies == []
             }

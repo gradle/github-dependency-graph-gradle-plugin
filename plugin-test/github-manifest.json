@@ -1,28 +1,20 @@
 {
   "manifests" : {
-    "::runtimeClasspath" : {
-      "name" : "::runtimeClasspath",
-      "file" : {
-        "source_location" : "build.gradle.kts"
-      },
-      "resolved" : {
-        "pkg:maven/org.test/foo@1.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2F3xeyg%2Fmaven-repo%2F" : {
-          "purl" : "pkg:maven/org.test/foo@1.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2F3xeyg%2Fmaven-repo%2F",
-          "relationship" : "direct",
-          "dependencies" : [ ]
-        }
-      }
-    },
     ":a:runtimeClasspath" : {
       "name" : ":a:runtimeClasspath",
       "file" : {
         "source_location" : "build.gradle.kts"
       },
       "resolved" : {
-        "pkg:maven/org.test/foo@1.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2F3xeyg%2Fmaven-repo%2F" : {
-          "purl" : "pkg:maven/org.test/foo@1.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2F3xeyg%2Fmaven-repo%2F",
+        "pkg:maven/org.test-published/foo@1.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2Fsacvu%2Fmaven-repo%2F" : {
+          "purl" : "pkg:maven/org.test-published/foo@1.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2Fsacvu%2Fmaven-repo%2F",
           "relationship" : "direct",
-          "dependencies" : [ ]
+          "dependencies" : [ ],
+          "metadata" : {
+            "group" : "org.test-published",
+            "module" : "foo",
+            "version" : "1.0"
+          }
         }
       }
     },
@@ -32,10 +24,24 @@
         "source_location" : "build.gradle.kts"
       },
       "resolved" : {
-        "pkg:maven/org.test/foo@1.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2F3xeyg%2Fmaven-repo%2F" : {
-          "purl" : "pkg:maven/org.test/foo@1.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2F3xeyg%2Fmaven-repo%2F",
+        "pkg:maven/org.test-published/foo@1.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2Fsacvu%2Fmaven-repo%2F" : {
+          "purl" : "pkg:maven/org.test-published/foo@1.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2Fsacvu%2Fmaven-repo%2F",
+          "relationship" : "indirect",
+          "dependencies" : [ ],
+          "metadata" : {
+            "group" : "org.test-published",
+            "module" : "foo",
+            "version" : "1.0"
+          }
+        },
+        "pkg:maven/org.test/a@1.0" : {
+          "purl" : "pkg:maven/org.test/a@1.0",
           "relationship" : "direct",
-          "dependencies" : [ ]
+          "dependencies" : [ "pkg:maven/org.test-published/foo@1.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2Fsacvu%2Fmaven-repo%2F" ],
+          "metadata" : {
+            "name" : ":",
+            "projectPath" : ":a"
+          }
         }
       }
     }

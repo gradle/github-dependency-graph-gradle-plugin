@@ -226,7 +226,6 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         }
         """
         when:
-        executer.startBuildProcessInDebugger(true)
         succeeds("dependencies", "--configuration", "runtimeClasspath")
 
         then:

@@ -3,10 +3,7 @@
  */
 package org.gradle.github.dependency.extractor
 
-import org.gradle.BuildResult
 import org.gradle.api.Plugin
-import org.gradle.api.Project
-import org.gradle.api.artifacts.Configuration
 import org.gradle.api.internal.GradleInternal
 import org.gradle.api.invocation.Gradle
 import org.gradle.github.dependency.extractor.internal.DependencyExtractorService

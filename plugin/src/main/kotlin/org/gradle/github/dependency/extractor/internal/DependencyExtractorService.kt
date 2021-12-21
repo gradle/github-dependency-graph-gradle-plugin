@@ -3,8 +3,12 @@ package org.gradle.github.dependency.extractor.internal
 import com.github.packageurl.PackageURL
 import com.github.packageurl.PackageURLBuilder
 import org.gradle.api.artifacts.ModuleVersionIdentifier
+import org.gradle.api.artifacts.component.ComponentIdentifier
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
+import org.gradle.api.artifacts.result.ResolvedVariantResult
 import org.gradle.api.internal.artifacts.configurations.ResolveConfigurationDependenciesBuildOperationType
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
@@ -17,6 +21,7 @@ import org.gradle.internal.operations.OperationFinishEvent
 import org.gradle.internal.operations.OperationIdentifier
 import org.gradle.internal.operations.OperationProgressEvent
 import org.gradle.internal.operations.OperationStartEvent
+import org.gradle.util.GradleVersion
 import java.io.File
 import java.net.URI
 
@@ -112,36 +117,68 @@ abstract class DependencyExtractorService :
      */
     class ConfigurationDependencyCollector {
 
+        private val variantExtractor by lazy {
+            if (GradleVersion.current() >= GradleVersion.version("5.6")) {
+                VariantExtractor.VariantExtractor_5_6
+            } else {
+                VariantExtractor.Default
+            }
+        }
         private val dependencies: MutableMap<PackageURL, GitHubDependency> = mutableMapOf()
 
         fun walkResolveComponentResults(
             resolvedComponentResult: ResolvedComponentResult,
+            selectedVariant: ResolvedVariantResult? = null,
             relationship: GitHubDependency.Relationship,
             repositoryUrlLookup: (ResolvedDependencyResult) -> String?
         ): List<PackageURL> {
             val dependencyPurls = mutableListOf<PackageURL>()
-            resolvedComponentResult.dependencies.forEach { dependency ->
-                // We only care about resolve dependencies
-                if (dependency is ResolvedDependencyResult) {
-                    val moduleVersion = dependency.selected.moduleVersion!!
-                    val transitives = walkResolveComponentResults(
-                        dependency.selected,
-                        GitHubDependency.Relationship.indirect,
-                        repositoryUrlLookup
-                    )
-                    val repositoryUrl = repositoryUrlLookup(dependency)
-                    val thisPurl = moduleVersion.toPurl(repositoryUrl)
-                    addDependency(
-                        GitHubDependency(
-                            thisPurl,
-                            relationship,
-                            transitives.map { it.toString() }
+            variantExtractor
+                .getDependencies(selectedVariant, resolvedComponentResult)
+                .forEach { dependency ->
+                    // We only care about resolve dependencies
+                    if (dependency is ResolvedDependencyResult) {
+                        val selected = dependency.selected
+                        val moduleVersion = selected.moduleVersion!!
+                        val resolvedSelectedVariant = variantExtractor.getSelectedVariant(dependency)
+                        val transitives = walkResolveComponentResults(
+                            selected,
+                            resolvedSelectedVariant,
+                            GitHubDependency.Relationship.indirect,
+                            repositoryUrlLookup
                         )
-                    )
-                    dependencyPurls.add(thisPurl)
+                        val repositoryUrl = repositoryUrlLookup(dependency)
+                        val thisPurl = moduleVersion.toPurl(repositoryUrl)
+                        addDependency(
+                            GitHubDependency(
+                                thisPurl,
+                                relationship,
+                                transitives.map { it.toString() },
+                                metaDataForComponentIdentifier(dependency.selected.id)
+                            )
+                        )
+                        dependencyPurls.add(thisPurl)
+                    }
                 }
-            }
             return dependencyPurls
+        }
+
+        private fun metaDataForComponentIdentifier(componentIdentifier: ComponentIdentifier): Map<String, Any> {
+            return when (componentIdentifier) {
+                is ProjectComponentIdentifier -> mapOf(
+                    "name" to componentIdentifier.build.name,
+                    "projectPath" to componentIdentifier.projectPath
+                )
+                is ModuleComponentIdentifier -> mapOf(
+                    "group" to componentIdentifier.group,
+                    "module" to componentIdentifier.module,
+                    "version" to componentIdentifier.version
+                )
+                else -> mapOf(
+                    "display_name" to componentIdentifier.displayName,
+                    "class" to componentIdentifier.javaClass.name
+                )
+            }
         }
 
         private fun addDependency(ghDependency: GitHubDependency) {
@@ -171,7 +208,11 @@ abstract class DependencyExtractorService :
         ): List<GitHubDependency> {
             return ConfigurationDependencyCollector()
                 .apply {
-                    walkResolveComponentResults(resolvedComponentResult, relationship, repositoryUrlLookup)
+                    walkResolveComponentResults(
+                        resolvedComponentResult = resolvedComponentResult,
+                        relationship = relationship,
+                        repositoryUrlLookup = repositoryUrlLookup
+                    )
                 }
                 .dependencies()
         }

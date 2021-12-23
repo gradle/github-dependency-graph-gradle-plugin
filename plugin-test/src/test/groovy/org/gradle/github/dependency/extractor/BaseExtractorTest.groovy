@@ -3,13 +3,20 @@ package org.gradle.github.dependency.extractor
 import groovy.json.JsonSlurper
 import groovy.transform.CompileDynamic
 import org.gradle.github.dependency.extractor.fixture.TestConfig
-import org.gradle.integtests.fixtures.AbstractIntegrationSpec
+import org.gradle.integtests.fixtures.MultiVersionIntegrationSpec
+import org.gradle.integtests.fixtures.TargetCoverage
 import org.gradle.integtests.fixtures.executer.*
 import org.gradle.test.fixtures.file.TestDirectoryProvider
 import org.gradle.test.fixtures.file.TestFile
 import org.gradle.testkit.runner.GradleRunner
+import org.gradle.util.GradleVersion
 
-abstract class BaseExtractorTest extends AbstractIntegrationSpec {
+@TargetCoverage({ getTestedGradleVersions() })
+abstract class BaseExtractorTest extends MultiVersionIntegrationSpec {
+    static List<String> getTestedGradleVersions() {
+        return [GradleVersion.current(), GradleVersion.version("5.0")].collect { it.version }
+    }
+
     private static final TestConfig TEST_CONFIG = new TestConfig()
 
     @CompileDynamic
@@ -81,6 +88,7 @@ abstract class BaseExtractorTest extends AbstractIntegrationSpec {
 
         private GradleRunner createRunner() {
             def runner = GradleRunner.create()
+            runner.withGradleVersion(version.toString())
             runner.withTestKitDir(testKitDir)
             runner.withProjectDir(workingDir)
             def args = allArgs

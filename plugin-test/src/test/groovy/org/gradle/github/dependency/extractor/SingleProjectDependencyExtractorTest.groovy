@@ -1,7 +1,9 @@
 package org.gradle.github.dependency.extractor
 
 import org.gradle.integtests.fixtures.GroovyBuildScriptLanguage
+import org.gradle.integtests.fixtures.compatibility.MultiVersionTest
 
+@MultiVersionTest
 class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
     def setup() {
         applyExtractorPlugin()
@@ -46,6 +48,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         }
         """
         when:
+        executer.startBuildProcessInDebugger(true)
         succeeds("dependencies", "--configuration", "runtimeClasspath")
 
         then:

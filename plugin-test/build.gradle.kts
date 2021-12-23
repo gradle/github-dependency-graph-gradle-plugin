@@ -28,6 +28,14 @@ sourceSets.test {
 tasks.withType<Test>().configureEach {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
+
+    // use -PtestVersions=all or -PtestVersions=1.2,1.3…
+    val integTestVersionsSysProp = "org.gradle.integtest.versions"
+    if (project.hasProperty("testVersions")) {
+        systemProperties[integTestVersionsSysProp] = project.property("testVersions")
+    } else {
+        systemProperties[integTestVersionsSysProp] = "default"
+    }
 }
 
 abstract class WriteConfigTask : DefaultTask() {

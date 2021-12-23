@@ -22,7 +22,11 @@ dependencies {
     shadowImplementation(platform(libs.jackson.platform))
     shadowImplementation(libs.jackson.databind)
     shadowImplementation(libs.jackson.kotlin) {
+        version {
+            strictly("2.12.3")
+        }
         exclude(group = "org.jetbrains.kotlin")
+        because("kotlin std lib is bundled with Gradle. 2.12.3 because higher versions depend upon Kotlin 1.5")
     }
     shadowImplementation("com.github.package-url:packageurl-java:1.4.1")
     // Use JUnit Jupiter for testing.
@@ -38,6 +42,7 @@ java {
 tasks.withType<KotlinCompile>() {
     kotlinOptions {
         apiVersion = "1.3"
+        languageVersion = "1.3"
         jvmTarget = "1.8"
     }
 }

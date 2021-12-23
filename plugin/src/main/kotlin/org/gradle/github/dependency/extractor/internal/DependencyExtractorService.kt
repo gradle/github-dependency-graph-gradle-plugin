@@ -26,7 +26,6 @@ import java.io.File
 import java.net.URI
 
 abstract class DependencyExtractorService :
-    BuildService<BuildServiceParameters.None>,
     BuildOperationListener,
     AutoCloseable {
 

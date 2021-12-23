@@ -8,7 +8,7 @@ import org.gradle.api.artifacts.result.ResolvedVariantResult
 /**
  * Defines various strategies for extracting dependency information based upon the version of Gradle.
  */
-sealed interface VariantExtractor {
+interface VariantExtractor {
     fun getSelectedVariant(dependency: ResolvedDependencyResult): ResolvedVariantResult?
 
     fun getDependencies(

@@ -50,10 +50,12 @@ abstract class DependencyExtractorService :
                 GitHubDependency.Relationship.direct,
                 repositoryLookup::doLookup
             )
-        // TODO: Remove this debug logging, potentially add it as meta-data to the JSON output
-        println("Project Path: ${details.projectPath}")
-        println("Configuration: ${details.configurationName}")
-        println("Build Path: ${details.buildPath}")
+        val metaData = mapOf(
+            "project_path" to details.projectPath,
+            "configuration" to details.configurationName,
+            "build_path" to details.buildPath,
+            "is_script_configuration" to details.isScriptConfiguration
+        )
         val name = (details.projectPath ?: "") + ':' + details.configurationName
         gitHubDependencyGraphBuilder.addManifest(
             name, GitHubManifest(
@@ -61,7 +63,8 @@ abstract class DependencyExtractorService :
                 file = GitHubManifestFile(
                     "build.gradle.kts"
                 ),
-                resolved = dependencies.associateBy { it.purl.toString() }
+                resolved = dependencies.associateBy { it.purl.toString() },
+                metadata = metaData
             )
         )
     }

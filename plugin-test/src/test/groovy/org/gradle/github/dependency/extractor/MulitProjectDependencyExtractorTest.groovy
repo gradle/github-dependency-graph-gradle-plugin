@@ -122,5 +122,12 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
             relationship == "indirect"
             dependencies == []
         }
+        def aTestProjectPurl = "pkg:maven/org.test/a@1.0"
+        def aTestProject = bClasspathResolved[aTestProjectPurl] as Map
+        verifyAll (aTestProject) {
+            purl == aTestProjectPurl
+            relationship == "direct"
+            dependencies == [this.fooPurl]
+        }
     }
 }

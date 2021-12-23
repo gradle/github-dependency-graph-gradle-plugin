@@ -34,7 +34,7 @@ tasks.withType<Test>().configureEach {
     if (project.hasProperty("testVersions")) {
         systemProperties[integTestVersionsSysProp] = project.property("testVersions")
     } else {
-        systemProperties[integTestVersionsSysProp] = "default"
+        systemProperties[integTestVersionsSysProp] = "partial"
     }
 }
 

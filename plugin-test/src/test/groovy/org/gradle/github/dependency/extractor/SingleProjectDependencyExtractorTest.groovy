@@ -7,6 +7,7 @@ import org.gradle.integtests.fixtures.compatibility.MultiVersionTest
 class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
     def setup() {
         applyExtractorPlugin()
+        establishEnvironmentVariables()
     }
 
     private def singleProjectBuildWithDependencies(@GroovyBuildScriptLanguage String dependenciesDeclaration) {
@@ -48,7 +49,6 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         }
         """
         when:
-        executer.startBuildProcessInDebugger(true)
         succeeds("dependencies", "--configuration", "runtimeClasspath")
 
         then:
@@ -83,7 +83,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         then:
         def runtimeClasspathManifest = jsonManifest(configuration: "runtimeClasspath")
         def file = runtimeClasspathManifest.file as Map
-        file.source_location == "build.gradle.kts"
+        file.source_location == "build.gradle"
         def resolved = runtimeClasspathManifest.resolved as Map
         def testFoo = resolved[fooPurl] as Map
         verifyAll(testFoo) {
@@ -116,7 +116,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         then:
         def runtimeClasspathManifest = jsonManifest(configuration: "runtimeClasspath")
         def file = runtimeClasspathManifest.file as Map
-        file.source_location == "build.gradle.kts"
+        file.source_location == "build.gradle"
         def resolved = runtimeClasspathManifest.resolved as Map
         def testFoo = resolved[fooPurl] as Map
         verifyAll(testFoo) {
@@ -153,7 +153,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         ["compileClasspath", "testCompileClasspath"].forEach {
             def classpathManifest = jsonManifest(configuration: it)
             def file = classpathManifest.file as Map
-            file.source_location == "build.gradle.kts"
+            file.source_location == "build.gradle"
             def resolved = classpathManifest.resolved as Map
             def testFoo = resolved[fooPurl] as Map
             verifyAll(testFoo) {
@@ -189,7 +189,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         then:
         def runtimeClasspathManifest = jsonManifest(configuration: "runtimeClasspath")
         def file = runtimeClasspathManifest.file as Map
-        file.source_location == "build.gradle.kts"
+        file.source_location == "build.gradle"
         def resolved = runtimeClasspathManifest.resolved as Map
         def testFoo = resolved[fooPurl] as Map
         verifyAll(testFoo) {
@@ -224,7 +224,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         then:
         def runtimeClasspathManifest = jsonManifest(configuration: "runtimeClasspath")
         def file = runtimeClasspathManifest.file as Map
-        file.source_location == "build.gradle.kts"
+        file.source_location == "build.gradle"
         def resolved = runtimeClasspathManifest.resolved as Map
         def testFoo = resolved[fooPurl] as Map
         verifyAll(testFoo) {
@@ -254,6 +254,8 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
 
         then:
         def classpathManifest = jsonManifest(configuration: "classpath", buildscript: true)
+        def buildScriptFile = classpathManifest.file as Map
+        buildScriptFile.source_location == "build.gradle"
         def classpathResolved = classpathManifest.resolved as Map
         def testFoo = classpathResolved[fooPurl] as Map
         verifyAll(testFoo) {
@@ -262,6 +264,8 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
             dependencies == []
         }
         def runtimeClasspathManifest = jsonManifest(configuration: "runtimeClasspath")
+        def runtimeClasspathFile = runtimeClasspathManifest.file as Map
+        buildScriptFile.source_location == "build.gradle"
         def runtimeClasspathResolved = runtimeClasspathManifest.resolved as Map
         runtimeClasspathResolved.isEmpty()
     }

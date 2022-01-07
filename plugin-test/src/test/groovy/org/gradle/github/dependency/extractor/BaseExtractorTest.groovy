@@ -38,6 +38,12 @@ abstract class BaseExtractorTest extends MultiVersionIntegrationSpec {
         args("--init-script", "init.gradle")
     }
 
+    protected void establishEnvironmentVariables() {
+        executer.withEnvironmentVars(
+                ["GITHUB_WORKSPACE": testDirectory.absolutePath]
+        )
+    }
+
     protected String purlFor(org.gradle.test.fixtures.Module module) {
         // NOTE: Don't use this in production, this is purely for test code. The escaping here may be insufficient.
         String repositoryUrlEscaped = URLEncoder.encode(mavenRepo.rootDir.toURI().toASCIIString(), "UTF-8")
@@ -120,6 +126,7 @@ abstract class BaseExtractorTest extends MultiVersionIntegrationSpec {
             runner.withArguments(args)
             runner.withPluginClasspath(pluginClasspath)
             if (!environmentVars.isEmpty()) {
+                println("Setting environment variables: $environmentVars")
                 runner.withEnvironment(environmentVars)
             }
             runner.withDebug(debug)

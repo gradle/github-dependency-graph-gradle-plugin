@@ -14,6 +14,7 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
 
     def setup() {
         applyExtractorPlugin()
+        establishEnvironmentVariables()
 
         foo = mavenRepo.module("org.test-published", "foo", "1.0").publish()
         fooPurl = purlFor(foo)
@@ -159,6 +160,8 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
         then:
         def buildSrcRuntimeClasspath =
                 jsonManifest(build: ":buildSrc", configuration: "runtimeClasspath")
+        def buildSrcRuntimeFile = buildSrcRuntimeClasspath.file as Map
+        buildSrcRuntimeFile.source_location == "buildSrc/build.gradle"
         def buildSrcRuntimeClasspathResolved = buildSrcRuntimeClasspath.resolved as Map
         def testFoo = buildSrcRuntimeClasspathResolved[fooPurl] as Map
         verifyAll(testFoo) {
@@ -167,6 +170,8 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
             dependencies == []
         }
         def runtimeClasspath = jsonManifest(configuration: "runtimeClasspath")
+        def runtimeFile = runtimeClasspath.file as Map
+        runtimeFile.source_location == "build.gradle"
         def runtimeClasspathResolved = runtimeClasspath.resolved as Map
         def testBar = runtimeClasspathResolved[barPurl] as Map
         verifyAll(testBar) {

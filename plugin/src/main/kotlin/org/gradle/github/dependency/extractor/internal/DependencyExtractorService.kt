@@ -9,12 +9,11 @@ import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.artifacts.result.ResolvedVariantResult
-import org.gradle.api.internal.artifacts.configurations.ResolveConfigurationDependenciesBuildOperationType
+import org.gradle.github.dependency.extractor.internal.json.BaseGitHubManifest
 import org.gradle.github.dependency.extractor.internal.json.GitHubDependency
-import org.gradle.github.dependency.extractor.internal.json.GitHubManifest
-import org.gradle.github.dependency.extractor.internal.json.GitHubManifestFile
 import org.gradle.internal.operations.BuildOperationDescriptor
 import org.gradle.internal.operations.BuildOperationListener
+import org.gradle.internal.operations.BuildOperationType
 import org.gradle.internal.operations.OperationFinishEvent
 import org.gradle.internal.operations.OperationIdentifier
 import org.gradle.internal.operations.OperationProgressEvent
@@ -22,16 +21,22 @@ import org.gradle.internal.operations.OperationStartEvent
 import org.gradle.util.GradleVersion
 import java.io.File
 import java.net.URI
+import java.nio.file.Path
+import org.gradle.api.internal.artifacts.configurations.ResolveConfigurationDependenciesBuildOperationType as ResolveConfigurationDependenciesBOT
+import org.gradle.initialization.LoadProjectsBuildOperationType as LoadProjectsBOT
 
 abstract class DependencyExtractorService :
     BuildOperationListener,
     AutoCloseable {
 
+    protected abstract val gitWorkspaceDirectory: Path
+    private val gitHubDependencyGraphBuilder by lazy {
+        GitHubDependencyGraphBuilder(gitWorkspaceDirectory)
+    }
+
     init {
         println("Creating: DependencyExtractorService")
     }
-
-    private val gitHubDependencyGraphBuilder = GitHubDependencyGraphBuilder()
 
     override fun started(buildOperation: BuildOperationDescriptor, startEvent: OperationStartEvent) {
         // No-op
@@ -42,23 +47,37 @@ abstract class DependencyExtractorService :
     }
 
     override fun finished(buildOperation: BuildOperationDescriptor, finishEvent: OperationFinishEvent) {
-        val details: ResolveConfigurationDependenciesBuildOperationType.Details? = buildOperation.details.let {
-            if (it is ResolveConfigurationDependenciesBuildOperationType.Details) it else null
+        handleBuildOperationType<
+            ResolveConfigurationDependenciesBOT.Details,
+            ResolveConfigurationDependenciesBOT.Result,
+            ResolveConfigurationDependenciesBOT
+            >(buildOperation, finishEvent) { details, result -> extractDependencies(details, result) }
+
+        handleBuildOperationType<
+            LoadProjectsBOT.Details,
+            LoadProjectsBOT.Result,
+            LoadProjectsBOT>(buildOperation, finishEvent) { details, result -> extractProjects(details, result) }
+    }
+
+    private fun extractProjects(
+        details: LoadProjectsBOT.Details,
+        result: LoadProjectsBOT.Result
+    ) {
+        println("Loaded Project: ${details.buildPath}")
+        println("Loaded Project Result -- Build Path: ${result.buildPath} Project Path: ${result.rootProject.path}")
+        fun recursivelyPrintProject(project: LoadProjectsBOT.Result.Project) {
+            gitHubDependencyGraphBuilder.addProject(details.buildPath, project.path, project.buildFile)
+            project.children.forEach {
+                println("\tBuild Path: ${result.buildPath} Project Path: ${it.path} Buildscript: ${it.buildFile}")
+                recursivelyPrintProject(it)
+            }
         }
-        val result: ResolveConfigurationDependenciesBuildOperationType.Result? = finishEvent.result.let {
-            if (it is ResolveConfigurationDependenciesBuildOperationType.Result) it else null
-        }
-        if (details == null && result == null) {
-            return
-        } else if (details == null || result == null) {
-            throw IllegalStateException("buildOperation.details & finishedEvent.result were unexpected types")
-        }
-        extractDependencies(details, result)
+        recursivelyPrintProject(result.rootProject)
     }
 
     private fun extractDependencies(
-        details: ResolveConfigurationDependenciesBuildOperationType.Details,
-        result: ResolveConfigurationDependenciesBuildOperationType.Result
+        details: ResolveConfigurationDependenciesBOT.Details,
+        result: ResolveConfigurationDependenciesBOT.Result
     ) {
         val repositoryLookup = RepositoryUrlLookup(details, result)
         val dependencies =
@@ -90,11 +109,11 @@ abstract class DependencyExtractorService :
             append(" Configuration: ${details.configurationName}")
         }
         gitHubDependencyGraphBuilder.addManifest(
-            name, GitHubManifest(
+            name = name,
+            buildPath = details.buildPath,
+            projectPath = trueProjectPath,
+            manifest = BaseGitHubManifest(
                 name = name,
-                file = GitHubManifestFile(
-                    "build.gradle.kts"
-                ),
                 resolved = dependencies.associateBy { it.purl.toString() },
                 metadata = metaData
             )
@@ -102,8 +121,8 @@ abstract class DependencyExtractorService :
     }
 
     private class RepositoryUrlLookup(
-        private val details: ResolveConfigurationDependenciesBuildOperationType.Details,
-        private val result: ResolveConfigurationDependenciesBuildOperationType.Result
+        private val details: ResolveConfigurationDependenciesBOT.Details,
+        private val result: ResolveConfigurationDependenciesBOT.Result
     ) {
 
         private fun getRepositoryUrlForId(id: String): String? {
@@ -250,4 +269,23 @@ abstract class DependencyExtractorService :
                 }
                 .build()
     }
+}
+
+private inline fun <reified D, reified R, BT : BuildOperationType<D, R>> handleBuildOperationType(
+    buildOperation: BuildOperationDescriptor,
+    finishEvent: OperationFinishEvent,
+    handler: (details: D, result: R) -> Unit
+) {
+    val details: D? = buildOperation.details.let {
+        if (it is D) it else null
+    }
+    val result: R? = finishEvent.result.let {
+        if (it is R) it else null
+    }
+    if (details == null && result == null) {
+        return
+    } else if (details == null || result == null) {
+        throw IllegalStateException("buildOperation.details & finishedEvent.result were unexpected types")
+    }
+    handler(details, result)
 }

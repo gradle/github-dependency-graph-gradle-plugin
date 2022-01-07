@@ -10,8 +10,6 @@ plugins {
     id("com.github.johnrengelman.shadow")
 }
 
-val jettyVersion = "9.4.36.v20210114"
-
 val shadowImplementation: Configuration by configurations.creating
 configurations["compileOnly"].extendsFrom(shadowImplementation)
 configurations["testImplementation"].extendsFrom(shadowImplementation)

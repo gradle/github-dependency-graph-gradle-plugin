@@ -1,59 +1,63 @@
 {
   "manifests" : {
-    ":a:runtimeClasspath" : {
-      "name" : ":a:runtimeClasspath",
+    ":::runtimeClasspath" : {
+      "name" : ":::runtimeClasspath",
       "file" : {
         "source_location" : "build.gradle.kts"
       },
       "resolved" : {
-        "pkg:maven/org.test-published/foo@1.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2Fvz11h%2Fmaven-repo%2F" : {
-          "purl" : "pkg:maven/org.test-published/foo@1.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2Fvz11h%2Fmaven-repo%2F",
+        "pkg:maven/org.test-published/bar@2.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2Fbp4fl%2Fmaven-repo%2F" : {
+          "purl" : "pkg:maven/org.test-published/bar@2.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2Fbp4fl%2Fmaven-repo%2F",
           "relationship" : "direct",
           "dependencies" : [ ],
           "metadata" : {
             "group" : "org.test-published",
-            "module" : "foo",
-            "version" : "1.0"
+            "module" : "bar",
+            "version" : "2.0"
           }
         }
       },
       "metadata" : {
-        "project_path" : ":a",
+        "project_path" : ":",
         "configuration" : "runtimeClasspath",
         "build_path" : ":",
         "is_script_configuration" : false
       }
     },
-    ":b:runtimeClasspath" : {
-      "name" : ":b:runtimeClasspath",
+    ":buildSrc::detachedConfiguration1" : {
+      "name" : ":buildSrc::detachedConfiguration1",
+      "file" : {
+        "source_location" : "build.gradle.kts"
+      },
+      "resolved" : { },
+      "metadata" : {
+        "project_path" : ":",
+        "configuration" : "detachedConfiguration1",
+        "build_path" : ":buildSrc",
+        "is_script_configuration" : false
+      }
+    },
+    ":buildSrc::runtimeClasspath" : {
+      "name" : ":buildSrc::runtimeClasspath",
       "file" : {
         "source_location" : "build.gradle.kts"
       },
       "resolved" : {
-        "pkg:maven/org.test-published/foo@1.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2Fvz11h%2Fmaven-repo%2F" : {
-          "purl" : "pkg:maven/org.test-published/foo@1.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2Fvz11h%2Fmaven-repo%2F",
-          "relationship" : "indirect",
+        "pkg:maven/org.test-published/foo@1.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2Fbp4fl%2Fmaven-repo%2F" : {
+          "purl" : "pkg:maven/org.test-published/foo@1.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2Fbp4fl%2Fmaven-repo%2F",
+          "relationship" : "direct",
           "dependencies" : [ ],
           "metadata" : {
             "group" : "org.test-published",
             "module" : "foo",
             "version" : "1.0"
           }
-        },
-        "pkg:maven/org.test/a@1.0" : {
-          "purl" : "pkg:maven/org.test/a@1.0",
-          "relationship" : "direct",
-          "dependencies" : [ "pkg:maven/org.test-published/foo@1.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2Fvz11h%2Fmaven-repo%2F" ],
-          "metadata" : {
-            "name" : ":",
-            "projectPath" : ":a"
-          }
         }
       },
       "metadata" : {
-        "project_path" : ":b",
+        "project_path" : ":",
         "configuration" : "runtimeClasspath",
-        "build_path" : ":",
+        "build_path" : ":buildSrc",
         "is_script_configuration" : false
       }
     }

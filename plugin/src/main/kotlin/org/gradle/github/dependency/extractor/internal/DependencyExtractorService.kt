@@ -10,8 +10,6 @@ import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.artifacts.result.ResolvedVariantResult
 import org.gradle.api.internal.artifacts.configurations.ResolveConfigurationDependenciesBuildOperationType
-import org.gradle.api.services.BuildService
-import org.gradle.api.services.BuildServiceParameters
 import org.gradle.github.dependency.extractor.internal.json.GitHubDependency
 import org.gradle.github.dependency.extractor.internal.json.GitHubManifest
 import org.gradle.github.dependency.extractor.internal.json.GitHubManifestFile
@@ -39,6 +37,21 @@ abstract class DependencyExtractorService :
         // No-op
     }
 
+    override fun finished(buildOperation: BuildOperationDescriptor, finishEvent: OperationFinishEvent) {
+        val details: ResolveConfigurationDependenciesBuildOperationType.Details? = buildOperation.details.let {
+            if (it is ResolveConfigurationDependenciesBuildOperationType.Details) it else null
+        }
+        val result: ResolveConfigurationDependenciesBuildOperationType.Result? = finishEvent.result.let {
+            if (it is ResolveConfigurationDependenciesBuildOperationType.Result) it else null
+        }
+        if (details == null && result == null) {
+            return
+        } else if (details == null || result == null) {
+            throw IllegalStateException("buildOperation.details & finishedEvent.result were unexpected types")
+        }
+        extractDependencies(details, result)
+    }
+
     private fun extractDependencies(
         details: ResolveConfigurationDependenciesBuildOperationType.Details,
         result: ResolveConfigurationDependenciesBuildOperationType.Result
@@ -56,7 +69,8 @@ abstract class DependencyExtractorService :
             "build_path" to details.buildPath,
             "is_script_configuration" to details.isScriptConfiguration
         )
-        val name = (details.projectPath ?: "") + ':' + details.configurationName
+        val test = "BuildPath : "
+        val name = (details.buildPath ?: "") + (details.projectPath ?: "") + ':' + details.configurationName
         gitHubDependencyGraphBuilder.addManifest(
             name, GitHubManifest(
                 name = name,
@@ -92,21 +106,6 @@ abstract class DependencyExtractorService :
             val repositoryId = result.getRepositoryId(resolvedDependencyResult.selected)
             return repositoryId?.let { getRepositoryUrlForId(it) }
         }
-    }
-
-    override fun finished(buildOperation: BuildOperationDescriptor, finishEvent: OperationFinishEvent) {
-        val details: ResolveConfigurationDependenciesBuildOperationType.Details? = buildOperation.details.let {
-            if (it is ResolveConfigurationDependenciesBuildOperationType.Details) it else null
-        }
-        val result: ResolveConfigurationDependenciesBuildOperationType.Result? = finishEvent.result.let {
-            if (it is ResolveConfigurationDependenciesBuildOperationType.Result) it else null
-        }
-        if (details == null && result == null) {
-            return
-        } else if (details == null || result == null) {
-            throw IllegalStateException("buildOperation.details & finishedEvent.result were unexpected types")
-        }
-        extractDependencies(details, result)
     }
 
     override fun close() {

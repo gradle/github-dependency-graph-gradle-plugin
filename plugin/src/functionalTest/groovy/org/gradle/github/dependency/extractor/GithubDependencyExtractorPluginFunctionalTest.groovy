@@ -3,25 +3,10 @@
  */
 package org.gradle.github.dependency.extractor
 
-import groovy.json.JsonSlurper
-import org.gradle.testkit.runner.BuildResult
 /**
  * A simple functional test for the 'org.gradle.github.dependency.extractor.greeting' plugin.
  */
 class GithubDependencyExtractorPluginFunctionalTest extends BaseFunctionalTest {
-
-    void "can run task"() {
-        given:
-        // Setup the test build
-        applyExtractorPlugin()
-        writeString(new File(projectDir, "settings.gradle"), "");
-
-        when:
-        BuildResult result = succeed("greeting");
-
-        then:
-        result.getOutput().contains("Hello from plugin 'org.gradle.github.dependency.extractor.greeting'")
-    }
 
     void "can resolve dependencies"() {
         // Setup the test build

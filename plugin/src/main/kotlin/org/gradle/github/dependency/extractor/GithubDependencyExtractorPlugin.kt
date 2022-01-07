@@ -52,7 +52,10 @@ class GithubDependencyExtractorPlugin : Plugin<Gradle> {
             extractorServiceProvider: Provider<out DependencyExtractorService>
         )
 
-        fun registerExtractorServiceShutdown(gradle: Gradle, extractorService: Provider<out DependencyExtractorService>)
+        fun registerExtractorServiceShutdown(
+            gradle: Gradle,
+            extractorServiceProvider: Provider<out DependencyExtractorService>
+        )
 
         object DefaultPluginApplicatorStrategy : PluginApplicatorStrategy {
             override fun createExtractorService(
@@ -76,10 +79,14 @@ class GithubDependencyExtractorPlugin : Plugin<Gradle> {
 
             override fun registerExtractorServiceShutdown(
                 gradle: Gradle,
-                extractorService: Provider<out DependencyExtractorService>
+                extractorServiceProvider: Provider<out DependencyExtractorService>
             ) {
                 gradle.buildFinished {
-                    extractorService.get().close()
+                    extractorServiceProvider.get().close()
+                    (gradle as GradleInternal)
+                        .services
+                        .get(BuildOperationListenerManager::class.java)
+                        .removeListener(extractorServiceProvider.get())
                 }
             }
         }
@@ -107,7 +114,7 @@ class GithubDependencyExtractorPlugin : Plugin<Gradle> {
 
             override fun registerExtractorServiceShutdown(
                 gradle: Gradle,
-                extractorService: Provider<out DependencyExtractorService>
+                extractorServiceProvider: Provider<out DependencyExtractorService>
             ) {
                 // No-op as DependencyExtractorService is Auto-Closable
             }

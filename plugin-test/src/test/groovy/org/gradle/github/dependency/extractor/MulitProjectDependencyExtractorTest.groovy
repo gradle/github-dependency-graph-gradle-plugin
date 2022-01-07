@@ -7,12 +7,16 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
 
     private MavenModule foo
     private String fooPurl
+    private MavenModule bar
+    private String barPurl
 
     def setup() {
         applyExtractorPlugin()
 
         foo = mavenRepo.module("org.test-published", "foo", "1.0").publish()
         fooPurl = purlFor(foo)
+        bar = mavenRepo.module("org.test-published", "bar", "2.0").publish()
+        barPurl = purlFor(bar)
     }
 
     void setupBuildFile(BuildTestFile buildTestFile) {
@@ -98,7 +102,6 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
             }
         }
         when:
-        executer.startBuildProcessInDebugger(true)
         succeeds("validate")
 
         then:
@@ -124,10 +127,39 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
         }
         def aTestProjectPurl = "pkg:maven/org.test/a@1.0"
         def aTestProject = bClasspathResolved[aTestProjectPurl] as Map
-        verifyAll (aTestProject) {
+        verifyAll(aTestProject) {
             purl == aTestProjectPurl
             relationship == "direct"
             dependencies == [this.fooPurl]
         }
+    }
+
+    def "project with buildSrc"() {
+        given:
+        multiProjectBuild("parent", []) {
+            project("buildSrc").tap {
+                buildFile """
+                apply plugin: 'java'
+                dependencies {
+                    implementation 'org.test-published:foo:1.0'    
+                }
+                """
+                setupBuildFile(it)
+            }
+
+            buildFile """
+            apply plugin: 'java'
+            dependencies {
+                implementation 'org.test-published:bar:2.0'    
+            }
+            """
+            setupBuildFile(it)
+        }
+        when:
+        succeeds("validate")
+
+        then:
+        noExceptionThrown()
+        jsonManifests() != null
     }
 }

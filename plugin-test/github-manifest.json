@@ -1,64 +1,44 @@
 {
   "manifests" : {
-    ":::runtimeClasspath" : {
-      "name" : ":::runtimeClasspath",
-      "file" : {
-        "source_location" : "build.gradle.kts"
-      },
-      "resolved" : {
-        "pkg:maven/org.test-published/bar@2.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2Fbp4fl%2Fmaven-repo%2F" : {
-          "purl" : "pkg:maven/org.test-published/bar@2.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2Fbp4fl%2Fmaven-repo%2F",
-          "relationship" : "direct",
-          "dependencies" : [ ],
-          "metadata" : {
-            "group" : "org.test-published",
-            "module" : "bar",
-            "version" : "2.0"
-          }
-        }
-      },
-      "metadata" : {
-        "project_path" : ":",
-        "configuration" : "runtimeClasspath",
-        "build_path" : ":",
-        "is_script_configuration" : false
-      }
-    },
-    ":buildSrc::detachedConfiguration1" : {
-      "name" : ":buildSrc::detachedConfiguration1",
+    "Build: :, Project: :, Configuration: runtimeClasspath" : {
+      "name" : "Build: :, Project: :, Configuration: runtimeClasspath",
       "file" : {
         "source_location" : "build.gradle.kts"
       },
       "resolved" : { },
       "metadata" : {
         "project_path" : ":",
-        "configuration" : "detachedConfiguration1",
-        "build_path" : ":buildSrc",
-        "is_script_configuration" : false
+        "configuration" : "runtimeClasspath",
+        "build_path" : ":",
+        "configuration_description" : "Runtime classpath of source set 'main'.",
+        "is_script_configuration" : false,
+        "true_project_path" : ":"
       }
     },
-    ":buildSrc::runtimeClasspath" : {
-      "name" : ":buildSrc::runtimeClasspath",
+    "Build: :, Project: :, Buildscript Configuration: classpath" : {
+      "name" : "Build: :, Project: :, Buildscript Configuration: classpath",
       "file" : {
         "source_location" : "build.gradle.kts"
       },
       "resolved" : {
-        "pkg:maven/org.test-published/foo@1.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2Fbp4fl%2Fmaven-repo%2F" : {
-          "purl" : "pkg:maven/org.test-published/foo@1.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2Fbp4fl%2Fmaven-repo%2F",
+        "pkg:maven/org.test/foo@1.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FSingleProje.Test%2Ftx844%2Fmaven-repo%2F" : {
+          "purl" : "pkg:maven/org.test/foo@1.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FSingleProje.Test%2Ftx844%2Fmaven-repo%2F",
           "relationship" : "direct",
           "dependencies" : [ ],
           "metadata" : {
-            "group" : "org.test-published",
+            "group" : "org.test",
             "module" : "foo",
             "version" : "1.0"
           }
         }
       },
       "metadata" : {
-        "project_path" : ":",
-        "configuration" : "runtimeClasspath",
-        "build_path" : ":buildSrc",
-        "is_script_configuration" : false
+        "project_path" : null,
+        "configuration" : "classpath",
+        "build_path" : ":",
+        "configuration_description" : null,
+        "is_script_configuration" : true,
+        "true_project_path" : ":"
       }
     }
   }

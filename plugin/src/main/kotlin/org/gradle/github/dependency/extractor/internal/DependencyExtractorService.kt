@@ -27,6 +27,10 @@ abstract class DependencyExtractorService :
     BuildOperationListener,
     AutoCloseable {
 
+    init {
+        println("Creating: DependencyExtractorService")
+    }
+
     private val gitHubDependencyGraphBuilder = GitHubDependencyGraphBuilder()
 
     override fun started(buildOperation: BuildOperationDescriptor, startEvent: OperationStartEvent) {
@@ -63,14 +67,28 @@ abstract class DependencyExtractorService :
                 GitHubDependency.Relationship.direct,
                 repositoryLookup::doLookup
             )
+        val trueProjectPath = (result.rootComponent.id as ProjectComponentIdentifier).projectPath
         val metaData = mapOf(
             "project_path" to details.projectPath,
             "configuration" to details.configurationName,
             "build_path" to details.buildPath,
-            "is_script_configuration" to details.isScriptConfiguration
+            "configuration_description" to details.configurationDescription,
+            "is_script_configuration" to details.isScriptConfiguration,
+            "true_project_path" to trueProjectPath
         )
-        val test = "BuildPath : "
-        val name = (details.buildPath ?: "") + (details.projectPath ?: "") + ':' + details.configurationName
+        val name = buildString {
+            /*
+             * For project dependencies, create a name like:
+             * `Build: :, Project: :, Configuration: runtimeClasspath`
+             * For buildscript dependencies, create a name like:
+             * `Build: :, Project: :, Buildscript Configuration: classpath`
+             */
+            append("Build: ${details.buildPath}, Project: ${trueProjectPath},")
+            if (details.projectPath == null) {
+                append(" Buildscript")
+            }
+            append(" Configuration: ${details.configurationName}")
+        }
         gitHubDependencyGraphBuilder.addManifest(
             name, GitHubManifest(
                 name = name,

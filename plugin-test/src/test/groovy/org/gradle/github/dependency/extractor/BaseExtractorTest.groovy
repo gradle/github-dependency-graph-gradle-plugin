@@ -2,6 +2,8 @@ package org.gradle.github.dependency.extractor
 
 import groovy.json.JsonSlurper
 import groovy.transform.CompileDynamic
+import groovy.transform.CompileStatic
+import groovy.transform.Memoized
 import org.gradle.github.dependency.extractor.fixture.TestConfig
 import org.gradle.integtests.fixtures.MultiVersionIntegrationSpec
 import org.gradle.integtests.fixtures.TargetCoverage
@@ -18,6 +20,7 @@ abstract class BaseExtractorTest extends MultiVersionIntegrationSpec {
     }
 
     private static final TestConfig TEST_CONFIG = new TestConfig()
+    private JsonManifestLoader loader;
 
     @CompileDynamic
     protected void applyExtractorPlugin() {
@@ -35,29 +38,50 @@ abstract class BaseExtractorTest extends MultiVersionIntegrationSpec {
         args("--init-script", "init.gradle")
     }
 
-    @CompileDynamic
-    protected Object jsonManifest() {
-        def jsonSlurper = new JsonSlurper()
-        File manifestFile = new File("github-manifest.json")
-        assert (manifestFile.exists())
-        println(manifestFile.text)
-        return jsonSlurper.parse(manifestFile)
-    }
-
-    protected Map jsonManifests() {
-        def json = jsonManifest()
-        return json.manifests as Map
-    }
-
     protected String purlFor(org.gradle.test.fixtures.Module module) {
         // NOTE: Don't use this in production, this is purely for test code. The escaping here may be insufficient.
         String repositoryUrlEscaped = URLEncoder.encode(mavenRepo.rootDir.toURI().toASCIIString(), "UTF-8")
         return "pkg:maven/${module.group}/${module.module}@${module.version}?repository_url=$repositoryUrlEscaped"
     }
 
+    @CompileDynamic
+    protected Object jsonManifest() {
+        return loader.jsonManifest()
+    }
+
+    protected Map jsonManifests() {
+        return loader.jsonManifests()
+    }
+
+    protected String manifestKey(Map args) {
+        String build = args.getOrDefault("build", ":")
+        String project = args.getOrDefault("project", ":")
+        boolean isBuildscript = args.getOrDefault("buildscript", false)
+        String configuration = args.get("configuration")
+        if (!configuration) {
+            throw new IllegalArgumentException("Missing 'configuration' parameter")
+        }
+        return "Build: ${build}, Project: ${project}, ${isBuildscript ? "Buildscript " : ""}Configuration: $configuration"
+    }
+
+    protected Map jsonManifest(Map args) {
+        String manifestName = manifestKey(args)
+        Map manifests = jsonManifests()
+        assert manifests.keySet().contains(manifestName)
+        Map manifest = manifests[manifestName] as Map
+        assert manifest.name == manifestName
+        return manifest
+    }
+
     @Override
     GradleExecuter createExecuter() {
         def testKitDir = file("test-kit")
+
+        // Create a new JsonManifestLoader for each invocation of the executer
+        File manifestFile = new File("github-manifest.json")
+        assert (manifestFile.exists())
+        loader = new JsonManifestLoader(manifestFile)
+
         return new TestKitBackedGradleExecuter(temporaryFolder, testKitDir)
     }
 
@@ -101,6 +125,28 @@ abstract class BaseExtractorTest extends MultiVersionIntegrationSpec {
             runner.withDebug(debug)
             runner.forwardOutput()
             runner
+        }
+    }
+
+    @CompileStatic
+    private static class JsonManifestLoader {
+        private final File manifestFile
+
+        JsonManifestLoader(File manifestFile) {
+            this.manifestFile = manifestFile
+        }
+
+        @Memoized
+        protected Object jsonManifest() {
+            def jsonSlurper = new JsonSlurper()
+            println(manifestFile.text)
+            return jsonSlurper.parse(manifestFile)
+        }
+
+        @Memoized
+        protected Map jsonManifests() {
+            def json = jsonManifest()
+            return json["manifests"] as Map
         }
     }
 }

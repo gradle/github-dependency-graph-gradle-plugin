@@ -21,6 +21,8 @@ import org.gradle.util.GradleVersion
 class GithubDependencyExtractorPlugin : Plugin<Gradle> {
 
     override fun apply(gradle: Gradle) {
+        println("Applying Plugin: GithubDependencyExtractorPlugin")
+
         val gradleVersion = GradleVersion.current()
         // Create the adapter based upon the version of Gradle
         val applicatorStrategy = when {

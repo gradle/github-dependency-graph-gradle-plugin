@@ -1,8 +1,10 @@
 package org.gradle.github.dependency.extractor
 
 import org.gradle.integtests.fixtures.build.BuildTestFile
+import org.gradle.integtests.fixtures.compatibility.MultiVersionTest
 import org.gradle.test.fixtures.maven.MavenModule
 
+@MultiVersionTest
 class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
 
     private MavenModule foo
@@ -55,8 +57,7 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
         then:
         def manifests = jsonManifests()
         manifests.size() == 3
-        def parentRuntimeClasspath = manifests["::runtimeClasspath"]
-        parentRuntimeClasspath.name == "::runtimeClasspath"
+        def parentRuntimeClasspath = jsonManifest(configuration: "runtimeClasspath")
         def parentClasspathResolved = parentRuntimeClasspath.resolved as Map
         def parentTestFoo = parentClasspathResolved[fooPurl] as Map
         verifyAll(parentTestFoo) {
@@ -65,8 +66,7 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
             dependencies == []
         }
         subprojects.each { name ->
-            def runtimeClasspath = manifests[":$name:runtimeClasspath"]
-            runtimeClasspath.name == ":$name:runtimeClasspath"
+            def runtimeClasspath = jsonManifest(project: ':' + name, configuration: "runtimeClasspath")
             def classpathResolved = runtimeClasspath.resolved as Map
             def testFoo = classpathResolved[fooPurl] as Map
             verifyAll(testFoo) {
@@ -107,8 +107,7 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
         then:
         def manifests = jsonManifests()
         manifests.size() == 2
-        def aRuntimeClasspath = manifests[":a:runtimeClasspath"]
-        aRuntimeClasspath.name == ":a:runtimeClasspath"
+        def aRuntimeClasspath = jsonManifest(project: ":a", configuration: "runtimeClasspath")
         def aClasspathResolved = aRuntimeClasspath.resolved as Map
         def aTestFoo = aClasspathResolved[fooPurl] as Map
         verifyAll(aTestFoo) {
@@ -116,8 +115,7 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
             relationship == "direct"
             dependencies == []
         }
-        def bRuntimeClasspath = manifests[":b:runtimeClasspath"]
-        bRuntimeClasspath.name == ":b:runtimeClasspath"
+        def bRuntimeClasspath = jsonManifest(project: ":b", configuration: "runtimeClasspath")
         def bClasspathResolved = bRuntimeClasspath.resolved as Map
         def bTestFoo = bClasspathResolved[fooPurl] as Map
         verifyAll(bTestFoo) {
@@ -159,7 +157,22 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
         succeeds("validate")
 
         then:
-        noExceptionThrown()
-        jsonManifests() != null
+        def buildSrcRuntimeClasspath =
+                jsonManifest(build: ":buildSrc", configuration: "runtimeClasspath")
+        def buildSrcRuntimeClasspathResolved = buildSrcRuntimeClasspath.resolved as Map
+        def testFoo = buildSrcRuntimeClasspathResolved[fooPurl] as Map
+        verifyAll(testFoo) {
+            purl == this.fooPurl
+            relationship == "direct"
+            dependencies == []
+        }
+        def runtimeClasspath = jsonManifest(configuration: "runtimeClasspath")
+        def runtimeClasspathResolved = runtimeClasspath.resolved as Map
+        def testBar = runtimeClasspathResolved[barPurl] as Map
+        verifyAll(testBar) {
+            purl == this.barPurl
+            relationship == "direct"
+            dependencies == []
+        }
     }
 }

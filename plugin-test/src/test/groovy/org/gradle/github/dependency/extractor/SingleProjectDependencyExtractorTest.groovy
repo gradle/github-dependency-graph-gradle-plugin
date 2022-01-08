@@ -265,7 +265,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         }
         def runtimeClasspathManifest = jsonManifest(configuration: "runtimeClasspath")
         def runtimeClasspathFile = runtimeClasspathManifest.file as Map
-        buildScriptFile.source_location == "build.gradle"
+        runtimeClasspathFile.source_location == "build.gradle"
         def runtimeClasspathResolved = runtimeClasspathManifest.resolved as Map
         runtimeClasspathResolved.isEmpty()
     }

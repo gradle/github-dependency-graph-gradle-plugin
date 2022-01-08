@@ -63,16 +63,15 @@ abstract class DependencyExtractorService :
         details: LoadProjectsBOT.Details,
         result: LoadProjectsBOT.Result
     ) {
-        println("Loaded Project: ${details.buildPath}")
-        println("Loaded Project Result -- Build Path: ${result.buildPath} Project Path: ${result.rootProject.path}")
-        fun recursivelyPrintProject(project: LoadProjectsBOT.Result.Project) {
-            gitHubDependencyGraphBuilder.addProject(details.buildPath, project.path, project.buildFile)
-            project.children.forEach {
-                println("\tBuild Path: ${result.buildPath} Project Path: ${it.path} Buildscript: ${it.buildFile}")
-                recursivelyPrintProject(it)
+        tailrec fun recursivelyExtractProjects(projects: Set<LoadProjectsBOT.Result.Project>)  {
+            if(projects.isEmpty()) return
+            projects.forEach { project ->
+                gitHubDependencyGraphBuilder.addProject(details.buildPath, project.path, project.buildFile)
             }
+            val newProjects = projects.flatMap { it.children }.toSet()
+            recursivelyExtractProjects(newProjects)
         }
-        recursivelyPrintProject(result.rootProject)
+        recursivelyExtractProjects(setOf(result.rootProject))
     }
 
     private fun extractDependencies(

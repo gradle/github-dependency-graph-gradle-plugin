@@ -18,8 +18,8 @@
     "Build: :, Project: :, Configuration: runtimeClasspath" : {
       "name" : "Build: :, Project: :, Configuration: runtimeClasspath",
       "resolved" : {
-        "pkg:maven/org.test-published/bar@2.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2Fezgqx%2Fmaven-repo%2F" : {
-          "purl" : "pkg:maven/org.test-published/bar@2.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2Fezgqx%2Fmaven-repo%2F",
+        "pkg:maven/org.test-published/bar@2.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2F6f83c%2Fmaven-repo%2F" : {
+          "purl" : "pkg:maven/org.test-published/bar@2.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2F6f83c%2Fmaven-repo%2F",
           "relationship" : "direct",
           "dependencies" : [ ],
           "metadata" : {
@@ -44,8 +44,8 @@
     "Build: :buildSrc, Project: :, Configuration: runtimeClasspath" : {
       "name" : "Build: :buildSrc, Project: :, Configuration: runtimeClasspath",
       "resolved" : {
-        "pkg:maven/org.test-published/foo@1.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2Fezgqx%2Fmaven-repo%2F" : {
-          "purl" : "pkg:maven/org.test-published/foo@1.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2Fezgqx%2Fmaven-repo%2F",
+        "pkg:maven/org.test-published/foo@1.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2F6f83c%2Fmaven-repo%2F" : {
+          "purl" : "pkg:maven/org.test-published/foo@1.0?repository_url=file%3A%2FUsers%2Fjonathanleitschuh%2Fcode%2Fwork%2Fgithub-dependency-extractor%2Fplugin-test%2Fbuild%2Ftmp%2Ftest%2520files%2FMulitProjec.Test%2F6f83c%2Fmaven-repo%2F",
           "relationship" : "direct",
           "dependencies" : [ ],
           "metadata" : {

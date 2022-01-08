@@ -12,7 +12,10 @@ class GitHubDependencyGraphBuilder(
     private val gitWorkspaceDirectory: Path
 ) {
 
-    private val projectToBuildPath = ConcurrentHashMap<SimpleProjectIdentifier, String>()
+    /**
+     * Map of the project identifier to the relative path of the git workspace directory [gitWorkspaceDirectory].
+     */
+    private val projectToRelativeBuildFile = ConcurrentHashMap<SimpleProjectIdentifier, String>()
     private val bundledManifests: MutableMap<String, BundledManifest> = ConcurrentHashMap()
 
     fun addManifest(
@@ -33,14 +36,14 @@ class GitHubDependencyGraphBuilder(
     fun addProject(buildPath: String, projectPath: String, buildFileAbsolutePath: String) {
         val projectIdentifier = SimpleProjectIdentifier(buildPath, projectPath)
         val buildFilePath = Paths.get(buildFileAbsolutePath)
-        projectToBuildPath[projectIdentifier] = gitWorkspaceDirectory.relativize(buildFilePath).toString()
+        projectToRelativeBuildFile[projectIdentifier] = gitWorkspaceDirectory.relativize(buildFilePath).toString()
     }
 
     fun build(): GitHubDependencyGraph {
         val manifests = bundledManifests.mapValues { (_, value) ->
             GitHubManifest(
                 base = value.manifest,
-                file = projectToBuildPath[value.projectIdentifier]?.let {
+                file = projectToRelativeBuildFile[value.projectIdentifier]?.let {
                     GitHubManifestFile(sourceLocation = it)
                 }
             )
@@ -51,6 +54,9 @@ class GitHubDependencyGraphBuilder(
     }
 
     private data class BundledManifest(
+        /**
+         * Used to look up the file path of the build file in the [projectToRelativeBuildFile] map.
+         */
         val projectIdentifier: SimpleProjectIdentifier,
         val manifest: BaseGitHubManifest
     )

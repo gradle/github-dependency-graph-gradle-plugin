@@ -59,6 +59,8 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
         def manifests = jsonManifests()
         manifests.size() == 3
         def parentRuntimeClasspath = jsonManifest(configuration: "runtimeClasspath")
+        def parentRuntimeClasspathFile = parentRuntimeClasspath.file as Map
+        parentRuntimeClasspathFile.source_location == "build.gradle"
         def parentClasspathResolved = parentRuntimeClasspath.resolved as Map
         def parentTestFoo = parentClasspathResolved[fooPurl] as Map
         verifyAll(parentTestFoo) {
@@ -68,6 +70,8 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
         }
         subprojects.each { name ->
             def runtimeClasspath = jsonManifest(project: ':' + name, configuration: "runtimeClasspath")
+            def runtimeClasspathFile = runtimeClasspath.file as Map
+            runtimeClasspathFile.source_location == name + "/build.gradle"
             def classpathResolved = runtimeClasspath.resolved as Map
             def testFoo = classpathResolved[fooPurl] as Map
             verifyAll(testFoo) {
@@ -109,6 +113,8 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
         def manifests = jsonManifests()
         manifests.size() == 2
         def aRuntimeClasspath = jsonManifest(project: ":a", configuration: "runtimeClasspath")
+        def aRuntimeClasspathFile = aRuntimeClasspath.file as Map
+        aRuntimeClasspathFile.source_location == "a/build.gradle"
         def aClasspathResolved = aRuntimeClasspath.resolved as Map
         def aTestFoo = aClasspathResolved[fooPurl] as Map
         verifyAll(aTestFoo) {
@@ -117,6 +123,8 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
             dependencies == []
         }
         def bRuntimeClasspath = jsonManifest(project: ":b", configuration: "runtimeClasspath")
+        def bRuntimeClasspathFile = bRuntimeClasspath.file as Map
+        bRuntimeClasspathFile.source_location == "b/build.gradle"
         def bClasspathResolved = bRuntimeClasspath.resolved as Map
         def bTestFoo = bClasspathResolved[fooPurl] as Map
         verifyAll(bTestFoo) {

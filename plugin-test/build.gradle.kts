@@ -8,9 +8,15 @@ val extractorPlugin: Configuration by configurations.creating
 dependencies {
     extractorPlugin(project(":plugin", "shadowJar"))
     testImplementation(gradleTestKit())
-    testImplementation(platform("org.gradle:distributions-dependencies"))
-    testImplementation("org.gradle:internal-integ-testing")
-    testImplementation("org.codehaus.groovy:groovy-json")
+    testImplementation("org.codehaus.groovy:groovy-json:3.0.9")
+
+    testFixturesApi(gradleTestKit())
+    testFixturesApi(libs.spock.core)
+    testFixturesApi("junit:junit:4.13.2")
+    testFixturesApi("org.jetbrains:annotations:22.0.0")
+
+    testFixturesImplementation(gradleApi())
+    testFixturesImplementation("com.google.code.gson:gson:2.8.9")
 }
 
 val writeTestConfig by tasks.registering(WriteConfigTask::class) {

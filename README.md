@@ -14,7 +14,7 @@ and this
 
 ## Building/Testing
 
-The `plugin` project is a standard Gradle project which contains source for the plugin. The `plugin-test` depends upon
-the [gradle/gradle](https://github.com/gradle/gradle)
-source as an included build to test the plugin. To run the `plugin-test` tests, please ensure the `gradle/gradle`
-repository is checked out in a sibling directory to this one.
+To test this plugin, run the following task:
+```shell
+./gradlew test
+```

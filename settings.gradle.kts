@@ -54,17 +54,7 @@ apply(from = "gradle/build-cache-configuration.settings.gradle.kts")
 
 rootProject.name = "github-dependency-extractor"
 include("plugin")
-
-val gradleDirectory = file("../gradle")
-if (gradleDirectory.exists()) {
-    includeBuild(gradleDirectory) {
-        dependencySubstitution {
-            substitute(module("org.gradle:internal-integ-testing")).using(project(":internal-integ-testing"))
-            substitute(module("org.gradle:distributions-dependencies")).using(platform(project(":distributions-dependencies")))
-        }
-    }
-    include("plugin-test")
-}
+include("plugin-test")
 
 FeaturePreviews.Feature.values().forEach { feature ->
     if (feature.isActive) {

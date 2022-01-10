@@ -5,22 +5,26 @@ import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import groovy.transform.Memoized
 import org.gradle.github.dependency.extractor.fixture.TestConfig
-import org.gradle.integtests.fixtures.MultiVersionIntegrationSpec
+import org.gradle.github.dependency.extractor.fixtures.SimpleGradleExecuter
 import org.gradle.integtests.fixtures.TargetCoverage
-import org.gradle.integtests.fixtures.executer.*
-import org.gradle.test.fixtures.file.TestDirectoryProvider
-import org.gradle.test.fixtures.file.TestFile
-import org.gradle.testkit.runner.GradleRunner
 import org.gradle.util.GradleVersion
 
 @TargetCoverage({ getTestedGradleVersions() })
-abstract class BaseExtractorTest extends MultiVersionIntegrationSpec {
+abstract class BaseExtractorTest extends BaseMultiVersionIntegrationSpec {
     static List<String> getTestedGradleVersions() {
         return [GradleVersion.current(), GradleVersion.version("5.0")].collect { it.version }
     }
 
     private static final TestConfig TEST_CONFIG = new TestConfig()
-    private JsonManifestLoader loader;
+    private JsonManifestLoader loader
+
+    @Override
+    SimpleGradleExecuter createExecuter() {
+        // Create a new JsonManifestLoader for each invocation of the executer
+        File manifestFile = new File("github-manifest.json")
+        loader = new JsonManifestLoader(manifestFile)
+        return createExecuter(version.toString())
+    }
 
     @CompileDynamic
     protected void applyExtractorPlugin() {
@@ -79,61 +83,61 @@ abstract class BaseExtractorTest extends MultiVersionIntegrationSpec {
         return manifest
     }
 
-    @Override
-    GradleExecuter createExecuter() {
-        def testKitDir = file("test-kit")
-
-        // Create a new JsonManifestLoader for each invocation of the executer
-        File manifestFile = new File("github-manifest.json")
-        assert (manifestFile.exists())
-        loader = new JsonManifestLoader(manifestFile)
-
-        return new TestKitBackedGradleExecuter(temporaryFolder, testKitDir)
-    }
-
-    static class TestKitBackedGradleExecuter extends AbstractGradleExecuter {
-        List<File> pluginClasspath = []
-        private final TestFile testKitDir
-
-        TestKitBackedGradleExecuter(TestDirectoryProvider testDirectoryProvider, TestFile testKitDir) {
-            super(null, testDirectoryProvider)
-            this.testKitDir = testKitDir
-        }
-
-        @Override
-        void assertCanExecute() throws AssertionError {
-        }
-
-        @Override
-        protected ExecutionResult doRun() {
-            def runnerResult = createRunner().build()
-            return OutputScrapingExecutionResult.from(runnerResult.output, "")
-        }
-
-        @Override
-        protected ExecutionFailure doRunWithFailure() {
-            def runnerResult = createRunner().buildAndFail()
-            return OutputScrapingExecutionFailure.from(runnerResult.output, "")
-        }
-
-        private GradleRunner createRunner() {
-            def runner = GradleRunner.create()
-            runner.withGradleVersion(version.toString())
-            runner.withTestKitDir(testKitDir)
-            runner.withProjectDir(workingDir)
-            def args = allArgs
-            args.remove("--no-daemon")
-            runner.withArguments(args)
-            runner.withPluginClasspath(pluginClasspath)
-            if (!environmentVars.isEmpty()) {
-                println("Setting environment variables: $environmentVars")
-                runner.withEnvironment(environmentVars)
-            }
-            runner.withDebug(debug)
-            runner.forwardOutput()
-            runner
-        }
-    }
+//    @Override
+//    GradleExecuter createExecuter() {
+//        def testKitDir = file("test-kit")
+//
+//        // Create a new JsonManifestLoader for each invocation of the executer
+//        File manifestFile = new File("github-manifest.json")
+//        assert (manifestFile.exists())
+//        loader = new JsonManifestLoader(manifestFile)
+//
+//        return new TestKitBackedGradleExecuter(temporaryFolder, testKitDir)
+//    }
+//
+//    static class TestKitBackedGradleExecuter extends AbstractGradleExecuter {
+//        List<File> pluginClasspath = []
+//        private final TestFile testKitDir
+//
+//        TestKitBackedGradleExecuter(TestDirectoryProvider testDirectoryProvider, TestFile testKitDir) {
+//            super(null, testDirectoryProvider)
+//            this.testKitDir = testKitDir
+//        }
+//
+//        @Override
+//        void assertCanExecute() throws AssertionError {
+//        }
+//
+//        @Override
+//        protected ExecutionResult doRun() {
+//            def runnerResult = createRunner().build()
+//            return OutputScrapingExecutionResult.from(runnerResult.output, "")
+//        }
+//
+//        @Override
+//        protected ExecutionFailure doRunWithFailure() {
+//            def runnerResult = createRunner().buildAndFail()
+//            return OutputScrapingExecutionFailure.from(runnerResult.output, "")
+//        }
+//
+//        private GradleRunner createRunner() {
+//            def runner = GradleRunner.create()
+//            runner.withGradleVersion(version.toString())
+//            runner.withTestKitDir(testKitDir)
+//            runner.withProjectDir(workingDir)
+//            def args = allArgs
+//            args.remove("--no-daemon")
+//            runner.withArguments(args)
+//            runner.withPluginClasspath(pluginClasspath)
+//            if (!environmentVars.isEmpty()) {
+//                println("Setting environment variables: $environmentVars")
+//                runner.withEnvironment(environmentVars)
+//            }
+//            runner.withDebug(debug)
+//            runner.forwardOutput()
+//            runner
+//        }
+//    }
 
     @CompileStatic
     private static class JsonManifestLoader {

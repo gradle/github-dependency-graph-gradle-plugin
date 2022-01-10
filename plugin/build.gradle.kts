@@ -29,7 +29,7 @@ dependencies {
     shadowImplementation("com.github.package-url:packageurl-java:1.4.1")
     // Use JUnit Jupiter for testing.
     testImplementation("org.junit.jupiter:junit-jupiter:5.8.1")
-    testImplementation("org.spockframework:spock-core:2.0-groovy-3.0")
+    testImplementation(libs.spock.core)
 }
 
 java {

@@ -1,6 +1,5 @@
 package org.gradle.github.dependency.extractor
 
-import org.gradle.integtests.fixtures.GroovyBuildScriptLanguage
 import org.gradle.integtests.fixtures.compatibility.MultiVersionTest
 
 @MultiVersionTest
@@ -10,7 +9,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         establishEnvironmentVariables()
     }
 
-    private def singleProjectBuildWithDependencies(@GroovyBuildScriptLanguage String dependenciesDeclaration) {
+    private def singleProjectBuildWithDependencies(String dependenciesDeclaration) {
         singleProjectBuild("a") {
             buildFile """
             apply plugin: 'java'
@@ -25,7 +24,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         }
     }
 
-    private def singleProjectBuildWithBuildscript(@GroovyBuildScriptLanguage String dependenciesDeclaration) {
+    private def singleProjectBuildWithBuildscript(String dependenciesDeclaration) {
         singleProjectBuild("a") {
             buildFile """
             buildscript {
@@ -54,7 +53,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         then:
         def runtimeClasspathManifest = jsonManifest(configuration: "runtimeClasspath")
         def file = runtimeClasspathManifest.file as Map
-        file.source_location == "build.gradle.kts"
+        file.source_location == "build.gradle"
         def resolved = runtimeClasspathManifest.resolved as Map
         def testFoo = resolved[fooPurl]
         testFoo instanceof Map

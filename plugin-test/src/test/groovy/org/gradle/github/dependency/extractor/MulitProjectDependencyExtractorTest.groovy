@@ -1,5 +1,6 @@
 package org.gradle.github.dependency.extractor
 
+import org.gradle.github.dependency.extractor.base.BaseExtractorTest
 import org.gradle.integtests.fixtures.build.BuildTestFile
 import org.gradle.integtests.fixtures.compatibility.MultiVersionTest
 import org.gradle.test.fixtures.maven.MavenModule
@@ -187,5 +188,42 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
             relationship == "direct"
             dependencies == []
         }
+    }
+
+    def "project leveraging included builds"() {
+        given:
+        multiProjectBuild("parent", []) {
+            project("included-child").tap {
+                buildFile """
+                apply plugin: 'java'
+                
+                group = 'org.test.included'
+                version = '1.0'
+                dependencies {
+                    implementation 'org.test-published:foo:1.0'    
+                }
+                """
+                setupBuildFile(it)
+                file("src/main/java/Dummy.java") << "public class Dummy {}"
+                settingsFile << "rootProject.name = '$projectName'"
+            }
+            settingsFile << "includeBuild 'included-child'"
+
+            buildFile """
+            apply plugin: 'java'
+            
+            dependencies {
+                implementation 'org.test.included:included-child'    
+            }
+            """
+            setupBuildFile(it)
+        }
+        when:
+        succeeds("validate")
+
+        then:
+        def runtimeClasspath = jsonManifest(configuration: "runtimeClasspath")
+        def runtimeFile = runtimeClasspath.file as Map
+        runtimeFile.source_location == "build.gradle"
     }
 }

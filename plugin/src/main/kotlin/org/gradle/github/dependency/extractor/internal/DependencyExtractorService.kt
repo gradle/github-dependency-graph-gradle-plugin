@@ -39,10 +39,12 @@ abstract class DependencyExtractorService :
     }
 
     override fun started(buildOperation: BuildOperationDescriptor, startEvent: OperationStartEvent) {
+        // This method will never be called when registered in a `BuildServiceRegistry` (ie. Gradle 6.1 & higher)
         // No-op
     }
 
     override fun progress(operationIdentifier: OperationIdentifier, progressEvent: OperationProgressEvent) {
+        // This method will never be called when registered in a `BuildServiceRegistry` (ie. Gradle 6.1 & higher)
         // No-op
     }
 
@@ -63,8 +65,8 @@ abstract class DependencyExtractorService :
         details: LoadProjectsBOT.Details,
         result: LoadProjectsBOT.Result
     ) {
-        tailrec fun recursivelyExtractProjects(projects: Set<LoadProjectsBOT.Result.Project>)  {
-            if(projects.isEmpty()) return
+        tailrec fun recursivelyExtractProjects(projects: Set<LoadProjectsBOT.Result.Project>) {
+            if (projects.isEmpty()) return
             projects.forEach { project ->
                 gitHubDependencyGraphBuilder.addProject(details.buildPath, project.path, project.buildFile)
             }
@@ -78,6 +80,17 @@ abstract class DependencyExtractorService :
         details: ResolveConfigurationDependenciesBOT.Details,
         result: ResolveConfigurationDependenciesBOT.Result
     ) {
+        val rootComponentId = result.rootComponent.id
+        val trueProjectPath =
+            (rootComponentId as? ProjectComponentIdentifier)?.projectPath
+                ?: details.projectPath
+        @Suppress("FoldInitializerAndIfToElvis") // Purely for documentation purposes
+        if (trueProjectPath == null) {
+            // TODO: We can actually handle this case, but it's more complicated than I have time to deal with
+            // TODO: See the Gradle Enterprise Build Scan Plugin: `ConfigurationResolutionCapturer_5_0`
+            return
+        }
+
         val repositoryLookup = RepositoryUrlLookup(details, result)
         val dependencies =
             extractDependenciesFromResolvedComponentResult(
@@ -85,7 +98,6 @@ abstract class DependencyExtractorService :
                 GitHubDependency.Relationship.direct,
                 repositoryLookup::doLookup
             )
-        val trueProjectPath = (result.rootComponent.id as ProjectComponentIdentifier).projectPath
         val metaData = mapOf(
             "project_path" to details.projectPath,
             "configuration" to details.configurationName,

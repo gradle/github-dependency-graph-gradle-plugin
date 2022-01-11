@@ -4,7 +4,6 @@ import org.gradle.test.fixtures.file.TestDirectoryProvider
 import org.gradle.test.fixtures.file.TestFile
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
-import org.gradle.util.internal.TextUtil
 
 class SimpleGradleExecuter {
 
@@ -15,6 +14,7 @@ class SimpleGradleExecuter {
     private final TestDirectoryProvider testDirectoryProvider
     private final TestFile testKitDir
     private final String gradleVersion
+    private boolean showStacktrace = true
     private boolean debug = false
 
     SimpleGradleExecuter(
@@ -98,9 +98,9 @@ class SimpleGradleExecuter {
 //                allArgs.add("--no-daemon");
 //            }
 //        }
-//        if (showStacktrace) {
-//            allArgs.add("--stacktrace");
-//        }
+        if (showStacktrace) {
+            allArgs.add("--stacktrace");
+        }
 //        if (taskList) {
 //            allArgs.add("tasks");
 //        }
@@ -143,12 +143,17 @@ class SimpleGradleExecuter {
         runner.withTestKitDir(testKitDir)
         runner.withProjectDir(testDirectoryProvider.testDirectory)
         def args = getAllArgs()
+        if (!environmentVars.isEmpty()) {
+            if (debug) {
+                environmentVars.forEach { key, value ->
+                    args.add("-Porg.gradle.github.internal.debug.env.$key=$value".toString())
+                }
+            } else {
+                runner.withEnvironment(environmentVars)
+            }
+        }
         args.remove("--no-daemon")
         runner.withArguments(args)
-        if (!environmentVars.isEmpty()) {
-            println("Setting environment variables: $environmentVars")
-            runner.withEnvironment(environmentVars)
-        }
         runner.withDebug(debug)
         runner.forwardOutput()
         runner

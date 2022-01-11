@@ -1,4 +1,4 @@
-package org.gradle.github.dependency.extractor
+package org.gradle.github.dependency.extractor.base
 
 import groovy.json.JsonSlurper
 import groovy.transform.CompileDynamic
@@ -23,7 +23,7 @@ abstract class BaseExtractorTest extends BaseMultiVersionIntegrationSpec {
         // Create a new JsonManifestLoader for each invocation of the executer
         File manifestFile = new File("github-manifest.json")
         loader = new JsonManifestLoader(manifestFile)
-        return createExecuter(version.toString())
+        return createExecuter(BaseMultiVersionIntegrationSpec.version.toString())
     }
 
     @CompileDynamic

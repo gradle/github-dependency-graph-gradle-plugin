@@ -24,12 +24,14 @@ import java.nio.file.Paths
 @Suppress("unused")
 class GithubDependencyExtractorPlugin : Plugin<Gradle> {
     private companion object {
+        private const val ENV_VIA_PARAMETER_PREFIX = "org.gradle.github.internal.debug.env."
+
         /**
          * Environment variable should be set to the workspace directory that the Git repository is checked out in.
          */
         const val ENV_GITHUB_WORKSPACE = "GITHUB_WORKSPACE"
 
-        fun throwEnvironmentVariableMissingExeption(variable: String): Nothing {
+        fun throwEnvironmentVariableMissingException(variable: String): Nothing {
             throw IllegalStateException("The environment variable '$variable' must be set, but it was not.")
         }
 
@@ -39,6 +41,10 @@ class GithubDependencyExtractorPlugin : Plugin<Gradle> {
 
     override fun apply(gradle: Gradle) {
         println("Applying Plugin: GithubDependencyExtractorPlugin")
+        if (gradle.parent != null) {
+            println("Not applying plugin to included build")
+            return
+        }
 
         val gradleVersion = GradleVersion.current()
         // Create the adapter based upon the version of Gradle
@@ -83,7 +89,8 @@ class GithubDependencyExtractorPlugin : Plugin<Gradle> {
                 val providerFactory = gradle.service<ProviderFactory>()
 
                 val gitWorkspaceEnvVar = System.getenv()[ENV_GITHUB_WORKSPACE]
-                    ?: throwEnvironmentVariableMissingExeption(ENV_GITHUB_WORKSPACE)
+                    ?: gradle.startParameter.projectProperties[ENV_VIA_PARAMETER_PREFIX + ENV_GITHUB_WORKSPACE]
+                    ?: throwEnvironmentVariableMissingException(ENV_GITHUB_WORKSPACE)
 
                 val gitWorkspaceDirectory = Paths.get(gitWorkspaceEnvVar)
                 // Create a constant value that the provider will always return
@@ -117,6 +124,8 @@ class GithubDependencyExtractorPlugin : Plugin<Gradle> {
 
         @Suppress("ClassName")
         object PluginApplicatorStrategy_6_1 : PluginApplicatorStrategy {
+            private const val SERVICE_NAME = "dependencyExtractorService"
+
             override fun createExtractorService(
                 gradle: Gradle
             ): Provider<out DependencyExtractorService> {
@@ -125,7 +134,10 @@ class GithubDependencyExtractorPlugin : Plugin<Gradle> {
                 val gitWorkspaceEnvVar =
                     providerFactory.environmentVariable(ENV_GITHUB_WORKSPACE)
                         .orElse(
-                            providerFactory.provider { throwEnvironmentVariableMissingExeption(ENV_GITHUB_WORKSPACE) }
+                            providerFactory.gradleProperty(ENV_VIA_PARAMETER_PREFIX + ENV_GITHUB_WORKSPACE)
+                        )
+                        .orElse(
+                            providerFactory.provider { throwEnvironmentVariableMissingException(ENV_GITHUB_WORKSPACE) }
                         ).map { File(it) }
                 val gitWorkspaceDirectory =
                     gitWorkspaceEnvVar.flatMap {
@@ -135,7 +147,7 @@ class GithubDependencyExtractorPlugin : Plugin<Gradle> {
                     }
 
                 return gradle.sharedServices.registerIfAbsent(
-                    "dependencyExtractorService",
+                    SERVICE_NAME,
                     DependencyExtractorService_6_1::class.java
                 ) { spec ->
                     spec.parameters { it.gitWorkspaceDirectory.convention(gitWorkspaceDirectory) }

@@ -1,4 +1,4 @@
-package org.gradle.github.dependency.extractor
+package org.gradle.github.dependency.extractor.base
 
 import org.gradle.integtests.fixtures.compatibility.MultiVersionTest
 import org.gradle.integtests.fixtures.compatibility.MultiVersionTestCategory

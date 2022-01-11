@@ -53,4 +53,12 @@ class BuildTestFile extends TestFile {
     BuildTestFile project(String name) {
         return new BuildTestFile(file(name), name)
     }
+
+    BuildTestFile includedBuild(String name) {
+        settingsFile << "includeBuild '$name'"
+        return new BuildTestFile(file(name), name).tap {
+            file("src/main/java/Dummy.java") << "public class Dummy {}"
+            settingsFile << "rootProject.name = '$projectName'"
+        }
+    }
 }

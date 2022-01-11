@@ -83,7 +83,7 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
         }
     }
 
-    def "multi-project build where one project depends upon another"() {
+    def "multi-project build where one project depends upon another"(String taskInvocation, boolean resolveProjectA) {
         given:
         multiProjectBuild("parent", ["a", "b"]) {
             List<BuildTestFile> projects = []
@@ -108,20 +108,24 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
             }
         }
         when:
-        succeeds("validate")
+        succeeds(taskInvocation)
 
         then:
         def manifests = jsonManifests()
-        manifests.size() == 2
-        def aRuntimeClasspath = jsonManifest(project: ":a", configuration: "runtimeClasspath")
-        def aRuntimeClasspathFile = aRuntimeClasspath.file as Map
-        aRuntimeClasspathFile.source_location == "a/build.gradle"
-        def aClasspathResolved = aRuntimeClasspath.resolved as Map
-        def aTestFoo = aClasspathResolved[fooPurl] as Map
-        verifyAll(aTestFoo) {
-            purl == this.fooPurl
-            relationship == "direct"
-            dependencies == []
+        if (resolveProjectA) {
+            manifests.size() == 2
+            def aRuntimeClasspath = jsonManifest(project: ":a", configuration: "runtimeClasspath")
+            def aRuntimeClasspathFile = aRuntimeClasspath.file as Map
+            aRuntimeClasspathFile.source_location == "a/build.gradle"
+            def aClasspathResolved = aRuntimeClasspath.resolved as Map
+            def aTestFoo = aClasspathResolved[fooPurl] as Map
+            verifyAll(aTestFoo) {
+                purl == this.fooPurl
+                relationship == "direct"
+                dependencies == []
+            }
+        } else {
+            manifests.size() == 1
         }
         def bRuntimeClasspath = jsonManifest(project: ":b", configuration: "runtimeClasspath")
         def bRuntimeClasspathFile = bRuntimeClasspath.file as Map
@@ -140,6 +144,14 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
             relationship == "direct"
             dependencies == [this.fooPurl]
         }
+        where:
+        // Running just the 'validate' task on 'b' will not implicitly cause 'a' to be resolved.
+        // This is because the configuration 'runtimeClasspath' on 'b' relies upon the 'runtimeElements' of 'a',
+        // not the 'runtimeClasspath'. The 'runtimeElements' configuration is not itself resolvable.
+        // https://docs.gradle.org/current/userguide/java_library_plugin.html#sec:java_library_configurations_graph
+        taskInvocation | resolveProjectA
+        "validate"     | true
+        ":b:validate"  | false
     }
 
     def "project with buildSrc"() {
@@ -190,24 +202,22 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
         }
     }
 
-    def "project leveraging included builds"() {
+    def "project leveraging included builds"(boolean includedBuildTaskDependency, boolean resolveIncludedBuild) {
         given:
+        executer.enableDebug()
         multiProjectBuild("parent", []) {
-            project("included-child").tap {
+            includedBuild("included-child").tap {
                 buildFile """
                 apply plugin: 'java'
                 
                 group = 'org.test.included'
                 version = '1.0'
                 dependencies {
-                    implementation 'org.test-published:foo:1.0'    
+                    implementation 'org.test-published:foo:1.0'
                 }
                 """
                 setupBuildFile(it)
-                file("src/main/java/Dummy.java") << "public class Dummy {}"
-                settingsFile << "rootProject.name = '$projectName'"
             }
-            settingsFile << "includeBuild 'included-child'"
 
             buildFile """
             apply plugin: 'java'
@@ -217,6 +227,13 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
             }
             """
             setupBuildFile(it)
+            if (includedBuildTaskDependency) {
+                buildFile """
+                tasks.validate {
+                    dependsOn gradle.includedBuild("included-child").task(":validate")
+                }
+                """
+            }
         }
         when:
         succeeds("validate")
@@ -224,6 +241,42 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
         then:
         def runtimeClasspath = jsonManifest(configuration: "runtimeClasspath")
         def runtimeFile = runtimeClasspath.file as Map
-        runtimeFile.source_location == "build.gradle"
+        verifyAll {
+            runtimeFile.source_location == "build.gradle"
+            def runtimeClasspathResolved = runtimeClasspath.resolved as Map
+            def testFoo = runtimeClasspathResolved[fooPurl] as Map
+            verifyAll(testFoo) {
+                purl == this.fooPurl
+                relationship == "indirect"
+                dependencies == []
+            }
+            def includedChildPurl = "pkg:maven/org.test.included/included-child@1.0"
+            def testIncludedChild = runtimeClasspathResolved[includedChildPurl] as Map
+            verifyAll(testIncludedChild) {
+                purl == includedChildPurl
+                relationship == "direct"
+                dependencies == [this.fooPurl]
+            }
+        }
+        if (resolveIncludedBuild) {
+            def includedChildRuntimeClasspath = jsonManifest(build: ":included-child", configuration: "runtimeClasspath")
+            def includedChildRuntimeFile = includedChildRuntimeClasspath.file as Map
+            verifyAll {
+                includedChildRuntimeFile.source_location == "included-child/build.gradle"
+                def includedChildRuntimeClasspathResolved = includedChildRuntimeClasspath.resolved as Map
+
+                def testFoo = includedChildRuntimeClasspathResolved[fooPurl] as Map
+                verifyAll(testFoo) {
+                    purl == this.fooPurl
+                    relationship == "direct"
+                    dependencies == []
+                }
+            }
+        }
+
+        where:
+        includedBuildTaskDependency | resolveIncludedBuild
+        false                       | false
+        true                        | true
     }
 }

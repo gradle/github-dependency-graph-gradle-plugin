@@ -7,6 +7,8 @@ import groovy.transform.Memoized
 import org.gradle.github.dependency.extractor.fixture.TestConfig
 import org.gradle.github.dependency.extractor.fixtures.SimpleGradleExecuter
 import org.gradle.integtests.fixtures.TargetCoverage
+import org.gradle.internal.hash.Hashing
+import org.gradle.test.fixtures.file.TestFile
 import org.gradle.util.GradleVersion
 
 @TargetCoverage({ getTestedGradleVersions() })
@@ -16,14 +18,15 @@ abstract class BaseExtractorTest extends BaseMultiVersionIntegrationSpec {
     }
 
     private static final TestConfig TEST_CONFIG = new TestConfig()
-    private JsonManifestLoader loader
+    protected TestEnvironmentVars environmentVars = new TestEnvironmentVars(testDirectory)
+    private JsonRepositorySnapshotLoader loader
 
     @Override
     SimpleGradleExecuter createExecuter() {
         // Create a new JsonManifestLoader for each invocation of the executer
         File manifestFile =
                 testDirectory.file("build/reports/github-dependency-report/github-dependency-manifest.json")
-        loader = new JsonManifestLoader(manifestFile)
+        loader = new JsonRepositorySnapshotLoader(manifestFile)
         return createExecuter(BaseMultiVersionIntegrationSpec.version.toString())
     }
 
@@ -44,9 +47,7 @@ abstract class BaseExtractorTest extends BaseMultiVersionIntegrationSpec {
     }
 
     protected void establishEnvironmentVariables() {
-        executer.withEnvironmentVars(
-                ["GITHUB_WORKSPACE": testDirectory.absolutePath]
-        )
+        executer.withEnvironmentVars(environmentVars.asEnvironmentMap())
     }
 
     protected String purlFor(org.gradle.test.fixtures.Module module) {
@@ -56,12 +57,24 @@ abstract class BaseExtractorTest extends BaseMultiVersionIntegrationSpec {
     }
 
     @CompileDynamic
-    protected Object jsonManifest() {
-        return loader.jsonManifest()
+    protected Map jsonRepositorySnapshot() {
+        return loader.jsonRepositorySnapshot()
     }
 
     protected Map jsonManifests() {
-        return loader.jsonManifests()
+        def json = jsonRepositorySnapshot()
+        assert json.version == 0
+        assert json.sha == environmentVars.sha
+        assert json.ref == environmentVars.ref
+        def job = json.job as Map
+        assert job.name == environmentVars.job
+        assert job.id == environmentVars.runNumber
+        def detector = json.detector as Map
+        assert detector.name.contains("Gradle")
+        assert detector.version != null
+        assert detector.version != ""
+        assert detector.url == "https://github.com/gradle/github-dependency-extractor"
+        return json["manifests"] as Map
     }
 
     protected String manifestKey(Map args) {
@@ -75,7 +88,7 @@ abstract class BaseExtractorTest extends BaseMultiVersionIntegrationSpec {
         return "Build: ${build}, Project: ${project}, ${isBuildscript ? "Buildscript " : ""}Configuration: $configuration"
     }
 
-    protected Map jsonManifest(Map args) {
+    protected Map jsonRepositorySnapshot(Map args) {
         String manifestName = manifestKey(args)
         Map manifests = jsonManifests()
         assert manifests.keySet().contains(manifestName)
@@ -84,81 +97,46 @@ abstract class BaseExtractorTest extends BaseMultiVersionIntegrationSpec {
         return manifest
     }
 
-//    @Override
-//    GradleExecuter createExecuter() {
-//        def testKitDir = file("test-kit")
-//
-//        // Create a new JsonManifestLoader for each invocation of the executer
-//        File manifestFile = new File("github-manifest.json")
-//        assert (manifestFile.exists())
-//        loader = new JsonManifestLoader(manifestFile)
-//
-//        return new TestKitBackedGradleExecuter(temporaryFolder, testKitDir)
-//    }
-//
-//    static class TestKitBackedGradleExecuter extends AbstractGradleExecuter {
-//        List<File> pluginClasspath = []
-//        private final TestFile testKitDir
-//
-//        TestKitBackedGradleExecuter(TestDirectoryProvider testDirectoryProvider, TestFile testKitDir) {
-//            super(null, testDirectoryProvider)
-//            this.testKitDir = testKitDir
-//        }
-//
-//        @Override
-//        void assertCanExecute() throws AssertionError {
-//        }
-//
-//        @Override
-//        protected ExecutionResult doRun() {
-//            def runnerResult = createRunner().build()
-//            return OutputScrapingExecutionResult.from(runnerResult.output, "")
-//        }
-//
-//        @Override
-//        protected ExecutionFailure doRunWithFailure() {
-//            def runnerResult = createRunner().buildAndFail()
-//            return OutputScrapingExecutionFailure.from(runnerResult.output, "")
-//        }
-//
-//        private GradleRunner createRunner() {
-//            def runner = GradleRunner.create()
-//            runner.withGradleVersion(version.toString())
-//            runner.withTestKitDir(testKitDir)
-//            runner.withProjectDir(workingDir)
-//            def args = allArgs
-//            args.remove("--no-daemon")
-//            runner.withArguments(args)
-//            runner.withPluginClasspath(pluginClasspath)
-//            if (!environmentVars.isEmpty()) {
-//                println("Setting environment variables: $environmentVars")
-//                runner.withEnvironment(environmentVars)
-//            }
-//            runner.withDebug(debug)
-//            runner.forwardOutput()
-//            runner
-//        }
-//    }
-
     @CompileStatic
-    private static class JsonManifestLoader {
+    private static class JsonRepositorySnapshotLoader {
         private final File manifestFile
 
-        JsonManifestLoader(File manifestFile) {
+        JsonRepositorySnapshotLoader(File manifestFile) {
             this.manifestFile = manifestFile
         }
 
         @Memoized
-        protected Object jsonManifest() {
+        protected Object jsonRepositorySnapshot() {
             def jsonSlurper = new JsonSlurper()
             println(manifestFile.text)
             return jsonSlurper.parse(manifestFile)
         }
+    }
 
-        @Memoized
-        protected Map jsonManifests() {
-            def json = jsonManifest()
-            return json["manifests"] as Map
+    static class TestEnvironmentVars {
+        final String job = "Build -" + System.currentTimeMillis()
+        final String runNumber = UUID.randomUUID().toString()
+        final String ref = "refs/head/feature/test" + UUID.randomUUID().toString()
+        final String sha = fakeSha()
+        final String workspace
+
+        TestEnvironmentVars(TestFile testDirectory) {
+            workspace = testDirectory.absolutePath
         }
+
+        Map<String, String> asEnvironmentMap() {
+            return [
+                    "GITHUB_JOB"       : job,
+                    "GITHUB_RUN_NUMBER": runNumber,
+                    "GITHUB_REF"       : ref,
+                    "GITHUB_SHA"       : sha,
+                    "GITHUB_WORKSPACE" : workspace,
+            ]
+        }
+
+        private static String fakeSha() {
+            Hashing.sha1().hashString(UUID.toString().toString()).toString()
+        }
+
     }
 }

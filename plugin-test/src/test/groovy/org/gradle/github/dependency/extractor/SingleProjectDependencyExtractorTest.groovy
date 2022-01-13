@@ -52,7 +52,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         succeeds("dependencies", "--configuration", "runtimeClasspath")
 
         then:
-        def runtimeClasspathManifest = jsonManifest(configuration: "runtimeClasspath")
+        def runtimeClasspathManifest = jsonRepositorySnapshot(configuration: "runtimeClasspath")
         def file = runtimeClasspathManifest.file as Map
         file.source_location == "build.gradle"
         def resolved = runtimeClasspathManifest.resolved as Map
@@ -81,7 +81,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         succeeds("dependencies", "--configuration", "runtimeClasspath")
 
         then:
-        def runtimeClasspathManifest = jsonManifest(configuration: "runtimeClasspath")
+        def runtimeClasspathManifest = jsonRepositorySnapshot(configuration: "runtimeClasspath")
         def file = runtimeClasspathManifest.file as Map
         file.source_location == "build.gradle"
         def resolved = runtimeClasspathManifest.resolved as Map
@@ -114,7 +114,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         succeeds("dependencies", "--configuration", "runtimeClasspath")
 
         then:
-        def runtimeClasspathManifest = jsonManifest(configuration: "runtimeClasspath")
+        def runtimeClasspathManifest = jsonRepositorySnapshot(configuration: "runtimeClasspath")
         def file = runtimeClasspathManifest.file as Map
         file.source_location == "build.gradle"
         def resolved = runtimeClasspathManifest.resolved as Map
@@ -151,7 +151,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
 
         then:
         ["compileClasspath", "testCompileClasspath"].forEach {
-            def classpathManifest = jsonManifest(configuration: it)
+            def classpathManifest = jsonRepositorySnapshot(configuration: it)
             def file = classpathManifest.file as Map
             file.source_location == "build.gradle"
             def resolved = classpathManifest.resolved as Map
@@ -187,7 +187,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         succeeds("dependencies", "--configuration", "runtimeClasspath")
 
         then:
-        def runtimeClasspathManifest = jsonManifest(configuration: "runtimeClasspath")
+        def runtimeClasspathManifest = jsonRepositorySnapshot(configuration: "runtimeClasspath")
         def file = runtimeClasspathManifest.file as Map
         file.source_location == "build.gradle"
         def resolved = runtimeClasspathManifest.resolved as Map
@@ -222,7 +222,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         succeeds("dependencies", "--configuration", "runtimeClasspath")
 
         then:
-        def runtimeClasspathManifest = jsonManifest(configuration: "runtimeClasspath")
+        def runtimeClasspathManifest = jsonRepositorySnapshot(configuration: "runtimeClasspath")
         def file = runtimeClasspathManifest.file as Map
         file.source_location == "build.gradle"
         def resolved = runtimeClasspathManifest.resolved as Map
@@ -253,7 +253,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         succeeds("dependencies", "--configuration", "runtimeClasspath")
 
         then:
-        def classpathManifest = jsonManifest(configuration: "classpath", buildscript: true)
+        def classpathManifest = jsonRepositorySnapshot(configuration: "classpath", buildscript: true)
         def buildScriptFile = classpathManifest.file as Map
         buildScriptFile.source_location == "build.gradle"
         def classpathResolved = classpathManifest.resolved as Map
@@ -263,7 +263,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
             relationship == "direct"
             dependencies == []
         }
-        def runtimeClasspathManifest = jsonManifest(configuration: "runtimeClasspath")
+        def runtimeClasspathManifest = jsonRepositorySnapshot(configuration: "runtimeClasspath")
         def runtimeClasspathFile = runtimeClasspathManifest.file as Map
         runtimeClasspathFile.source_location == "build.gradle"
         def runtimeClasspathResolved = runtimeClasspathManifest.resolved as Map

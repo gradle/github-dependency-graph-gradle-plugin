@@ -78,9 +78,13 @@ tasks.test {
     useJUnitPlatform()
 }
 
-// tasks.named("test").configure {
-//     dependsOn("publishToMavenLocal")
-// }
+tasks.withType<Jar>().configureEach {
+    manifest {
+        attributes["Implementation-Version"] = archiveVersion.get()
+        attributes["Implementation-Title"] = "Gradle GitHub Dependency Extractor"
+        attributes["Implementation-Vendor"] = "Gradle GitHub Dependency Extractor"
+    }
+}
 
 tasks.withType<PluginUnderTestMetadata>().configureEach {
     pluginClasspath.from(shadowImplementation)

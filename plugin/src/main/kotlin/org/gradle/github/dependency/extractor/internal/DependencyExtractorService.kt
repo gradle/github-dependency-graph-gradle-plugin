@@ -9,8 +9,6 @@ import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.artifacts.result.ResolvedVariantResult
-import org.gradle.api.file.RegularFile
-import org.gradle.api.provider.Provider
 import org.gradle.github.dependency.extractor.internal.json.BaseGitHubManifest
 import org.gradle.github.dependency.extractor.internal.json.GitHubDependency
 import org.gradle.internal.operations.BuildOperationDescriptor
@@ -32,6 +30,10 @@ abstract class DependencyExtractorService :
     BuildOperationListener,
     AutoCloseable {
 
+    protected abstract val gitHubJobName: String
+    protected abstract val gitHubRunNumber: String
+    protected abstract val gitSha: String
+    protected abstract val gitRef: String
     protected abstract val gitWorkspaceDirectory: Path
 
     /**
@@ -40,8 +42,14 @@ abstract class DependencyExtractorService :
      */
     private var fileWriter: DependencyFileWriter = DependencyFileWriter.create()
 
-    private val gitHubDependencyGraphBuilder by lazy {
-        GitHubDependencyGraphBuilder(gitWorkspaceDirectory)
+    private val gitHubRepositorySnapshotBuilder by lazy {
+        GitHubRepositorySnapshotBuilder(
+            gitHubJobName = gitHubJobName,
+            gitHubRunNumber = gitHubRunNumber,
+            gitSha = gitSha,
+            gitRef = gitRef,
+            gitWorkspaceDirectory = gitWorkspaceDirectory
+        )
     }
 
     init {
@@ -82,7 +90,7 @@ abstract class DependencyExtractorService :
         tailrec fun recursivelyExtractProjects(projects: Set<LoadProjectsBOT.Result.Project>) {
             if (projects.isEmpty()) return
             projects.forEach { project ->
-                gitHubDependencyGraphBuilder.addProject(details.buildPath, project.path, project.buildFile)
+                gitHubRepositorySnapshotBuilder.addProject(details.buildPath, project.path, project.buildFile)
             }
             val newProjects = projects.flatMap { it.children }.toSet()
             recursivelyExtractProjects(newProjects)
@@ -133,7 +141,7 @@ abstract class DependencyExtractorService :
             }
             append(" Configuration: ${details.configurationName}")
         }
-        gitHubDependencyGraphBuilder.addManifest(
+        gitHubRepositorySnapshotBuilder.addManifest(
             name = name,
             buildPath = details.buildPath,
             projectPath = trueProjectPath,
@@ -171,7 +179,7 @@ abstract class DependencyExtractorService :
     }
 
     override fun close() {
-        fileWriter.writeDependencyManifest(gitHubDependencyGraphBuilder.build())
+        fileWriter.writeDependencyManifest(gitHubRepositorySnapshotBuilder.build())
     }
 
     /**

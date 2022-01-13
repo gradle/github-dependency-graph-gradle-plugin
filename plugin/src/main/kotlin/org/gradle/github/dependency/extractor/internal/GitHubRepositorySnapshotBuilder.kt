@@ -1,16 +1,31 @@
 package org.gradle.github.dependency.extractor.internal
 
 import org.gradle.github.dependency.extractor.internal.json.BaseGitHubManifest
-import org.gradle.github.dependency.extractor.internal.json.GitHubDependencyGraph
+import org.gradle.github.dependency.extractor.internal.json.GitHubDetector
+import org.gradle.github.dependency.extractor.internal.json.GitHubJob
 import org.gradle.github.dependency.extractor.internal.json.GitHubManifest
 import org.gradle.github.dependency.extractor.internal.json.GitHubManifestFile
+import org.gradle.github.dependency.extractor.internal.json.GitHubRepositorySnapshot
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.ConcurrentHashMap
 
-class GitHubDependencyGraphBuilder(
+class GitHubRepositorySnapshotBuilder(
+    private val gitHubJobName: String,
+    private val gitHubRunNumber: String,
+    private val gitSha: String,
+    private val gitRef: String,
     private val gitWorkspaceDirectory: Path
 ) {
+
+    private val detector by lazy { GitHubDetector() }
+
+    private val job by lazy {
+        GitHubJob(
+            id = gitHubRunNumber,
+            name = gitHubJobName
+        )
+    }
 
     /**
      * Map of the project identifier to the relative path of the git workspace directory [gitWorkspaceDirectory].
@@ -39,7 +54,7 @@ class GitHubDependencyGraphBuilder(
         projectToRelativeBuildFile[projectIdentifier] = gitWorkspaceDirectory.relativize(buildFilePath).toString()
     }
 
-    fun build(): GitHubDependencyGraph {
+    fun build(): GitHubRepositorySnapshot {
         val manifests = bundledManifests.mapValues { (_, value) ->
             GitHubManifest(
                 base = value.manifest,
@@ -48,7 +63,11 @@ class GitHubDependencyGraphBuilder(
                 }
             )
         }
-        return GitHubDependencyGraph(
+        return GitHubRepositorySnapshot(
+            job = job,
+            sha = gitSha,
+            ref = gitRef,
+            detector = detector,
             manifests = manifests
         )
     }

@@ -6,3 +6,9 @@ These are the current limitations of this project and potential solutions.
    For example, see the test: `MulitProjectDependencyExtractorTest::project leveraging included builds`
    The `result.rootComponent.id` is not a `ProjectComponentIdentifier`, so the `projectPath` can not be determined.
    This could be remedied using a variation of the logic found in the Gradle Enterprise Plugin `ConfigurationResolutionCapturer_5_0`.
+
+# TODO Items
+
+ - Rename file from
+   `build/reports/github-dependency-report/github-dependency-manifest.json` to
+   something like `build/reports/github-repository-snapshot/github-repository-snapshot.json`.

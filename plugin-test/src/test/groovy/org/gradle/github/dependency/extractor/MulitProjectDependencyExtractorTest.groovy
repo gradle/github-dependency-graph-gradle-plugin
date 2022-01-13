@@ -59,7 +59,7 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
         then:
         def manifests = jsonManifests()
         manifests.size() == 3
-        def parentRuntimeClasspath = jsonManifest(configuration: "runtimeClasspath")
+        def parentRuntimeClasspath = jsonRepositorySnapshot(configuration: "runtimeClasspath")
         def parentRuntimeClasspathFile = parentRuntimeClasspath.file as Map
         parentRuntimeClasspathFile.source_location == "build.gradle"
         def parentClasspathResolved = parentRuntimeClasspath.resolved as Map
@@ -70,7 +70,7 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
             dependencies == []
         }
         subprojects.each { name ->
-            def runtimeClasspath = jsonManifest(project: ':' + name, configuration: "runtimeClasspath")
+            def runtimeClasspath = jsonRepositorySnapshot(project: ':' + name, configuration: "runtimeClasspath")
             def runtimeClasspathFile = runtimeClasspath.file as Map
             runtimeClasspathFile.source_location == name + "/build.gradle"
             def classpathResolved = runtimeClasspath.resolved as Map
@@ -114,7 +114,7 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
         def manifests = jsonManifests()
         if (resolveProjectA) {
             manifests.size() == 2
-            def aRuntimeClasspath = jsonManifest(project: ":a", configuration: "runtimeClasspath")
+            def aRuntimeClasspath = jsonRepositorySnapshot(project: ":a", configuration: "runtimeClasspath")
             def aRuntimeClasspathFile = aRuntimeClasspath.file as Map
             aRuntimeClasspathFile.source_location == "a/build.gradle"
             def aClasspathResolved = aRuntimeClasspath.resolved as Map
@@ -127,7 +127,7 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
         } else {
             manifests.size() == 1
         }
-        def bRuntimeClasspath = jsonManifest(project: ":b", configuration: "runtimeClasspath")
+        def bRuntimeClasspath = jsonRepositorySnapshot(project: ":b", configuration: "runtimeClasspath")
         def bRuntimeClasspathFile = bRuntimeClasspath.file as Map
         bRuntimeClasspathFile.source_location == "b/build.gradle"
         def bClasspathResolved = bRuntimeClasspath.resolved as Map
@@ -180,7 +180,7 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
 
         then:
         def buildSrcRuntimeClasspath =
-                jsonManifest(build: ":buildSrc", configuration: "runtimeClasspath")
+                jsonRepositorySnapshot(build: ":buildSrc", configuration: "runtimeClasspath")
         def buildSrcRuntimeFile = buildSrcRuntimeClasspath.file as Map
         buildSrcRuntimeFile.source_location == "buildSrc/build.gradle"
         def buildSrcRuntimeClasspathResolved = buildSrcRuntimeClasspath.resolved as Map
@@ -190,7 +190,7 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
             relationship == "direct"
             dependencies == []
         }
-        def runtimeClasspath = jsonManifest(configuration: "runtimeClasspath")
+        def runtimeClasspath = jsonRepositorySnapshot(configuration: "runtimeClasspath")
         def runtimeFile = runtimeClasspath.file as Map
         runtimeFile.source_location == "build.gradle"
         def runtimeClasspathResolved = runtimeClasspath.resolved as Map
@@ -239,7 +239,7 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
         succeeds("validate")
 
         then:
-        def runtimeClasspath = jsonManifest(configuration: "runtimeClasspath")
+        def runtimeClasspath = jsonRepositorySnapshot(configuration: "runtimeClasspath")
         def runtimeFile = runtimeClasspath.file as Map
         verifyAll {
             runtimeFile.source_location == "build.gradle"
@@ -259,7 +259,7 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
             }
         }
         if (resolveIncludedBuild) {
-            def includedChildRuntimeClasspath = jsonManifest(build: ":included-child", configuration: "runtimeClasspath")
+            def includedChildRuntimeClasspath = jsonRepositorySnapshot(build: ":included-child", configuration: "runtimeClasspath")
             def includedChildRuntimeFile = includedChildRuntimeClasspath.file as Map
             verifyAll {
                 includedChildRuntimeFile.source_location == "included-child/build.gradle"

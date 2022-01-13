@@ -1,6 +1,6 @@
 package org.gradle.github.dependency.extractor.internal
 
-import org.gradle.github.dependency.extractor.internal.json.GitHubDependencyGraph
+import org.gradle.github.dependency.extractor.internal.json.GitHubRepositorySnapshot
 import org.slf4j.LoggerFactory
 import java.io.File
 
@@ -10,7 +10,7 @@ private constructor(
     private val loggerWarning: () -> Unit
 ) {
 
-    fun writeDependencyManifest(graph: GitHubDependencyGraph) {
+    fun writeDependencyManifest(graph: GitHubRepositorySnapshot) {
         loggerWarning()
         manifestFile.parentFile.mkdirs()
         manifestFile.writeText(JacksonJsonSerializer.serializeToJson(graph))

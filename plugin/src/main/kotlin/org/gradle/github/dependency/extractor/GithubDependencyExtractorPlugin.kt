@@ -14,6 +14,7 @@ import org.gradle.github.dependency.extractor.internal.DependencyExtractorServic
 import org.gradle.internal.build.event.BuildEventListenerRegistryInternal
 import org.gradle.internal.operations.BuildOperationListenerManager
 import org.gradle.util.GradleVersion
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -24,6 +25,7 @@ import java.nio.file.Paths
 @Suppress("unused")
 class GithubDependencyExtractorPlugin : Plugin<Gradle> {
     private companion object {
+        private val LOGGER = LoggerFactory.getLogger(GithubDependencyExtractorPlugin::class.java)
         private const val ENV_VIA_PARAMETER_PREFIX = "org.gradle.github.internal.debug.env."
 
         /**
@@ -37,6 +39,12 @@ class GithubDependencyExtractorPlugin : Plugin<Gradle> {
 
         private inline fun <reified T> Gradle.service(): T =
             (this as GradleInternal).services.get(T::class.java)
+
+        private inline val Gradle.objectFactory: ObjectFactory
+            get() = service()
+
+        private inline val Gradle.providerFactory: ProviderFactory
+            get() = service()
     }
 
     override fun apply(gradle: Gradle) {
@@ -56,6 +64,12 @@ class GithubDependencyExtractorPlugin : Plugin<Gradle> {
         // Create the service
         val extractorServiceProvider = applicatorStrategy.createExtractorService(gradle)
 
+        gradle.rootProject { project ->
+            extractorServiceProvider
+                .get()
+                .setRootProjectBuildDirectory(project.buildDir)
+        }
+
         // Register the service to listen for Build Events
         applicatorStrategy.registerExtractorListener(gradle, extractorServiceProvider)
 
@@ -66,7 +80,7 @@ class GithubDependencyExtractorPlugin : Plugin<Gradle> {
     /**
      * Adapters for creating the [DependencyExtractorService] and installing it into [Gradle] based upon the Gradle version.
      */
-    interface PluginApplicatorStrategy {
+    private interface PluginApplicatorStrategy {
 
         fun createExtractorService(
             gradle: Gradle
@@ -86,7 +100,7 @@ class GithubDependencyExtractorPlugin : Plugin<Gradle> {
             override fun createExtractorService(
                 gradle: Gradle
             ): Provider<out DependencyExtractorService> {
-                val providerFactory = gradle.service<ProviderFactory>()
+                val providerFactory = gradle.providerFactory
 
                 val gitWorkspaceEnvVar = System.getenv()[ENV_GITHUB_WORKSPACE]
                     ?: gradle.startParameter.projectProperties[ENV_VIA_PARAMETER_PREFIX + ENV_GITHUB_WORKSPACE]
@@ -139,6 +153,7 @@ class GithubDependencyExtractorPlugin : Plugin<Gradle> {
                         .orElse(
                             providerFactory.provider { throwEnvironmentVariableMissingException(ENV_GITHUB_WORKSPACE) }
                         ).map { File(it) }
+
                 val gitWorkspaceDirectory =
                     gitWorkspaceEnvVar.flatMap {
                         objectFactory.directoryProperty().apply {

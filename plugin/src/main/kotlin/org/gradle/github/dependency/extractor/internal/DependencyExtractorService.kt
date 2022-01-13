@@ -9,6 +9,8 @@ import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.artifacts.result.ResolvedVariantResult
+import org.gradle.api.file.RegularFile
+import org.gradle.api.provider.Provider
 import org.gradle.github.dependency.extractor.internal.json.BaseGitHubManifest
 import org.gradle.github.dependency.extractor.internal.json.GitHubDependency
 import org.gradle.internal.operations.BuildOperationDescriptor
@@ -19,6 +21,7 @@ import org.gradle.internal.operations.OperationIdentifier
 import org.gradle.internal.operations.OperationProgressEvent
 import org.gradle.internal.operations.OperationStartEvent
 import org.gradle.util.GradleVersion
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.net.URI
 import java.nio.file.Path
@@ -30,12 +33,23 @@ abstract class DependencyExtractorService :
     AutoCloseable {
 
     protected abstract val gitWorkspaceDirectory: Path
+
+    /**
+     * Can't use this as a proper input:
+     * https://github.com/gradle/gradle/issues/19562
+     */
+    private var fileWriter: DependencyFileWriter = DependencyFileWriter.create()
+
     private val gitHubDependencyGraphBuilder by lazy {
         GitHubDependencyGraphBuilder(gitWorkspaceDirectory)
     }
 
     init {
         println("Creating: DependencyExtractorService")
+    }
+
+    internal fun setRootProjectBuildDirectory(rootProjectBuildDirectory: File) {
+        fileWriter = DependencyFileWriter.create(rootProjectBuildDirectory)
     }
 
     override fun started(buildOperation: BuildOperationDescriptor, startEvent: OperationStartEvent) {
@@ -157,8 +171,7 @@ abstract class DependencyExtractorService :
     }
 
     override fun close() {
-        // Generate JSON
-        File("github-manifest.json").writeText(JacksonJsonSerializer.serializeToJson(gitHubDependencyGraphBuilder.build()))
+        fileWriter.writeDependencyManifest(gitHubDependencyGraphBuilder.build())
     }
 
     /**
@@ -248,6 +261,7 @@ abstract class DependencyExtractorService :
     }
 
     companion object {
+        private val LOGGER = LoggerFactory.getLogger(DependencyExtractorService::class.java)
 
         @JvmStatic
         fun extractDependenciesFromResolvedComponentResult(

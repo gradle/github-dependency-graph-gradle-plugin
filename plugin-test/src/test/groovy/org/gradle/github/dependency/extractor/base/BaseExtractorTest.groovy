@@ -21,7 +21,8 @@ abstract class BaseExtractorTest extends BaseMultiVersionIntegrationSpec {
     @Override
     SimpleGradleExecuter createExecuter() {
         // Create a new JsonManifestLoader for each invocation of the executer
-        File manifestFile = new File("github-manifest.json")
+        File manifestFile =
+                testDirectory.file("build/reports/github-dependency-report/github-dependency-manifest.json")
         loader = new JsonManifestLoader(manifestFile)
         return createExecuter(BaseMultiVersionIntegrationSpec.version.toString())
     }

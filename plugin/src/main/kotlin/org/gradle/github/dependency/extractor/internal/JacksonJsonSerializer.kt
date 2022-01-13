@@ -8,6 +8,7 @@ import org.gradle.github.dependency.extractor.internal.json.GitHubRepositorySnap
 object JacksonJsonSerializer {
 
     private val mapper = jsonMapper {
+        serializationInclusion(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
         addModule(kotlinModule())
         val simpleModule = SimpleModule()
         simpleModule.addSerializer(PackageUrlSerializer())

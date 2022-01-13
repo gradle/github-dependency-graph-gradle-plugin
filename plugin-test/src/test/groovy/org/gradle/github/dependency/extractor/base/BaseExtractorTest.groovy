@@ -1,5 +1,8 @@
 package org.gradle.github.dependency.extractor.base
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.networknt.schema.*
 import groovy.json.JsonSlurper
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
@@ -10,6 +13,8 @@ import org.gradle.integtests.fixtures.TargetCoverage
 import org.gradle.internal.hash.Hashing
 import org.gradle.test.fixtures.file.TestFile
 import org.gradle.util.GradleVersion
+
+import java.util.stream.Collectors
 
 @TargetCoverage({ getTestedGradleVersions() })
 abstract class BaseExtractorTest extends BaseMultiVersionIntegrationSpec {
@@ -99,6 +104,7 @@ abstract class BaseExtractorTest extends BaseMultiVersionIntegrationSpec {
 
     @CompileStatic
     private static class JsonRepositorySnapshotLoader {
+        private static final String SCHEMA = "schema/github-repository-snapshot-schema.json"
         private final File manifestFile
 
         JsonRepositorySnapshotLoader(File manifestFile) {
@@ -109,7 +115,48 @@ abstract class BaseExtractorTest extends BaseMultiVersionIntegrationSpec {
         protected Object jsonRepositorySnapshot() {
             def jsonSlurper = new JsonSlurper()
             println(manifestFile.text)
+            JsonSchema schema = createSchemaValidator()
+            ObjectMapper mapper = new ObjectMapper()
+            JsonNode node = mapper.readTree(manifestFile)
+            validateAgainstJsonSchema(schema, node)
             return jsonSlurper.parse(manifestFile)
+        }
+
+        private static void validateAgainstJsonSchema(JsonSchema schema, JsonNode json) {
+            final Set<ValidationMessage> validationMessages = schema.validate(json)
+            if (!validationMessages.isEmpty()) {
+                final String newline = System.lineSeparator()
+                final String violationMessage = createViolationMessage(newline, validationMessages)
+                throw new AssertionError(
+                        ("Dependency constraints contains schema violations:" + newline + violationMessage) as Object
+                )
+            }
+        }
+
+        @CompileDynamic
+        private static String createViolationMessage(String newline, Set<ValidationMessage> validationMessages) {
+            return validationMessages
+                    .stream()
+                    .map(ValidationMessage::getMessage)
+                    .collect(Collectors.joining(newline + "  - ", "  - ", ""))
+        }
+
+        private static JsonSchema createSchemaValidator() {
+            final JsonSchemaFactory factory =
+                    JsonSchemaFactory
+                            .builder(JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V201909))
+                            .build()
+            try {
+                return factory
+                        .getSchema(
+                                JsonRepositorySnapshotLoader.class.classLoader.getResourceAsStream(SCHEMA)
+                        )
+            } catch (JsonSchemaException ex) {
+                throw new RuntimeException(
+                        "Unable to load dependency constraints schema (resource: " + SCHEMA + ")",
+                        ex
+                )
+            }
         }
     }
 

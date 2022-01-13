@@ -38,6 +38,7 @@ class GithubDependencyExtractorPlugin : Plugin<Gradle> {
         const val ENV_GITHUB_RUN_NUMBER = "GITHUB_RUN_NUMBER"
         const val ENV_GITHUB_REF = "GITHUB_REF"
         const val ENV_GITHUB_SHA = "GITHUB_SHA"
+
         /**
          * Environment variable should be set to the workspace directory that the Git repository is checked out in.
          */

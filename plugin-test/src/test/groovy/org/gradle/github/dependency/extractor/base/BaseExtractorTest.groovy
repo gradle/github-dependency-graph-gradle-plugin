@@ -144,7 +144,7 @@ abstract class BaseExtractorTest extends BaseMultiVersionIntegrationSpec {
         private static JsonSchema createSchemaValidator() {
             final JsonSchemaFactory factory =
                     JsonSchemaFactory
-                            .builder(JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V201909))
+                            .builder(JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4))
                             .build()
             try {
                 return factory

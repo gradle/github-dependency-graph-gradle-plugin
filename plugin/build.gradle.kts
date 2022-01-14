@@ -47,8 +47,8 @@ tasks.withType<KotlinCompile>() {
 
 gradlePlugin {
     // Define the plugin
-    val greeting by plugins.creating {
-        id = "org.gradle.github.dependency.extractor.greeting"
+    val extractor by plugins.creating {
+        id = "org.gradle.github.dependency.extractor"
         implementationClass = "org.gradle.github.dependency.extractor.GithubDependencyExtractorPlugin"
     }
 }

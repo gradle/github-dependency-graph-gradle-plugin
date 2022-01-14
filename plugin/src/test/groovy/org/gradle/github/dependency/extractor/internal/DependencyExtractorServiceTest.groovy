@@ -17,15 +17,29 @@ class DependencyExtractorServiceTest extends Specification {
         project.getDependencies().add(testConfiguration.getName(), "junit:junit:4.12")
         when:
         ResolvedConfiguration resolvedConfiguration = testConfiguration.getResolvedConfiguration()
-        def gitHubDependencies = DependencyExtractorService.extractDependenciesFromResolvedComponentResult(
-                testConfiguration.incoming.resolutionResult.root,
-                GitHubDependency.Relationship.direct
-        )
-        assert gitHubDependencies.size() == 2
-        def gitHubDependency = gitHubDependencies.get(0)
+        def gitHubDependencies =
+                DependencyExtractorService.extractDependenciesFromResolvedComponentResult(
+                        testConfiguration.incoming.resolutionResult.root,
+                        GitHubDependency.Relationship.direct,
+                        { null }
+                )
         then:
-        gitHubDependency.purl.toString() == "pkg:maven/junit/junit@4.12"
-        gitHubDependency.relationship == GitHubDependency.Relationship.direct
-        gitHubDependency.dependencies == ["pkg:maven/org.hamcrest/hamcrest-core@1.3"]
+        gitHubDependencies.size() == 2
+        GitHubDependency junitDependency =
+                gitHubDependencies
+                        .find { it.purl.toString() == "pkg:maven/junit/junit@4.12" }
+        verifyAll(junitDependency) {
+            purl.toString() == "pkg:maven/junit/junit@4.12"
+            relationship == GitHubDependency.Relationship.direct
+            dependencies == ["pkg:maven/org.hamcrest/hamcrest-core@1.3"]
+        }
+        GitHubDependency hamcrestDependency =
+                gitHubDependencies
+                        .find { it.purl.toString() == "pkg:maven/org.hamcrest/hamcrest-core@1.3" }
+        verifyAll(hamcrestDependency) {
+            purl.toString() == "pkg:maven/org.hamcrest/hamcrest-core@1.3"
+            relationship == GitHubDependency.Relationship.indirect
+            dependencies == []
+        }
     }
 }

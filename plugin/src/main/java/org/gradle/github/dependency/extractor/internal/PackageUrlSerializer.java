@@ -8,7 +8,7 @@ import com.github.packageurl.PackageURL;
 import java.io.IOException;
 
 /**
- * Must be written in Java. Shadow Jar relocation doesn't support Kotlin Reflection.
+ * @implNote Must be written in Java. Shadow Jar relocation doesn't support Kotlin Reflection.
  */
 class PackageUrlSerializer extends StdSerializer<PackageURL> {
 

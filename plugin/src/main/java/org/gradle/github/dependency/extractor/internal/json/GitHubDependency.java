@@ -9,6 +9,9 @@ import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 
+/**
+ * @implNote Must be written in Java. Shadow Jar relocation doesn't support Kotlin Reflection.
+ */
 public class GitHubDependency {
     private final PackageURL purl;
     private final Relationship relationship;

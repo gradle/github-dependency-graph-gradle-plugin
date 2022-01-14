@@ -154,6 +154,71 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
         ":b:validate"  | false
     }
 
+    def "multi-project build where one project depends upon another when compiling"(String taskInvocation) {
+        given:
+        multiProjectBuild("parent", ["a", "b"]) {
+            List<BuildTestFile> projects = []
+            projects.add project("a").tap {
+                buildFile """
+                apply plugin: 'java-library'
+                dependencies {
+                    api 'org.test-published:foo:1.0'    
+                }
+                """
+            }
+            projects.add project("b").tap {
+                buildFile """
+                apply plugin: 'java'
+                dependencies {
+                    implementation project(':a')
+                }
+                """
+            }
+            projects.forEach {
+                setupBuildFile(it)
+            }
+        }
+        when:
+        succeeds(taskInvocation)
+
+        then:
+        def aCompileClasspath = jsonRepositorySnapshot(project: ":a", configuration: "compileClasspath")
+        def aCompileClasspathFile = aCompileClasspath.file as Map
+        aCompileClasspathFile.source_location == "a/build.gradle"
+        def aClasspathResolved = aCompileClasspath.resolved as Map
+        def aTestFoo = aClasspathResolved[fooPurl] as Map
+        verifyAll(aTestFoo) {
+            purl == this.fooPurl
+            relationship == "direct"
+            dependencies == []
+        }
+        def bCompileClasspath = jsonRepositorySnapshot(project: ":b", configuration: "compileClasspath")
+        def bCompileClasspathFile = bCompileClasspath.file as Map
+        bCompileClasspathFile.source_location == "b/build.gradle"
+        def bClasspathResolved = bCompileClasspath.resolved as Map
+        def bTestFoo = bClasspathResolved[fooPurl] as Map
+        verifyAll(bTestFoo) {
+            purl == this.fooPurl
+            relationship == "indirect"
+            dependencies == []
+        }
+        def aTestProjectPurl = "pkg:maven/org.test/a@1.0"
+        def aTestProject = bClasspathResolved[aTestProjectPurl] as Map
+        verifyAll(aTestProject) {
+            purl == aTestProjectPurl
+            relationship == "direct"
+            dependencies == [this.fooPurl]
+        }
+        where:
+        // Running just the 'validate' task on 'b' will not implicitly cause 'a' to be resolved.
+        // This is because the configuration 'runtimeClasspath' on 'b' relies upon the 'runtimeElements' of 'a',
+        // not the 'runtimeClasspath'. The 'runtimeElements' configuration is not itself resolvable.
+        // https://docs.gradle.org/current/userguide/java_library_plugin.html#sec:java_library_configurations_graph
+        taskInvocation | _
+        "classes"      | _
+        ":b:classes"   | _
+    }
+
     def "project with buildSrc"() {
         given:
         multiProjectBuild("parent", []) {

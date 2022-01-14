@@ -65,6 +65,41 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         }
     }
 
+    def "build with single dependency compiled & built"() {
+        given:
+        def foo = mavenRepo.module("org.test", "foo", "1.0").publish()
+        def fooPurl = purlFor(foo)
+        singleProjectBuildWithDependencies """
+        dependencies {
+            implementation "org.test:foo:1.0"
+        }
+        """
+        when:
+        succeeds("build")
+
+        then:
+        def runtimeClasspathManifest = jsonRepositorySnapshot(configuration: "compileClasspath")
+        verifyAll {
+            def file = runtimeClasspathManifest.file as Map
+            file.source_location == "build.gradle"
+            def resolved = runtimeClasspathManifest.resolved as Map
+            def testFoo = resolved[fooPurl]
+            testFoo instanceof Map
+            verifyAll(testFoo as Map) {
+                purl == fooPurl
+                relationship == "direct"
+                dependencies == []
+            }
+        }
+        def annotationProcessorManifest = jsonRepositorySnapshot(configuration: "annotationProcessor")
+        verifyAll {
+            def file = annotationProcessorManifest.file as Map
+            file.source_location == "build.gradle"
+            def resolved = annotationProcessorManifest.resolved as Map
+            resolved.isEmpty()
+        }
+    }
+
     def "build with two dependencies"() {
         given:
         def foo = mavenRepo.module("org.test", "foo", "1.0").publish()

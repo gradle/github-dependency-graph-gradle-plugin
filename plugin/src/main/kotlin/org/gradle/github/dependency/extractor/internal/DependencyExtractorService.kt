@@ -120,6 +120,7 @@ abstract class DependencyExtractorService :
                 GitHubDependency.Relationship.direct,
                 repositoryLookup::doLookup
             )
+        // Feel free to change this. This is free-form and has no spec associated with it.
         val metaData = mapOf(
             "project_path" to details.projectPath,
             "configuration" to details.configurationName,

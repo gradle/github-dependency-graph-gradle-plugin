@@ -18,15 +18,14 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        java-version: ${{ fromJson(needs.build-matrix.outputs.version_matrix) }}
+        java_version: ${{ fromJson(needs.build-matrix.outputs.version_matrix) }}
     runs-on: ${{ matrix.os }}
-
     steps:
     - uses: actions/checkout@v2
     - name: Set up JDK
       uses: actions/setup-java@v2
       with:
-        java-version: ${{ matrix.java-version }}
+        java-version: ${{ matrix.java_version }}
     - name: Setup Gradle
       uses: gradle/gradle-build-action@v2
       with:

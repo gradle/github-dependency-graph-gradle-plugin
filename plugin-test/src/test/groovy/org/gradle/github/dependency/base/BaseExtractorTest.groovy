@@ -7,6 +7,7 @@ import groovy.json.JsonSlurper
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import groovy.transform.Memoized
+import org.gradle.api.JavaVersion
 import org.gradle.github.dependency.extractor.fixtures.SimpleGradleExecuter
 import org.gradle.github.dependency.fixture.TestConfig
 import org.gradle.integtests.fixtures.TargetCoverage
@@ -19,7 +20,11 @@ import java.util.stream.Collectors
 @TargetCoverage({ getTestedGradleVersions() })
 abstract class BaseExtractorTest extends BaseMultiVersionIntegrationSpec {
     static List<String> getTestedGradleVersions() {
-        return [GradleVersion.current(), GradleVersion.version("5.0")].collect { it.version }
+        List<GradleVersion> versions = [GradleVersion.current()]
+        if (JavaVersion.current() <= JavaVersion.VERSION_11) {
+            versions.add(GradleVersion.version("5.0"))
+        }
+        return versions.collect { it.version }
     }
 
     private static final TestConfig TEST_CONFIG = new TestConfig()

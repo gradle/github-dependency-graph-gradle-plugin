@@ -10,27 +10,37 @@ jobs:
   build-matrix:
     runs-on: ubuntu-latest
     steps: # https://michaelheap.com/dynamic-matrix-generation-github-actions/
-    - id: set-matrix
-      run: echo "::set-output name=version_matrix::$(curl https://endoflife.date/api/java.json | jq -c '[.[] | select(.eol > (now | strftime("%Y-%m-%d"))) | .cycle]' | sed 's/ //g')"
-    - name: verify-matrix
-      run: echo "The selected java versions are ${{ steps.set-matrix.outputs.version_matrix }}"
+      - id: set-matrix
+        run: echo "::set-output name=version_matrix::$(curl https://endoflife.date/api/java.json | jq -c '[.[] | select(.eol > (now | strftime("%Y-%m-%d"))) | .cycle]' | sed 's/ //g')"
+      - name: verify-matrix
+        run: echo "The selected java versions are ${{ steps.set-matrix.outputs.version_matrix }}"
     outputs:
       version_matrix: ${{ steps.set-matrix.outputs.version_matrix }}
   build:
     needs: build-matrix
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
         java_version: ${{ fromJson(needs.build-matrix.outputs.version_matrix) }}
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up JDK
-      uses: actions/setup-java@v2
-      with:
-        java-version: ${{ matrix.java_version }}
-        distribution: temurin
-    - name: Setup Gradle
-      uses: gradle/gradle-build-action@v2
-      with:
-        arguments: build
+      - uses: actions/checkout@v2
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          java-version: ${{ matrix.java_version }}
+          distribution: temurin
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: build
+      - name: Publish Unit Test Results (macos & windows)
+        uses: EnricoMi/publish-unit-test-result-action/composite@v1
+        if: ${{ matrix.os }} == 'macos-latest' || ${{ matrix.os }} == 'windows-latest'
+        with:
+          files: '**/test-results/**/*.xml'
+      - name: Publish Unit Test Results (linux)
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        if: ${{ matrix.os }} == 'ubuntu-latest'
+        with:
+          files: '**/test-results/**/*.xml'

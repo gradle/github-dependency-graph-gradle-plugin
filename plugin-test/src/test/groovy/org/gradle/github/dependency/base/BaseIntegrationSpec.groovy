@@ -1,5 +1,6 @@
 package org.gradle.github.dependency.base
 
+import org.gradle.api.JavaVersion
 import org.gradle.github.dependency.extractor.fixtures.SimpleGradleExecuter
 import org.gradle.integtests.fixtures.CompiledLanguage
 import org.gradle.integtests.fixtures.build.BuildTestFile
@@ -22,6 +23,13 @@ class BaseIntegrationSpec extends Specification {
 
     private SimpleGradleExecuter executer
     private BuildResult result
+
+    def setup() {
+        if (JavaVersion.current() == JavaVersion.VERSION_1_8 &&
+                System.getProperty("os.name").containsIgnoreCase("windows")) {
+            temporaryFolder.suppressCleanupErrors()
+        }
+    }
 
     SimpleGradleExecuter getExecuter() {
         if (executer == null) {

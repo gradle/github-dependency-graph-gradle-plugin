@@ -49,7 +49,7 @@ tasks.withType<Test>().configureEach {
 
 abstract class WriteConfigTask : DefaultTask() {
     @get:Input
-    abstract val properties: MapProperty<String, Any>
+    abstract val properties: MapProperty<String, String>
 
     @get:OutputDirectory
     abstract val generatedResourceDirectory: DirectoryProperty
@@ -57,6 +57,6 @@ abstract class WriteConfigTask : DefaultTask() {
     @TaskAction
     fun writeConfig() {
         val configFile = generatedResourceDirectory.file("test-config.properties").get().asFile
-        configFile.writeText(properties.get().map { "${it.key}=${it.value}" }.joinToString("\n"))
+        configFile.writeText(properties.get().map { "${it.key}=${it.value.replace('\\', '/')}" }.joinToString("\n"))
     }
 }

@@ -116,7 +116,6 @@ abstract class BaseExtractorTest extends BaseMultiVersionIntegrationSpec {
             this.manifestFile = manifestFile
         }
 
-        @Memoized
         protected Object jsonRepositorySnapshot() {
             def jsonSlurper = new JsonSlurper()
             println(manifestFile.text)

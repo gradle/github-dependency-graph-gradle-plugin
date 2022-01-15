@@ -43,12 +43,13 @@ abstract class BaseExtractorTest extends BaseMultiVersionIntegrationSpec {
     @CompileDynamic
     protected void applyExtractorPlugin() {
         File pluginJar = TEST_CONFIG.asFile("extractorPlugin.jar.path")
+        String cleanedAbsolutePath = pluginJar.absolutePath.replace('\\',  '/')
         assert (pluginJar.exists())
         file("init.gradle") << """
         import org.gradle.github.dependency.extractor.GithubDependencyExtractorPlugin
         initscript {
             dependencies {
-                classpath files("${pluginJar.absolutePath}")
+                classpath files('${cleanedAbsolutePath}')
             }
         }
         apply plugin: GithubDependencyExtractorPlugin

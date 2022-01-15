@@ -33,10 +33,10 @@ jobs:
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: build
+          arguments: build --scan
       - name: Publish Unit Test Results (macos & windows)
         uses: EnricoMi/publish-unit-test-result-action/composite@v1
-        if: matrix.os == 'macos-latest' || matrix.os == 'windows-latest'
+        if: (matrix.os == 'macos-latest' || matrix.os == 'windows-latest') && ${{ failure() }}
         with:
           files: '**/test-results/**/*.xml'
       - name: Publish Unit Test Results (linux)
@@ -45,6 +45,7 @@ jobs:
         with:
           files: '**/test-results/**/*.xml'
       - uses: actions/upload-artifact@v2
+        if: ${{ failure() }}
         with:
           name: test-results ${{ matrix.os }} java ${{ matrix.java_version }}
           path: '**/build/reports/tests/**'

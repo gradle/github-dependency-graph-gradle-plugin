@@ -1,0 +1,11 @@
+#!/bin/sh
+
+export GITHUB_JOB="Build"
+export GITHUB_RUN_NUMBER="42"
+export GITHUB_REF="refs/heads/master"
+export GITHUB_SHA=$( git rev-parse HEAD )
+export GITHUB_WORKSPACE=$( pwd )
+export GITHUB_REPOSITORY="gradle/github-dependency-extractor"
+
+# invoke whatever Gradle task you want to test here
+./gradlew -S --no-configuration-cache -I plugin-self-test.init.gradle :plugin-test:classes --no-scan

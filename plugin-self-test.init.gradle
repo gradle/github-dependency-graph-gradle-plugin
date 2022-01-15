@@ -1,0 +1,21 @@
+import org.gradle.github.dependency.uploader.GithubDependencyUploaderPlugin
+initscript {
+    def pluginFiles = fileTree("plugin/build/libs") {
+        include "**/*.jar"
+        exclude "*-test-fixtures.jar"
+    }
+    File pluginFile
+    try {
+        pluginFile = pluginFiles.singleFile
+    } catch (IllegalStateException e) {
+        if (pluginFiles.iterator().hasNext()) {
+            throw new GradleException("Multiple plugins found in build/libs. Run `clean build` task", e)
+        } else {
+            throw new GradleException("No plugins found in build/libs. Run `build` task", e)
+        }
+    }
+    dependencies {
+        classpath files(pluginFile)
+    }
+}
+apply plugin: GithubDependencyUploaderPlugin

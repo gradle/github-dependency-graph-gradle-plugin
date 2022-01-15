@@ -47,8 +47,9 @@ jobs:
         with:
           check_name: Unit Test Results ${{ matrix.os }} java ${{ matrix.java_version }}
           files: '**/test-results/**/*.xml'
-      - uses: actions/upload-artifact@v2
+      - name: Upload Reports
+        uses: actions/upload-artifact@v2
         if: ${{ failure() }}
         with:
-          name: test-results ${{ matrix.os }} java ${{ matrix.java_version }}
-          path: '**/build/reports/tests/**'
+          name: reports ${{ matrix.os }} java ${{ matrix.java_version }}
+          path: '**/build/reports/**'

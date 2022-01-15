@@ -42,11 +42,15 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           arguments: --no-configuration-cache -S -I plugin-self-test.init.gradle :plugin:dependencies
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Self Test :plugin-test
         uses: gradle/gradle-build-action@v2
         with:
           arguments: --no-configuration-cache -S -I plugin-self-test.init.gradle :plugin-test:dependencies
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish Unit Test Results (macos & windows)
         uses: EnricoMi/publish-unit-test-result-action/composite@v1

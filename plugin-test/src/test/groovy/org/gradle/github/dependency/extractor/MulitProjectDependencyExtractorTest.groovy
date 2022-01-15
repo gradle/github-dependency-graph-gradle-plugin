@@ -4,6 +4,7 @@ import org.gradle.github.dependency.base.BaseExtractorTest
 import org.gradle.integtests.fixtures.build.BuildTestFile
 import org.gradle.integtests.fixtures.compatibility.MultiVersionTest
 import org.gradle.test.fixtures.maven.MavenModule
+import spock.lang.IgnoreIf
 
 @MultiVersionTest
 class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
@@ -267,6 +268,10 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
         }
     }
 
+    /**
+     * This test is failing when executing on GitHub Actions where the environment variable is pre-set
+     */
+    @IgnoreIf({ System.getenv("GITHUB_SHA") != null })
     def "project leveraging included builds"(boolean includedBuildTaskDependency, boolean resolveIncludedBuild) {
         given:
         executer.enableDebug()

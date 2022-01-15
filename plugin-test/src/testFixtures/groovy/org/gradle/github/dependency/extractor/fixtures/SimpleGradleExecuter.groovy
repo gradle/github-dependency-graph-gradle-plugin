@@ -146,6 +146,12 @@ class SimpleGradleExecuter {
         if (!environmentVars.isEmpty()) {
             if (debug) {
                 environmentVars.forEach { key, value ->
+                    if (System.getenv(key) != null) {
+                        throw new RuntimeException(
+                                "Running in debug mode with environment variable $key from host system already set is unsupported.\n" +
+                                        "\tDid you forget to remove an `enableDebug` from your code?"
+                        )
+                    }
                     args.add("-Porg.gradle.github.internal.debug.env.$key=$value".toString())
                 }
             } else {

@@ -25,8 +25,8 @@ class BaseIntegrationSpec extends Specification {
     private BuildResult result
 
     def setup() {
-        if (JavaVersion.current() == JavaVersion.VERSION_1_8 &&
-                System.getProperty("os.name").containsIgnoreCase("windows")) {
+        if (System.getProperty("os.name").containsIgnoreCase("windows")) {
+            // Suppress file cleanup check on windows
             temporaryFolder.suppressCleanupErrors()
         }
     }

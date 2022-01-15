@@ -18,3 +18,14 @@ To test this plugin, run the following task:
 ```shell
 ./gradlew test
 ```
+
+Self testing this plugin is also possible.
+In order to do this, you'll need a
+[GitHub API token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
+set to the environment variable `GITHUB_TOKEN`.
+
+To run the self-test, run the following:
+```shell
+./gradlew build
+./plugin-self-test-local
+```

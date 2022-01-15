@@ -17,6 +17,7 @@ jobs:
     outputs:
       version_matrix: ${{ steps.set-matrix.outputs.version_matrix }}
   build:
+    needs: build-matrix
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]

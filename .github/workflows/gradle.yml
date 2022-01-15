@@ -1,0 +1,33 @@
+name: Java CI with Gradle
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-matrix:
+    runs-on: ubuntu-latest
+    steps: # https://michaelheap.com/dynamic-matrix-generation-github-actions/
+    - id: set-matrix
+      run: echo "::set-output name=version_matrix::$(curl https://endoflife.date/api/java.json | jq -c '[.[] | select(.eol > (now | strftime("%Y-%m-%d"))) | .cycle]')"
+    outputs:
+      version_matrix: ${{ steps.set-matrix.outputs.version_matrix }}
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        java-version: ${{ fromJson(needs.build-matrix.outputs.version_matrix) }}
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up JDK ${{ matrix.java-version }}
+      uses: actions/setup-java@v2
+      with:
+        java-version: ${{ matrix.java-version }}
+    - name: Setup Gradle
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: build

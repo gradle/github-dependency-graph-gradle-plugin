@@ -1,6 +1,6 @@
-package org.gradle.github.dependency.extractor
+package org.gradle.github.dependency
 
-import org.gradle.github.dependency.extractor.fixture.TestConfig
+import org.gradle.github.dependency.fixture.TestConfig
 import spock.lang.Specification
 
 class SanityTest extends Specification {

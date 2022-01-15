@@ -1,7 +1,7 @@
 package org.gradle.github.dependency.extractor.internal
 
+import org.gradle.api.logging.Logging
 import org.gradle.github.dependency.extractor.internal.json.GitHubRepositorySnapshot
-import org.slf4j.LoggerFactory
 import java.io.File
 
 class DependencyFileWriter
@@ -10,14 +10,21 @@ private constructor(
     private val loggerWarning: () -> Unit
 ) {
 
-    fun writeDependencyManifest(graph: GitHubRepositorySnapshot) {
+    private var writtenFile: Boolean = false
+
+    fun writeDependencyManifest(graph: GitHubRepositorySnapshot): File {
+        if (writtenFile) {
+            return manifestFile
+        }
         loggerWarning()
         manifestFile.parentFile.mkdirs()
         manifestFile.writeText(JacksonJsonSerializer.serializeToJson(graph))
+        writtenFile = true
+        return manifestFile
     }
 
     companion object {
-        private val LOGGER = LoggerFactory.getLogger(DependencyFileWriter::class.java)
+        private val LOGGER = Logging.getLogger(DependencyFileWriter::class.java)
 
         fun create(buildDirectory: File): DependencyFileWriter =
             create(buildDirectory) {

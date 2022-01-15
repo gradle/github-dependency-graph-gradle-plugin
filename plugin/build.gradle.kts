@@ -27,8 +27,9 @@ dependencies {
         because("kotlin std lib is bundled with Gradle. 2.12.3 because higher versions depend upon Kotlin 1.5")
     }
     shadowImplementation("com.github.package-url:packageurl-java:1.4.1")
+    shadowImplementation(libs.apache.httpclient)
     // Use JUnit Jupiter for testing.
-    testImplementation("org.junit.jupiter:junit-jupiter:5.8.1")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.8.2")
     testImplementation(libs.spock.core)
 }
 
@@ -50,6 +51,10 @@ gradlePlugin {
     val extractor by plugins.creating {
         id = "org.gradle.github.dependency.extractor"
         implementationClass = "org.gradle.github.dependency.extractor.GithubDependencyExtractorPlugin"
+    }
+    val uploader by plugins.creating {
+        id = "org.gradle.dependency.uploader"
+        implementationClass = "org.gradle.github.dependency.uploader.GithubDependencyUploaderPlugin"
     }
 }
 
@@ -132,6 +137,9 @@ configurations.runtimeElements.get().outgoing.artifact(tasks.shadowJar)
 val shadowJarConfig = configurations.create("shadowJar") {
     isCanBeConsumed = true
     isCanBeResolved = false
+}
+repositories {
+    mavenCentral()
 }
 
 artifacts {

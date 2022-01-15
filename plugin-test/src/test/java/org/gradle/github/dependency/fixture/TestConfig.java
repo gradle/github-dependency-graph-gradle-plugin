@@ -1,4 +1,4 @@
-package org.gradle.github.dependency.extractor.fixture;
+package org.gradle.github.dependency.fixture;
 
 import java.io.File;
 import java.io.IOException;

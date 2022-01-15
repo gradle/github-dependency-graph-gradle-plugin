@@ -1,6 +1,6 @@
 package org.gradle.github.dependency.extractor
 
-import org.gradle.github.dependency.extractor.base.BaseExtractorTest
+import org.gradle.github.dependency.base.BaseExtractorTest
 import org.gradle.integtests.fixtures.compatibility.MultiVersionTest
 
 @MultiVersionTest

@@ -1,4 +1,4 @@
-package org.gradle.github.dependency.extractor.base
+package org.gradle.github.dependency.base
 
 import org.gradle.github.dependency.extractor.fixtures.SimpleGradleExecuter
 import org.gradle.integtests.fixtures.CompiledLanguage

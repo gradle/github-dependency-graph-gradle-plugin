@@ -4,17 +4,16 @@
 package org.gradle.github.dependency.extractor
 
 import org.gradle.api.Plugin
-import org.gradle.api.internal.GradleInternal
 import org.gradle.api.invocation.Gradle
-import org.gradle.api.model.ObjectFactory
+import org.gradle.api.logging.Logging
 import org.gradle.api.provider.Provider
-import org.gradle.api.provider.ProviderFactory
 import org.gradle.github.dependency.extractor.internal.DependencyExtractorService
 import org.gradle.github.dependency.extractor.internal.DependencyExtractorService_6_1
+import org.gradle.github.dependency.util.EnvironmentVariableLoader
+import org.gradle.github.dependency.util.PluginCompanionUtils
+import org.gradle.github.dependency.util.service
 import org.gradle.internal.build.event.BuildEventListenerRegistryInternal
-import org.gradle.internal.operations.BuildOperationListenerManager
 import org.gradle.util.GradleVersion
-import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -24,15 +23,8 @@ import java.nio.file.Paths
  */
 @Suppress("unused")
 class GithubDependencyExtractorPlugin : Plugin<Gradle> {
-    private companion object {
-        private val LOGGER = LoggerFactory.getLogger(GithubDependencyExtractorPlugin::class.java)
-
-        /**
-         * Allows reading the environment variables from parameters.
-         * This is here purely for debugging purposes.
-         * The tooling API doesn't allow environment variables to be read when running in debug mode.
-         */
-        private const val ENV_VIA_PARAMETER_PREFIX = "org.gradle.github.internal.debug.env."
+    private companion object : PluginCompanionUtils() {
+        private val LOGGER = Logging.getLogger(GithubDependencyExtractorPlugin::class.java)
 
         const val ENV_GITHUB_JOB = "GITHUB_JOB"
         const val ENV_GITHUB_RUN_NUMBER = "GITHUB_RUN_NUMBER"
@@ -43,25 +35,14 @@ class GithubDependencyExtractorPlugin : Plugin<Gradle> {
          * Environment variable should be set to the workspace directory that the Git repository is checked out in.
          */
         const val ENV_GITHUB_WORKSPACE = "GITHUB_WORKSPACE"
-
-        fun throwEnvironmentVariableMissingException(variable: String): Nothing {
-            throw IllegalStateException("The environment variable '$variable' must be set, but it was not.")
-        }
-
-        private inline fun <reified T> Gradle.service(): T =
-            (this as GradleInternal).services.get(T::class.java)
-
-        private inline val Gradle.objectFactory: ObjectFactory
-            get() = service()
-
-        private inline val Gradle.providerFactory: ProviderFactory
-            get() = service()
     }
 
+    internal lateinit var dependencyExtractorServiceProvider: Provider<out DependencyExtractorService>
+
     override fun apply(gradle: Gradle) {
-        println("Applying Plugin: GithubDependencyExtractorPlugin")
+        LOGGER.lifecycle("Applying Plugin: GithubDependencyExtractorPlugin")
         if (gradle.parent != null) {
-            println("Not applying plugin to included build")
+            LOGGER.lifecycle("Not applying plugin to included build")
             return
         }
 
@@ -73,19 +54,19 @@ class GithubDependencyExtractorPlugin : Plugin<Gradle> {
         }
 
         // Create the service
-        val extractorServiceProvider = applicatorStrategy.createExtractorService(gradle)
+        dependencyExtractorServiceProvider = applicatorStrategy.createExtractorService(gradle)
 
         gradle.rootProject { project ->
-            extractorServiceProvider
+            dependencyExtractorServiceProvider
                 .get()
                 .setRootProjectBuildDirectory(project.buildDir)
         }
 
         // Register the service to listen for Build Events
-        applicatorStrategy.registerExtractorListener(gradle, extractorServiceProvider)
+        applicatorStrategy.registerExtractorListener(gradle, dependencyExtractorServiceProvider)
 
         // Register the shutdown hook that should execute at the completion of the Gradle build.
-        applicatorStrategy.registerExtractorServiceShutdown(gradle, extractorServiceProvider)
+        applicatorStrategy.registerExtractorServiceShutdown(gradle, dependencyExtractorServiceProvider)
     }
 
     /**
@@ -107,13 +88,7 @@ class GithubDependencyExtractorPlugin : Plugin<Gradle> {
             extractorServiceProvider: Provider<out DependencyExtractorService>
         )
 
-        object DefaultPluginApplicatorStrategy : PluginApplicatorStrategy {
-
-            private fun Gradle.loadEnvironmentVariable(envName: String): String {
-                return System.getenv()[envName]
-                    ?: startParameter.projectProperties[ENV_VIA_PARAMETER_PREFIX + envName]
-                    ?: throwEnvironmentVariableMissingException(envName)
-            }
+        object DefaultPluginApplicatorStrategy : PluginApplicatorStrategy, EnvironmentVariableLoader.LoaderDefault {
 
             override fun createExtractorService(
                 gradle: Gradle
@@ -145,7 +120,7 @@ class GithubDependencyExtractorPlugin : Plugin<Gradle> {
                 extractorServiceProvider: Provider<out DependencyExtractorService>
             ) {
                 gradle
-                    .service<BuildOperationListenerManager>()
+                    .buildOperationListenerManager
                     .addListener(extractorServiceProvider.get())
             }
 
@@ -155,27 +130,21 @@ class GithubDependencyExtractorPlugin : Plugin<Gradle> {
             ) {
                 gradle.buildFinished {
                     extractorServiceProvider.get().close()
-                    gradle.service<BuildOperationListenerManager>()
+                    gradle
+                        .buildOperationListenerManager
                         .removeListener(extractorServiceProvider.get())
                 }
             }
         }
 
         @Suppress("ClassName")
-        object PluginApplicatorStrategy_6_1 : PluginApplicatorStrategy {
-            private const val SERVICE_NAME = "dependencyExtractorService"
-
-            private fun Gradle.loadEnvironmentVariable(envName: String) =
-                providerFactory.run {
-                    environmentVariable(envName)
-                        .orElse(gradleProperty(ENV_VIA_PARAMETER_PREFIX + envName))
-                        .orElse(provider { throwEnvironmentVariableMissingException(envName) })
-                }
+        object PluginApplicatorStrategy_6_1 : PluginApplicatorStrategy, EnvironmentVariableLoader.Loader_6_1 {
+            private const val SERVICE_NAME = "gitHubDependencyExtractorService"
 
             override fun createExtractorService(
                 gradle: Gradle
             ): Provider<out DependencyExtractorService> {
-                val objectFactory = gradle.service<ObjectFactory>()
+                val objectFactory = gradle.objectFactory
                 val gitWorkspaceEnvVar =
                     gradle
                         .loadEnvironmentVariable(ENV_GITHUB_WORKSPACE)

@@ -2,7 +2,6 @@ package org.gradle.github.dependency.extractor.internal
 
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
-import org.gradle.api.provider.Provider
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
 import java.nio.file.Path
@@ -12,12 +11,12 @@ abstract class DependencyExtractorService_6_1 :
     DependencyExtractorService(),
     BuildService<DependencyExtractorService_6_1.Parameters> {
 
-    abstract class Parameters : BuildServiceParameters {
-        abstract val gitHubJobName: Property<String>
-        abstract val gitHubRunNumber: Property<String>
-        abstract val gitSha: Property<String>
-        abstract val gitRef: Property<String>
-        abstract val gitWorkspaceDirectory: DirectoryProperty
+    interface Parameters : BuildServiceParameters {
+        val gitHubJobName: Property<String>
+        val gitHubRunNumber: Property<String>
+        val gitSha: Property<String>
+        val gitRef: Property<String>
+        val gitWorkspaceDirectory: DirectoryProperty
     }
 
     override val gitHubJobName: String

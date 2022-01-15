@@ -179,8 +179,11 @@ abstract class DependencyExtractorService :
         }
     }
 
-    override fun close() {
+    fun writeAndGetSnapshotFile(): File =
         fileWriter.writeDependencyManifest(gitHubRepositorySnapshotBuilder.build())
+
+    override fun close() {
+        writeAndGetSnapshotFile()
     }
 
     /**

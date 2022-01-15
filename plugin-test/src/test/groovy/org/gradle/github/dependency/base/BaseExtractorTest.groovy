@@ -1,4 +1,4 @@
-package org.gradle.github.dependency.extractor.base
+package org.gradle.github.dependency.base
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -7,8 +7,8 @@ import groovy.json.JsonSlurper
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import groovy.transform.Memoized
-import org.gradle.github.dependency.extractor.fixture.TestConfig
 import org.gradle.github.dependency.extractor.fixtures.SimpleGradleExecuter
+import org.gradle.github.dependency.fixture.TestConfig
 import org.gradle.integtests.fixtures.TargetCoverage
 import org.gradle.internal.hash.Hashing
 import org.gradle.test.fixtures.file.TestFile
@@ -166,6 +166,8 @@ abstract class BaseExtractorTest extends BaseMultiVersionIntegrationSpec {
         final String ref = "refs/head/feature/test" + UUID.randomUUID().toString()
         final String sha = fakeSha()
         final String workspace
+        final String gitHubRepository = "gradle/github-dependency-extractor"
+        final String gitHubToken = UUID.randomUUID().toString()
 
         TestEnvironmentVars(TestFile testDirectory) {
             workspace = testDirectory.absolutePath
@@ -178,6 +180,8 @@ abstract class BaseExtractorTest extends BaseMultiVersionIntegrationSpec {
                     "GITHUB_REF"       : ref,
                     "GITHUB_SHA"       : sha,
                     "GITHUB_WORKSPACE" : workspace,
+                    "GITHUB_REPOSITORY": gitHubRepository,
+                    "GITHUB_TOKEN"     : gitHubToken
             ]
         }
 

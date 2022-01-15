@@ -54,21 +54,21 @@ jobs:
 
       - name: Publish Unit Test Results (macos & windows)
         uses: EnricoMi/publish-unit-test-result-action/composite@v1
-        if: (matrix.os == 'macos-latest' || matrix.os == 'windows-latest') && ${{ failure() }}
+        if: (matrix.os == 'macos-latest' || matrix.os == 'windows-latest') && failure()
         with:
           check_name: Unit Test Results ${{ matrix.os }} java ${{ matrix.java_version }}
           files: '**/test-results/**/*.xml'
 
       - name: Publish Unit Test Results (linux)
         uses: EnricoMi/publish-unit-test-result-action@v1
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-latest' && failure()
         with:
           check_name: Unit Test Results ${{ matrix.os }} java ${{ matrix.java_version }}
           files: '**/test-results/**/*.xml'
 
       - name: Upload Reports
         uses: actions/upload-artifact@v2
-        if: ${{ failure() }}
+        if: always()
         with:
           name: reports ${{ matrix.os }} java ${{ matrix.java_version }}
           path: '**/build/reports/**'

@@ -12,6 +12,8 @@ jobs:
     steps: # https://michaelheap.com/dynamic-matrix-generation-github-actions/
     - id: set-matrix
       run: echo "::set-output name=version_matrix::$(curl https://endoflife.date/api/java.json | jq -c '[.[] | select(.eol > (now | strftime("%Y-%m-%d"))) | .cycle]')"
+    - name: verify-matrix
+      run: echo "The selected java versions are ${{ steps.set-matrix.outputs.version_matrix }}"
     outputs:
       version_matrix: ${{ steps.set-matrix.outputs.version_matrix }}
   build:

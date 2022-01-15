@@ -19,6 +19,7 @@ jobs:
   build:
     needs: build-matrix
     strategy:
+      fail-fast: false
       matrix:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
         java_version: ${{ fromJson(needs.build-matrix.outputs.version_matrix) }}
@@ -30,7 +31,7 @@ jobs:
         with:
           java-version: ${{ matrix.java_version }}
           distribution: temurin
-      - name: Setup Gradle
+      - name: Execute Gradle Build
         uses: gradle/gradle-build-action@v2
         with:
           arguments: build --scan

@@ -6,6 +6,7 @@ import com.networknt.schema.*
 import groovy.json.JsonSlurper
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
+import groovy.transform.Memoized
 import org.gradle.api.JavaVersion
 import org.gradle.github.dependency.extractor.fixtures.SimpleGradleExecuter
 import org.gradle.github.dependency.fixture.TestConfig
@@ -115,6 +116,7 @@ abstract class BaseExtractorTest extends BaseMultiVersionIntegrationSpec {
             this.manifestFile = manifestFile
         }
 
+        @Memoized
         protected Object jsonRepositorySnapshot() {
             def jsonSlurper = new JsonSlurper()
             println(manifestFile.text)

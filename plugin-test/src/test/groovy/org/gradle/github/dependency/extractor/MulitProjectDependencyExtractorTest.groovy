@@ -270,7 +270,6 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
 
     def "project leveraging included builds"(boolean includedBuildTaskDependency, boolean resolveIncludedBuild) {
         given:
-        executer.enableDebug()
         multiProjectBuild("parent", []) {
             includedBuild("included-child").tap {
                 buildFile """

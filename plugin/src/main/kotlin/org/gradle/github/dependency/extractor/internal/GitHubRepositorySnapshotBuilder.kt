@@ -59,7 +59,9 @@ class GitHubRepositorySnapshotBuilder(
             GitHubManifest(
                 base = value.manifest,
                 file = projectToRelativeBuildFile[value.projectIdentifier]?.let {
-                    GitHubManifestFile(sourceLocation = it)
+                    // Cleanup the path for Windows systems
+                    val sourceLocation = it.replace('\\', '/')
+                    GitHubManifestFile(sourceLocation = sourceLocation)
                 }
             )
         }

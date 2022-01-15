@@ -36,11 +36,15 @@ jobs:
           arguments: build
       - name: Publish Unit Test Results (macos & windows)
         uses: EnricoMi/publish-unit-test-result-action/composite@v1
-        if: ${{ matrix.os }} == 'macos-latest' || ${{ matrix.os }} == 'windows-latest'
+        if: matrix.os == 'macos-latest' || matrix.os == 'windows-latest'
         with:
           files: '**/test-results/**/*.xml'
       - name: Publish Unit Test Results (linux)
         uses: EnricoMi/publish-unit-test-result-action@v1
-        if: ${{ matrix.os }} == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-latest'
         with:
           files: '**/test-results/**/*.xml'
+      - uses: actions/upload-artifact@v2
+        with:
+          name: test-results ${{ matrix.os }} java ${{ matrix.java_version }}
+          path: '**/build/reports/tests/**'

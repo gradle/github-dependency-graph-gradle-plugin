@@ -22,7 +22,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
-        java_version: ${{ fromJson(needs.build-matrix.outputs.version_matrix) }}
+        java_version: [8, 11, 17]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -51,24 +51,3 @@ jobs:
           arguments: --no-configuration-cache -S -I plugin-self-test.init.gradle :plugin-test:dependencies
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Publish Unit Test Results (macos & windows)
-        uses: EnricoMi/publish-unit-test-result-action/composite@v1
-        if: (matrix.os == 'macos-latest' || matrix.os == 'windows-latest') && failure()
-        with:
-          check_name: Unit Test Results ${{ matrix.os }} java ${{ matrix.java_version }}
-          files: '**/test-results/**/*.xml'
-
-      - name: Publish Unit Test Results (linux)
-        uses: EnricoMi/publish-unit-test-result-action@v1
-        if: matrix.os == 'ubuntu-latest' && failure()
-        with:
-          check_name: Unit Test Results ${{ matrix.os }} java ${{ matrix.java_version }}
-          files: '**/test-results/**/*.xml'
-
-      - name: Upload Reports
-        uses: actions/upload-artifact@v2
-        if: always()
-        with:
-          name: reports ${{ matrix.os }} java ${{ matrix.java_version }}
-          path: '**/build/reports/**'

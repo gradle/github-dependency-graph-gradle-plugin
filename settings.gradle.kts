@@ -7,8 +7,8 @@ pluginManagement {
     }
 }
 plugins {
-    id("com.gradle.enterprise").version("3.8.1")
-    id("io.github.gradle.gradle-enterprise-conventions-plugin").version("0.7.6")
+    id("com.gradle.enterprise").version("3.12.3")
+    id("com.gradle.common-custom-user-data-gradle-plugin").version("1.8.2")
 }
 
 dependencyResolutionManagement {

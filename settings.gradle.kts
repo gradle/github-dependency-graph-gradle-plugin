@@ -2,8 +2,8 @@ import org.gradle.api.internal.FeaturePreviews
 
 pluginManagement {
     plugins {
-        id("org.jetbrains.kotlin.jvm") version "1.7.10"
-        id("com.github.johnrengelman.shadow") version "7.1.0"
+        id("org.jetbrains.kotlin.jvm") version "1.8.10"
+        id("com.github.johnrengelman.shadow") version "8.1.0"
     }
 }
 plugins {

@@ -14,6 +14,12 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+            java-version: 17
+            distribution: temurin
+
       - name: Execute Gradle Build
         uses: gradle/gradle-build-action@v2
         with:

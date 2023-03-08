@@ -1,3 +1,4 @@
+import com.gradle.enterprise.gradleplugin.internal.extension.BuildScanExtensionWithHiddenFeatures
 import org.gradle.api.internal.FeaturePreviews
 
 pluginManagement {
@@ -42,10 +43,11 @@ dependencyResolutionManagement {
 }
 
 gradleEnterprise {
+    server = "https://ge.gradle.org"
     buildScan {
-        val buildUrl = System.getenv("BUILD_URL") ?: ""
-        if (buildUrl.isNotBlank()) {
-            link("Build URL", buildUrl)
+        publishAlways()
+        obfuscation {
+            ipAddresses { addresses -> addresses.map { _ -> "0.0.0.0" } }
         }
     }
 }

@@ -7,28 +7,38 @@ on:
     branches: [ main ]
 
 jobs:
-  build-matrix:
+  quick-check:
     runs-on: ubuntu-latest
-    steps: # https://michaelheap.com/dynamic-matrix-generation-github-actions/
-      - id: set-matrix
-        run: echo "::set-output name=version_matrix::$(curl https://endoflife.date/api/java.json | jq -c '[.[] | select(.eol > (now | strftime("%Y-%m-%d"))) | .cycle]' | sed 's/ //g')"
-      - name: verify-matrix
-        run: echo "The selected java versions are ${{ steps.set-matrix.outputs.version_matrix }}"
-    outputs:
-      version_matrix: ${{ steps.set-matrix.outputs.version_matrix }}
-  build:
-    needs: build-matrix
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ ubuntu-latest, macos-latest, windows-latest ]
-        java_version: ${{ fromJson(needs.build-matrix.outputs.version_matrix) }}
-    runs-on: ${{ matrix.os }}
+    env:
+      GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up JDK
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3
+        with:
+            java-version: 17
+            distribution: temurin
+
+      - name: Execute Gradle Build
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: -S build --scan
+
+  build:
+    needs: quick-check
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+        java_version: [8, 11, 17]
+    runs-on: ${{ matrix.os }}
+    env:
+      GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
         with:
           java-version: ${{ matrix.java_version }}
           distribution: temurin
@@ -51,24 +61,3 @@ jobs:
           arguments: --no-configuration-cache -S -I plugin-self-test.init.gradle :plugin-test:dependencies
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Publish Unit Test Results (macos & windows)
-        uses: EnricoMi/publish-unit-test-result-action/composite@v1
-        if: (matrix.os == 'macos-latest' || matrix.os == 'windows-latest') && failure()
-        with:
-          check_name: Unit Test Results ${{ matrix.os }} java ${{ matrix.java_version }}
-          files: '**/test-results/**/*.xml'
-
-      - name: Publish Unit Test Results (linux)
-        uses: EnricoMi/publish-unit-test-result-action@v1
-        if: matrix.os == 'ubuntu-latest' && failure()
-        with:
-          check_name: Unit Test Results ${{ matrix.os }} java ${{ matrix.java_version }}
-          files: '**/test-results/**/*.xml'
-
-      - name: Upload Reports
-        uses: actions/upload-artifact@v2
-        if: always()
-        with:
-          name: reports ${{ matrix.os }} java ${{ matrix.java_version }}
-          path: '**/build/reports/**'

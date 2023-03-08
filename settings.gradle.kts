@@ -1,14 +1,15 @@
+import com.gradle.enterprise.gradleplugin.internal.extension.BuildScanExtensionWithHiddenFeatures
 import org.gradle.api.internal.FeaturePreviews
 
 pluginManagement {
     plugins {
-        id("org.jetbrains.kotlin.jvm") version "1.5.32"
-        id("com.github.johnrengelman.shadow") version "7.1.0"
+        id("org.jetbrains.kotlin.jvm") version "1.8.10"
+        id("com.github.johnrengelman.shadow") version "8.1.0"
     }
 }
 plugins {
-    id("com.gradle.enterprise").version("3.8.1")
-    id("io.github.gradle.gradle-enterprise-conventions-plugin").version("0.7.6")
+    id("com.gradle.enterprise").version("3.12.3")
+    id("com.gradle.common-custom-user-data-gradle-plugin").version("1.8.2")
 }
 
 dependencyResolutionManagement {
@@ -42,10 +43,11 @@ dependencyResolutionManagement {
 }
 
 gradleEnterprise {
+    server = "https://ge.gradle.org"
     buildScan {
-        val buildUrl = System.getenv("BUILD_URL") ?: ""
-        if (buildUrl.isNotBlank()) {
-            link("Build URL", buildUrl)
+        publishAlways()
+        obfuscation {
+            ipAddresses { addresses -> addresses.map { _ -> "0.0.0.0" } }
         }
     }
 }

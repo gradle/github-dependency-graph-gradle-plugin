@@ -29,7 +29,7 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
         repositories {
             maven { url "${mavenRepo.uri}" }
         }
-        
+
         task validate {
             doLast {
                 configurations.runtimeClasspath.resolvedConfiguration.files
@@ -47,7 +47,7 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
                 it.buildFile """
                 apply plugin: 'java'
                 dependencies {
-                    implementation 'org.test-published:foo:1.0'    
+                    implementation 'org.test-published:foo:1.0'
                 }
                 """
                 setupBuildFile(it)
@@ -92,7 +92,7 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
                 buildFile """
                 apply plugin: 'java'
                 dependencies {
-                    implementation 'org.test-published:foo:1.0'    
+                    implementation 'org.test-published:foo:1.0'
                 }
                 """
             }
@@ -163,7 +163,7 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
                 buildFile """
                 apply plugin: 'java-library'
                 dependencies {
-                    api 'org.test-published:foo:1.0'    
+                    api 'org.test-published:foo:1.0'
                 }
                 """
             }
@@ -226,8 +226,10 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
             project("buildSrc").tap {
                 buildFile """
                 apply plugin: 'java'
+                group = 'org.test.buildSrc'
+                version = '1.0'
                 dependencies {
-                    implementation 'org.test-published:foo:1.0'    
+                    implementation 'org.test-published:foo:1.0'
                 }
                 """
                 setupBuildFile(it)
@@ -236,7 +238,7 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
             buildFile """
             apply plugin: 'java'
             dependencies {
-                implementation 'org.test-published:bar:2.0'    
+                implementation 'org.test-published:bar:2.0'
             }
             """
             setupBuildFile(it)
@@ -245,12 +247,12 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
         succeeds("validate")
 
         then:
-        def buildSrcRuntimeClasspath =
-                jsonRepositorySnapshot(build: ":buildSrc", configuration: "runtimeClasspath")
-        def buildSrcRuntimeFile = buildSrcRuntimeClasspath.file as Map
+        def buildSrcClasspath =
+                jsonRepositorySnapshot(build: ":buildSrc", configuration: "buildScriptClasspath")
+        def buildSrcRuntimeFile = buildSrcClasspath.file as Map
         buildSrcRuntimeFile.source_location == "buildSrc/build.gradle"
-        def buildSrcRuntimeClasspathResolved = buildSrcRuntimeClasspath.resolved as Map
-        def testFoo = buildSrcRuntimeClasspathResolved[fooPurl] as Map
+        def buildSrcClasspathResolved = buildSrcClasspath.resolved as Map
+        def testFoo = buildSrcClasspathResolved[fooPurl] as Map
         verifyAll(testFoo) {
             purl == this.fooPurl
             relationship == "direct"
@@ -274,7 +276,7 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
             includedBuild("included-child").tap {
                 buildFile """
                 apply plugin: 'java'
-                
+
                 group = 'org.test.included'
                 version = '1.0'
                 dependencies {
@@ -286,9 +288,9 @@ class MulitProjectDependencyExtractorTest extends BaseExtractorTest {
 
             buildFile """
             apply plugin: 'java'
-            
+
             dependencies {
-                implementation 'org.test.included:included-child'    
+                implementation 'org.test.included:included-child'
             }
             """
             setupBuildFile(it)

@@ -7,7 +7,20 @@ on:
     branches: [ main ]
 
 jobs:
+  quick-check:
+    runs-on: ubuntu-latest
+    env:
+      GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Execute Gradle Build
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: -S build --scan
+
   build:
+    needs: quick-check
     strategy:
       matrix:
         os: [ ubuntu-latest, macos-latest, windows-latest ]

@@ -1,6 +1,6 @@
 plugins {
     `java-test-fixtures`
-    `groovy`
+    groovy
 }
 
 val extractorPlugin: Configuration by configurations.creating
@@ -38,9 +38,9 @@ tasks.withType<Test>().configureEach {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
 
-    // Test with a Gradle version different from the current with -PtestGradleVersion="7.6.1"
-    if (project.hasProperty("testGradleVersion")) {
-        systemProperties["testGradleVersion"] = project.property("testGradleVersion")
+    // Test with a Gradle version different from the current with -DtestGradleVersion="7.6.1"
+    System.getProperty("testGradleVersion")?.let { testGradleVersion ->
+        systemProperties["testGradleVersion"] = testGradleVersion
     }
 }
 

@@ -47,7 +47,7 @@ jobs:
       - name: Execute Gradle Build
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: -S build -PtestGradleVersion=${{ matrix.gradle-version }}
+          arguments: -S build -DtestGradleVersion=${{ matrix.gradle-version }}
 
   self-test:
       needs: quick-check

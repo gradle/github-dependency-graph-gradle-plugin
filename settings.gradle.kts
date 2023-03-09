@@ -1,4 +1,3 @@
-import com.gradle.enterprise.gradleplugin.internal.extension.BuildScanExtensionWithHiddenFeatures
 import org.gradle.api.internal.FeaturePreviews
 
 pluginManagement {
@@ -48,6 +47,11 @@ gradleEnterprise {
         publishAlways()
         obfuscation {
             ipAddresses { addresses -> addresses.map { _ -> "0.0.0.0" } }
+        }
+
+        System.getProperty("testGradleVersion")?.let { testGradleVersion ->
+            tag("Test Gradle $testGradleVersion")
+            value("testGradleVersion", testGradleVersion)
         }
     }
 }

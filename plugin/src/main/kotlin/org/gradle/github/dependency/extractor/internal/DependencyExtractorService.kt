@@ -198,15 +198,15 @@ abstract class DependencyExtractorService :
                 VariantExtractor.Default
             }
         }
-        private val dependencies: MutableMap<PackageURL, GitHubDependency> = mutableMapOf()
+        private val dependencies: MutableMap<String, GitHubDependency> = mutableMapOf()
 
         fun walkResolveComponentResults(
             resolvedComponentResult: ResolvedComponentResult,
             selectedVariant: ResolvedVariantResult? = null,
             relationship: GitHubDependency.Relationship,
             repositoryUrlLookup: (ResolvedDependencyResult) -> String?
-        ): List<PackageURL> {
-            val dependencyPurls = mutableListOf<PackageURL>()
+        ): List<String> {
+            val dependencyPurls = mutableListOf<String>()
             variantExtractor
                 .getDependencies(selectedVariant, resolvedComponentResult)
                 .forEach { dependency ->
@@ -222,7 +222,7 @@ abstract class DependencyExtractorService :
                             repositoryUrlLookup
                         )
                         val repositoryUrl = repositoryUrlLookup(dependency)
-                        val thisPurl = moduleVersion.toPurl(repositoryUrl)
+                        val thisPurl = moduleVersion.toPurl(repositoryUrl).toString()
                         addDependency(
                             GitHubDependency(
                                 thisPurl,

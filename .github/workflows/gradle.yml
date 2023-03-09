@@ -29,6 +29,7 @@ jobs:
   build:
     needs: quick-check
     strategy:
+      fail-fast: false
       matrix:
         gradle-version: [ "5.6.4", "6.9.4", "7.6.1"]
     runs-on: ubuntu-latest

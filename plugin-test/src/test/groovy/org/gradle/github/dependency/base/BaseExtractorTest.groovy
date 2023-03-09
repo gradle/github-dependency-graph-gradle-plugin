@@ -7,25 +7,15 @@ import groovy.json.JsonSlurper
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import groovy.transform.Memoized
-import org.gradle.api.JavaVersion
 import org.gradle.github.dependency.extractor.fixtures.SimpleGradleExecuter
 import org.gradle.github.dependency.fixture.TestConfig
-import org.gradle.integtests.fixtures.TargetCoverage
 import org.gradle.internal.hash.Hashing
 import org.gradle.test.fixtures.file.TestFile
 import org.gradle.util.GradleVersion
 
 import java.util.stream.Collectors
 
-@TargetCoverage({ getTestedGradleVersions() })
-abstract class BaseExtractorTest extends BaseMultiVersionIntegrationSpec {
-    static List<String> getTestedGradleVersions() {
-        List<GradleVersion> versions = [GradleVersion.current()]
-        if (JavaVersion.current() <= JavaVersion.VERSION_11) {
-            versions.add(GradleVersion.version("5.0"))
-        }
-        return versions.collect { it.version }
-    }
+abstract class BaseExtractorTest extends BaseIntegrationSpec {
 
     private static final TestConfig TEST_CONFIG = new TestConfig()
     protected TestEnvironmentVars environmentVars = new TestEnvironmentVars(testDirectory)
@@ -37,7 +27,8 @@ abstract class BaseExtractorTest extends BaseMultiVersionIntegrationSpec {
         File manifestFile =
                 testDirectory.file("build/reports/github-dependency-report/github-dependency-manifest.json")
         loader = new JsonRepositorySnapshotLoader(manifestFile)
-        return createExecuter(BaseMultiVersionIntegrationSpec.version.toString())
+        def gradleVersion = System.getProperty("testGradleVersion", GradleVersion.current().version)
+        return createExecuter(gradleVersion)
     }
 
     @CompileDynamic

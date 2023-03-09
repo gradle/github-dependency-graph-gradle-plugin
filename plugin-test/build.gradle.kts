@@ -38,12 +38,9 @@ tasks.withType<Test>().configureEach {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
 
-    // use -PtestVersions=all or -PtestVersions=1.2,1.3…
-    val integTestVersionsSysProp = "org.gradle.integtest.versions"
-    if (project.hasProperty("testVersions")) {
-        systemProperties[integTestVersionsSysProp] = project.property("testVersions")
-    } else {
-        systemProperties[integTestVersionsSysProp] = "partial"
+    // Test with a Gradle version different from the current with -PtestGradleVersion="7.6.1"
+    if (project.hasProperty("testGradleVersion")) {
+        systemProperties["testGradleVersion"] = project.property("testGradleVersion")
     }
 }
 

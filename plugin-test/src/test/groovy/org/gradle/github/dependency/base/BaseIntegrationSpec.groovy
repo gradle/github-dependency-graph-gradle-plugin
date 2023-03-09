@@ -1,6 +1,6 @@
 package org.gradle.github.dependency.base
 
-import org.gradle.api.JavaVersion
+
 import org.gradle.github.dependency.extractor.fixtures.SimpleGradleExecuter
 import org.gradle.integtests.fixtures.CompiledLanguage
 import org.gradle.integtests.fixtures.build.BuildTestFile
@@ -43,6 +43,7 @@ class BaseIntegrationSpec extends Specification {
     }
 
     SimpleGradleExecuter createExecuter(String gradleVersion) {
+        println("Executing test with Gradle $gradleVersion")
         def testKitDir = file("test-kit")
         return new SimpleGradleExecuter(temporaryFolder, testKitDir, gradleVersion)
     }

@@ -244,8 +244,11 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         succeeds("validate")
 
         then:
+        Map manifests = jsonManifests()
         def buildSrcClasspath =
-                jsonRepositorySnapshot(build: ":buildSrc", configuration: "buildScriptClasspath")
+            manifests[manifestKey(build: ":buildSrc", configuration: "buildScriptClasspath")] // Gradle 8+
+            ?: manifests[manifestKey(build: ":buildSrc", configuration: "runtimeClasspath")] // Gradle <=7
+
         def buildSrcRuntimeFile = buildSrcClasspath.file as Map
         buildSrcRuntimeFile.source_location == "buildSrc/build.gradle"
         def buildSrcClasspathResolved = buildSrcClasspath.resolved as Map

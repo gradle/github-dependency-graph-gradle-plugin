@@ -40,7 +40,6 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
     def "build with single dependency"() {
         given:
         def foo = mavenRepo.module("org.test", "foo", "1.0").publish()
-        def fooPurl = purlFor(foo)
         singleProjectBuildWithDependencies """
         dependencies {
             implementation "org.test:foo:1.0"
@@ -54,10 +53,9 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         def file = runtimeClasspathManifest.file as Map
         file.source_location == "build.gradle"
         def resolved = runtimeClasspathManifest.resolved as Map
-        def testFoo = resolved[fooPurl]
-        testFoo instanceof Map
+        def testFoo = resolved[gavFor(foo)]
         verifyAll(testFoo as Map) {
-            purl == fooPurl
+            purl == purlFor(foo)
             relationship == "direct"
             dependencies == []
         }
@@ -66,7 +64,6 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
     def "build with single dependency compiled & built"() {
         given:
         def foo = mavenRepo.module("org.test", "foo", "1.0").publish()
-        def fooPurl = purlFor(foo)
         singleProjectBuildWithDependencies """
         dependencies {
             implementation "org.test:foo:1.0"
@@ -81,10 +78,9 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
             def file = runtimeClasspathManifest.file as Map
             file.source_location == "build.gradle"
             def resolved = runtimeClasspathManifest.resolved as Map
-            def testFoo = resolved[fooPurl]
-            testFoo instanceof Map
+            def testFoo = resolved[gavFor(foo)]
             verifyAll(testFoo as Map) {
-                purl == fooPurl
+                purl == purlFor(foo)
                 relationship == "direct"
                 dependencies == []
             }
@@ -101,9 +97,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
     def "build with two dependencies"() {
         given:
         def foo = mavenRepo.module("org.test", "foo", "1.0").publish()
-        def fooPurl = purlFor(foo)
         def bar = mavenRepo.module("org.test", "bar", "1.0").publish()
-        def barPurl = purlFor(bar)
         singleProjectBuildWithDependencies """
         dependencies {
             implementation "org.test:foo:1.0"
@@ -118,15 +112,15 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         def file = runtimeClasspathManifest.file as Map
         file.source_location == "build.gradle"
         def resolved = runtimeClasspathManifest.resolved as Map
-        def testFoo = resolved[fooPurl] as Map
+        def testFoo = resolved[gavFor(foo)] as Map
         verifyAll(testFoo) {
-            purl == fooPurl
+            purl == purlFor(foo)
             relationship == "direct"
             dependencies == []
         }
-        def testBar = resolved[barPurl] as Map
+        def testBar = resolved[gavFor(bar)] as Map
         verifyAll(testBar) {
-            purl == barPurl
+            purl == purlFor(bar)
             relationship == "direct"
             dependencies == []
         }
@@ -135,9 +129,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
     def "build with one dependency and one transitive"() {
         given:
         def bar = mavenRepo.module("org.test", "bar", "1.0").publish()
-        def barPurl = purlFor(bar)
         def foo = mavenRepo.module("org.test", "foo", "1.0").dependsOn(bar).publish()
-        def fooPurl = purlFor(foo)
         singleProjectBuildWithDependencies """
         dependencies {
             implementation "org.test:foo:1.0"
@@ -151,15 +143,15 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         def file = runtimeClasspathManifest.file as Map
         file.source_location == "build.gradle"
         def resolved = runtimeClasspathManifest.resolved as Map
-        def testFoo = resolved[fooPurl] as Map
+        def testFoo = resolved[gavFor(foo)] as Map
         verifyAll(testFoo) {
-            purl == fooPurl
+            purl == purlFor(foo)
             relationship == "direct"
-            dependencies == [barPurl]
+            dependencies == [gavFor(bar)]
         }
-        def testBar = resolved[barPurl] as Map
+        def testBar = resolved[gavFor(bar)] as Map
         verifyAll(testBar) {
-            purl == barPurl
+            purl == purlFor(bar)
             relationship == "indirect"
             dependencies == []
         }
@@ -168,9 +160,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
     def "build with one dependency and one transitive when multiple configurations are resolved"() {
         given:
         def bar = mavenRepo.module("org.test", "bar", "1.0").publish()
-        def barPurl = purlFor(bar)
         def foo = mavenRepo.module("org.test", "foo", "1.0").dependsOn(bar).publish()
-        def fooPurl = purlFor(foo)
         singleProjectBuildWithDependencies """
         dependencies {
             implementation "org.test:foo:1.0"
@@ -188,15 +178,15 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
             def file = classpathManifest.file as Map
             file.source_location == "build.gradle"
             def resolved = classpathManifest.resolved as Map
-            def testFoo = resolved[fooPurl] as Map
+            def testFoo = resolved[gavFor(foo)] as Map
             verifyAll(testFoo) {
-                purl == fooPurl
+                purl == purlFor(foo)
                 relationship == "direct"
-                dependencies == [barPurl]
+                dependencies == [gavFor(bar)]
             }
-            def testBar = resolved[barPurl] as Map
+            def testBar = resolved[gavFor(bar)] as Map
             verifyAll(testBar) {
-                purl == barPurl
+                purl == purlFor(bar)
                 relationship == "indirect"
                 dependencies == []
             }
@@ -207,9 +197,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         given:
         mavenRepo.module("org.test", "bar", "1.0").publish()
         def barNewer = mavenRepo.module("org.test", "bar", "1.1").publish()
-        def barNewerPurl = purlFor(barNewer)
         def foo = mavenRepo.module("org.test", "foo", "1.0").dependsOn(barNewer).publish()
-        def fooPurl = purlFor(foo)
         singleProjectBuildWithDependencies """
         dependencies {
             implementation "org.test:bar:1.0" // Direct dependency upon older version
@@ -224,15 +212,15 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         def file = runtimeClasspathManifest.file as Map
         file.source_location == "build.gradle"
         def resolved = runtimeClasspathManifest.resolved as Map
-        def testFoo = resolved[fooPurl] as Map
+        def testFoo = resolved[gavFor(foo)] as Map
         verifyAll(testFoo) {
-            purl == fooPurl
+            purl == purlFor(foo)
             relationship == "direct"
-            dependencies == [barNewerPurl]
+            dependencies == [gavFor(barNewer)]
         }
-        def testBar = resolved[barNewerPurl] as Map
+        def testBar = resolved[gavFor(barNewer)] as Map
         verifyAll(testBar) {
-            purl == barNewerPurl
+            purl == purlFor(barNewer)
             relationship == "direct"
             dependencies == []
         }
@@ -242,9 +230,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         given:
         def barOlder = mavenRepo.module("org.test", "bar", "1.0").publish()
         def bar = mavenRepo.module("org.test", "bar", "1.1").publish()
-        def barPurl = purlFor(bar)
         def foo = mavenRepo.module("org.test", "foo", "1.0").dependsOn(barOlder).publish()
-        def fooPurl = purlFor(foo)
         singleProjectBuildWithDependencies """
         dependencies {
             implementation "org.test:bar:1.1" // Direct dependency upon newer version
@@ -259,15 +245,15 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         def file = runtimeClasspathManifest.file as Map
         file.source_location == "build.gradle"
         def resolved = runtimeClasspathManifest.resolved as Map
-        def testFoo = resolved[fooPurl] as Map
+        def testFoo = resolved[gavFor(foo)] as Map
         verifyAll(testFoo) {
-            purl == fooPurl
+            purl == purlFor(foo)
             relationship == "direct"
-            dependencies == [barPurl]
+            dependencies == [gavFor(bar)]
         }
-        def testBarIndirect = resolved[barPurl] as Map
+        def testBarIndirect = resolved[gavFor(bar)] as Map
         verifyAll(testBarIndirect) {
-            purl == barPurl
+            purl == purlFor(bar)
             relationship == "direct"
             dependencies == []
         }
@@ -276,7 +262,6 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
     def "build with buildscript dependencies"() {
         given:
         def foo = mavenRepo.module("org.test", "foo", "1.0").publish()
-        def fooPurl = purlFor(foo)
         singleProjectBuildWithBuildscript """
         dependencies {
             classpath "org.test:foo:1.0"
@@ -286,13 +271,13 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         succeeds("dependencies", "--configuration", "runtimeClasspath")
 
         then:
-        def classpathManifest = jsonRepositorySnapshot(configuration: "classpath", buildscript: true)
+        def classpathManifest = jsonRepositorySnapshot(configuration: "classpath")
         def buildScriptFile = classpathManifest.file as Map
         buildScriptFile.source_location == "build.gradle"
         def classpathResolved = classpathManifest.resolved as Map
-        def testFoo = classpathResolved[fooPurl] as Map
+        def testFoo = classpathResolved[gavFor(foo)] as Map
         verifyAll(testFoo) {
-            purl == fooPurl
+            purl == purlFor(foo)
             relationship == "direct"
             dependencies == []
         }

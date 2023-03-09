@@ -16,7 +16,6 @@ class DependencyExtractorServiceTest extends Specification {
         Configuration testConfiguration = project.getConfigurations().create("test")
         project.getDependencies().add(testConfiguration.getName(), "junit:junit:4.12")
         when:
-        ResolvedConfiguration resolvedConfiguration = testConfiguration.getResolvedConfiguration()
         def gitHubDependencies =
                 DependencyExtractorService.extractDependenciesFromResolvedComponentResult(
                         testConfiguration.incoming.resolutionResult.root,
@@ -25,17 +24,13 @@ class DependencyExtractorServiceTest extends Specification {
                 )
         then:
         gitHubDependencies.size() == 2
-        GitHubDependency junitDependency =
-                gitHubDependencies
-                        .find { it.purl.toString() == "pkg:maven/junit/junit@4.12" }
+        GitHubDependency junitDependency = gitHubDependencies["junit:junit:4.12"]
         verifyAll(junitDependency) {
             purl.toString() == "pkg:maven/junit/junit@4.12"
             relationship == GitHubDependency.Relationship.direct
-            dependencies == ["pkg:maven/org.hamcrest/hamcrest-core@1.3"]
+            dependencies == ["org.hamcrest:hamcrest-core:1.3"]
         }
-        GitHubDependency hamcrestDependency =
-                gitHubDependencies
-                        .find { it.purl.toString() == "pkg:maven/org.hamcrest/hamcrest-core@1.3" }
+        GitHubDependency hamcrestDependency = gitHubDependencies["org.hamcrest:hamcrest-core:1.3"]
         verifyAll(hamcrestDependency) {
             purl.toString() == "pkg:maven/org.hamcrest/hamcrest-core@1.3"
             relationship == GitHubDependency.Relationship.indirect

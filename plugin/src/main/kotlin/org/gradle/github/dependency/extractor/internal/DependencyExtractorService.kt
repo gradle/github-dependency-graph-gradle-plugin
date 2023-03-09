@@ -1,6 +1,5 @@
 package org.gradle.github.dependency.extractor.internal
 
-import com.github.packageurl.PackageURL
 import com.github.packageurl.PackageURLBuilder
 import org.gradle.api.artifacts.ModuleVersionIdentifier
 import org.gradle.api.artifacts.component.ComponentIdentifier
@@ -13,13 +12,11 @@ import org.gradle.github.dependency.extractor.internal.json.BaseGitHubManifest
 import org.gradle.github.dependency.extractor.internal.json.GitHubDependency
 import org.gradle.internal.operations.BuildOperationDescriptor
 import org.gradle.internal.operations.BuildOperationListener
-import org.gradle.internal.operations.BuildOperationType
 import org.gradle.internal.operations.OperationFinishEvent
 import org.gradle.internal.operations.OperationIdentifier
 import org.gradle.internal.operations.OperationProgressEvent
 import org.gradle.internal.operations.OperationStartEvent
 import org.gradle.util.GradleVersion
-import org.slf4j.LoggerFactory
 import java.io.File
 import java.net.URI
 import java.nio.file.Path
@@ -73,14 +70,12 @@ abstract class DependencyExtractorService :
     override fun finished(buildOperation: BuildOperationDescriptor, finishEvent: OperationFinishEvent) {
         handleBuildOperationType<
             ResolveConfigurationDependenciesBOT.Details,
-            ResolveConfigurationDependenciesBOT.Result,
-            ResolveConfigurationDependenciesBOT
+            ResolveConfigurationDependenciesBOT.Result
             >(buildOperation, finishEvent) { details, result -> extractDependencies(details, result) }
 
         handleBuildOperationType<
             LoadProjectsBOT.Details,
-            LoadProjectsBOT.Result,
-            LoadProjectsBOT>(buildOperation, finishEvent) { details, result -> extractProjects(details, result) }
+            LoadProjectsBOT.Result>(buildOperation, finishEvent) { details, result -> extractProjects(details, result) }
     }
 
     private fun extractProjects(
@@ -129,26 +124,14 @@ abstract class DependencyExtractorService :
             "is_script_configuration" to details.isScriptConfiguration,
             "true_project_path" to trueProjectPath
         )
-        val name = buildString {
-            /*
-             * For project dependencies, create a name like:
-             * `Build: :, Project: :, Configuration: runtimeClasspath`
-             * For buildscript dependencies, create a name like:
-             * `Build: :, Project: :, Buildscript Configuration: classpath`
-             */
-            append("Build: ${details.buildPath}, Project: ${trueProjectPath},")
-            if (details.projectPath == null) {
-                append(" Buildscript")
-            }
-            append(" Configuration: ${details.configurationName}")
-        }
+        val name = "${rootComponentId.displayName} [${details.configurationName}]"
         gitHubRepositorySnapshotBuilder.addManifest(
             name = name,
             buildPath = details.buildPath,
             projectPath = trueProjectPath,
             manifest = BaseGitHubManifest(
                 name = name,
-                resolved = dependencies.associateBy { it.purl.toString() },
+                resolved = dependencies,
                 metadata = metaData
             )
         )
@@ -206,17 +189,18 @@ abstract class DependencyExtractorService :
             relationship: GitHubDependency.Relationship,
             repositoryUrlLookup: (ResolvedDependencyResult) -> String?
         ): List<String> {
-            val dependencyPurls = mutableListOf<String>()
+            val dependencies = mutableListOf<String>()
             variantExtractor
                 .getDependencies(selectedVariant, resolvedComponentResult)
                 .forEach { dependency ->
                     // We only care about resolve dependencies
                     if (dependency is ResolvedDependencyResult) {
-                        val selected = dependency.selected
-                        val moduleVersion = selected.moduleVersion!!
+                        val targetComponent = dependency.selected
+                        val dependencyName = targetComponent.id.displayName
+                        val moduleVersion = targetComponent.moduleVersion!!
                         val resolvedSelectedVariant = variantExtractor.getSelectedVariant(dependency)
                         val transitives = walkResolveComponentResults(
-                            selected,
+                            targetComponent,
                             resolvedSelectedVariant,
                             GitHubDependency.Relationship.indirect,
                             repositoryUrlLookup
@@ -224,17 +208,18 @@ abstract class DependencyExtractorService :
                         val repositoryUrl = repositoryUrlLookup(dependency)
                         val thisPurl = moduleVersion.toPurl(repositoryUrl).toString()
                         addDependency(
+                            dependencyName,
                             GitHubDependency(
                                 thisPurl,
                                 relationship,
-                                transitives.map { it.toString() },
+                                transitives,
                                 metaDataForComponentIdentifier(dependency.selected.id)
                             )
                         )
-                        dependencyPurls.add(thisPurl)
+                        dependencies.add(dependencyName)
                     }
                 }
-            return dependencyPurls
+            return dependencies
         }
 
         private fun metaDataForComponentIdentifier(componentIdentifier: ComponentIdentifier): Map<String, Any> {
@@ -255,32 +240,29 @@ abstract class DependencyExtractorService :
             }
         }
 
-        private fun addDependency(ghDependency: GitHubDependency) {
-            val purl = ghDependency.purl
-            val existing = dependencies[purl]
+        private fun addDependency(name: String, ghDependency: GitHubDependency) {
+            val existing = dependencies[name]
             if (existing != null) {
                 if (existing.relationship != GitHubDependency.Relationship.direct) {
-                    dependencies[purl] = ghDependency
+                    dependencies[name] = ghDependency
                 }
             } else {
-                dependencies[purl] = ghDependency
+                dependencies[name] = ghDependency
             }
         }
 
-        fun dependencies(): List<GitHubDependency> {
-            return dependencies.values.toList()
+        fun dependencies(): Map<String, GitHubDependency> {
+            return dependencies
         }
     }
 
     companion object {
-        private val LOGGER = LoggerFactory.getLogger(DependencyExtractorService::class.java)
-
         @JvmStatic
         fun extractDependenciesFromResolvedComponentResult(
             resolvedComponentResult: ResolvedComponentResult,
             relationship: GitHubDependency.Relationship,
             repositoryUrlLookup: (ResolvedDependencyResult) -> String?
-        ): List<GitHubDependency> {
+        ): Map<String, GitHubDependency> {
             return ConfigurationDependencyCollector()
                 .apply {
                     walkResolveComponentResults(
@@ -308,7 +290,7 @@ abstract class DependencyExtractorService :
     }
 }
 
-private inline fun <reified D, reified R, BT : BuildOperationType<D, R>> handleBuildOperationType(
+private inline fun <reified D, reified R> handleBuildOperationType(
     buildOperation: BuildOperationDescriptor,
     finishEvent: OperationFinishEvent,
     handler: (details: D, result: R) -> Unit

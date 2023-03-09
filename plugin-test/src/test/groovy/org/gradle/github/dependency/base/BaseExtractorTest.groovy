@@ -58,6 +58,10 @@ abstract class BaseExtractorTest extends BaseIntegrationSpec {
         return "pkg:maven/${module.group}/${module.module}@${module.version}?repository_url=$repositoryUrlEscaped"
     }
 
+    protected String gavFor(org.gradle.test.fixtures.Module module) {
+        return "${module.group}:${module.module}:${module.version}"
+    }
+
     @CompileDynamic
     protected Map jsonRepositorySnapshot() {
         return loader.jsonRepositorySnapshot()
@@ -80,14 +84,16 @@ abstract class BaseExtractorTest extends BaseIntegrationSpec {
     }
 
     protected String manifestKey(Map args) {
-        String build = args.getOrDefault("build", ":")
-        String project = args.getOrDefault("project", ":")
-        boolean isBuildscript = args.getOrDefault("buildscript", false)
+        String build = args.getOrDefault("build", "")
+        String project = args.getOrDefault("project", "")
+        if (build.isEmpty() && project.isEmpty()) {
+            project = ":"
+        }
         String configuration = args.get("configuration")
         if (!configuration) {
             throw new IllegalArgumentException("Missing 'configuration' parameter")
         }
-        return "Build: ${build}, Project: ${project}, ${isBuildscript ? "Buildscript " : ""}Configuration: $configuration"
+        return "project ${build}${project} [${configuration}]"
     }
 
     protected Map jsonRepositorySnapshot(Map args) {

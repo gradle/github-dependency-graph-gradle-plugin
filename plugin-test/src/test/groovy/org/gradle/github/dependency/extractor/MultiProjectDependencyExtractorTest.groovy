@@ -8,8 +8,8 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
 
     private MavenModule foo
     private String fooPurl
+    private String fooGav
     private MavenModule bar
-    private String barPurl
 
     def setup() {
         applyExtractorPlugin()
@@ -17,8 +17,8 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
 
         foo = mavenRepo.module("org.test-published", "foo", "1.0").publish()
         fooPurl = purlFor(foo)
+        fooGav = gavFor(foo)
         bar = mavenRepo.module("org.test-published", "bar", "2.0").publish()
-        barPurl = purlFor(bar)
     }
 
     void setupBuildFile(BuildTestFile buildTestFile) {
@@ -61,7 +61,7 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         def parentRuntimeClasspathFile = parentRuntimeClasspath.file as Map
         parentRuntimeClasspathFile.source_location == "build.gradle"
         def parentClasspathResolved = parentRuntimeClasspath.resolved as Map
-        def parentTestFoo = parentClasspathResolved[fooPurl] as Map
+        def parentTestFoo = parentClasspathResolved[gavFor(foo)] as Map
         verifyAll(parentTestFoo) {
             purl == this.fooPurl
             relationship == "direct"
@@ -72,7 +72,7 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
             def runtimeClasspathFile = runtimeClasspath.file as Map
             runtimeClasspathFile.source_location == name + "/build.gradle"
             def classpathResolved = runtimeClasspath.resolved as Map
-            def testFoo = classpathResolved[fooPurl] as Map
+            def testFoo = classpathResolved[gavFor(foo)] as Map
             verifyAll(testFoo) {
                 purl == this.fooPurl
                 relationship == "direct"
@@ -116,7 +116,7 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
             def aRuntimeClasspathFile = aRuntimeClasspath.file as Map
             aRuntimeClasspathFile.source_location == "a/build.gradle"
             def aClasspathResolved = aRuntimeClasspath.resolved as Map
-            def aTestFoo = aClasspathResolved[fooPurl] as Map
+            def aTestFoo = aClasspathResolved[fooGav] as Map
             verifyAll(aTestFoo) {
                 purl == this.fooPurl
                 relationship == "direct"
@@ -129,18 +129,18 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         def bRuntimeClasspathFile = bRuntimeClasspath.file as Map
         bRuntimeClasspathFile.source_location == "b/build.gradle"
         def bClasspathResolved = bRuntimeClasspath.resolved as Map
-        def bTestFoo = bClasspathResolved[fooPurl] as Map
+        def bTestFoo = bClasspathResolved[fooGav] as Map
         verifyAll(bTestFoo) {
             purl == this.fooPurl
             relationship == "indirect"
             dependencies == []
         }
         def aTestProjectPurl = "pkg:maven/org.test/a@1.0"
-        def aTestProject = bClasspathResolved[aTestProjectPurl] as Map
+        def aTestProject = bClasspathResolved["project :a"] as Map
         verifyAll(aTestProject) {
             purl == aTestProjectPurl
             relationship == "direct"
-            dependencies == [this.fooPurl]
+            dependencies == [this.fooGav]
         }
         where:
         // Running just the 'validate' task on 'b' will not implicitly cause 'a' to be resolved.
@@ -195,7 +195,7 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         def aCompileClasspathFile = aCompileClasspath.file as Map
         aCompileClasspathFile.source_location == "a/build.gradle"
         def aClasspathResolved = aCompileClasspath.resolved as Map
-        verifyAll(aClasspathResolved[fooPurl] as Map) {
+        verifyAll(aClasspathResolved[fooGav] as Map) {
             purl == this.fooPurl
             relationship == "direct"
             dependencies == []
@@ -205,35 +205,35 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         def bCompileClasspathFile = bCompileClasspath.file as Map
         bCompileClasspathFile.source_location == "b/build.gradle"
         def bClasspathResolved = bCompileClasspath.resolved as Map
-        verifyAll(bClasspathResolved[fooPurl] as Map) {
+        verifyAll(bClasspathResolved[fooGav] as Map) {
             purl == this.fooPurl
             relationship == "indirect"
             dependencies == []
         }
-        verifyAll(bClasspathResolved[aTestProjectPurl] as Map) {
+        verifyAll(bClasspathResolved["project :a"] as Map) {
             purl == aTestProjectPurl
             relationship == "direct"
-            dependencies == [this.fooPurl]
+            dependencies == [this.fooGav]
         }
 
         def cCompileClasspath = jsonRepositorySnapshot(project: ":c", configuration: "compileClasspath")
         def cCompileClasspathFile = cCompileClasspath.file as Map
         cCompileClasspathFile.source_location == "c/build.gradle"
         def cClasspathResolved = cCompileClasspath.resolved as Map
-        verifyAll(cClasspathResolved[fooPurl] as Map) {
+        verifyAll(cClasspathResolved[fooGav] as Map) {
             purl == this.fooPurl
             relationship == "indirect"
             dependencies == []
         }
-        verifyAll(cClasspathResolved[aTestProjectPurl] as Map) {
+        verifyAll(cClasspathResolved["project :a"] as Map) {
             purl == aTestProjectPurl
             relationship == "indirect"
-            dependencies == [this.fooPurl]
+            dependencies == [this.fooGav]
         }
-        verifyAll(cClasspathResolved[bTestProjectPurl] as Map) {
+        verifyAll(cClasspathResolved["project :b"] as Map) {
             purl == bTestProjectPurl
             relationship == "direct"
-            dependencies == [aTestProjectPurl]
+            dependencies == ["project :a"]
         }
         where:
         taskInvocation | _
@@ -276,7 +276,7 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         def buildSrcRuntimeFile = buildSrcClasspath.file as Map
         buildSrcRuntimeFile.source_location == "buildSrc/build.gradle"
         def buildSrcClasspathResolved = buildSrcClasspath.resolved as Map
-        def testFoo = buildSrcClasspathResolved[fooPurl] as Map
+        def testFoo = buildSrcClasspathResolved[fooGav] as Map
         verifyAll(testFoo) {
             purl == this.fooPurl
             relationship == "direct"
@@ -286,9 +286,9 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         def runtimeFile = runtimeClasspath.file as Map
         runtimeFile.source_location == "build.gradle"
         def runtimeClasspathResolved = runtimeClasspath.resolved as Map
-        def testBar = runtimeClasspathResolved[barPurl] as Map
+        def testBar = runtimeClasspathResolved[gavFor(bar)] as Map
         verifyAll(testBar) {
-            purl == this.barPurl
+            purl == purlFor(this.bar)
             relationship == "direct"
             dependencies == []
         }
@@ -335,18 +335,17 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         verifyAll {
             runtimeFile.source_location == "build.gradle"
             def runtimeClasspathResolved = runtimeClasspath.resolved as Map
-            def testFoo = runtimeClasspathResolved[fooPurl] as Map
+            def testFoo = runtimeClasspathResolved[fooGav] as Map
             verifyAll(testFoo) {
                 purl == this.fooPurl
                 relationship == "indirect"
                 dependencies == []
             }
-            def includedChildPurl = "pkg:maven/org.test.included/included-child@1.0"
-            def testIncludedChild = runtimeClasspathResolved[includedChildPurl] as Map
+            def testIncludedChild = runtimeClasspathResolved["project :included-child"] as Map
             verifyAll(testIncludedChild) {
-                purl == includedChildPurl
+                purl == "pkg:maven/org.test.included/included-child@1.0"
                 relationship == "direct"
-                dependencies == [this.fooPurl]
+                dependencies == [this.fooGav]
             }
         }
         if (resolveIncludedBuild) {
@@ -356,7 +355,7 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
                 includedChildRuntimeFile.source_location == "included-child/build.gradle"
                 def includedChildRuntimeClasspathResolved = includedChildRuntimeClasspath.resolved as Map
 
-                def testFoo = includedChildRuntimeClasspathResolved[fooPurl] as Map
+                def testFoo = includedChildRuntimeClasspathResolved[fooGav] as Map
                 verifyAll(testFoo) {
                     purl == this.fooPurl
                     relationship == "direct"

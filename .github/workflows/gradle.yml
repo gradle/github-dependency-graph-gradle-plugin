@@ -20,18 +20,18 @@ jobs:
             java-version: 17
             distribution: temurin
 
-      - name: Execute Gradle Build
+      - name: Set up Gradle
         uses: gradle/gradle-build-action@v2
-        with:
-          arguments: -S build --scan
+
+      - name: Execute Gradle Build
+        run: ./gradlew build
 
   build:
     needs: quick-check
     strategy:
       matrix:
-        os: [ ubuntu-latest, macos-latest, windows-latest ]
-        java_version: [8, 11, 17]
-    runs-on: ${{ matrix.os }}
+        gradle-version: [ "5.6.4", "6.9.4", "7.6.1"]
+    runs-on: ubuntu-latest
     env:
       GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
     steps:
@@ -40,24 +40,37 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
-          java-version: ${{ matrix.java_version }}
+          java-version: 11
           distribution: temurin
 
       - name: Execute Gradle Build
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: -S build --scan
+          arguments: -S build -PtestGradleVersion=${{ matrix.gradle-version }}
 
-      - name: Self Test :plugin
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: --no-configuration-cache -S -I plugin-self-test.init.gradle :plugin:dependencies
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  self-test:
+      needs: quick-check
+      runs-on: ubuntu-latest
+      env:
+          GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
+      steps:
+          - uses: actions/checkout@v3
 
-      - name: Self Test :plugin-test
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: --no-configuration-cache -S -I plugin-self-test.init.gradle :plugin-test:dependencies
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          - name: Set up JDK
+            uses: actions/setup-java@v3
+            with:
+                java-version: 11
+                distribution: temurin
+
+          - name: Set up Gradle
+            uses: gradle/gradle-build-action@v2
+
+          - name: Self Test :plugin
+            run: ./gradlew --no-configuration-cache -S -I plugin-self-test.init.gradle :plugin:dependencies
+            env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+          - name: Self Test :plugin-test
+            run: ./gradlew --no-configuration-cache -S -I plugin-self-test.init.gradle :plugin-test:dependencies
+            env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

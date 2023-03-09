@@ -1,6 +1,6 @@
 plugins {
     `java-test-fixtures`
-    `groovy`
+    groovy
 }
 
 val extractorPlugin: Configuration by configurations.creating
@@ -38,12 +38,9 @@ tasks.withType<Test>().configureEach {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
 
-    // use -PtestVersions=all or -PtestVersions=1.2,1.3…
-    val integTestVersionsSysProp = "org.gradle.integtest.versions"
-    if (project.hasProperty("testVersions")) {
-        systemProperties[integTestVersionsSysProp] = project.property("testVersions")
-    } else {
-        systemProperties[integTestVersionsSysProp] = "partial"
+    // Test with a Gradle version different from the current with -DtestGradleVersion="7.6.1"
+    System.getProperty("testGradleVersion")?.let { testGradleVersion ->
+        systemProperties["testGradleVersion"] = testGradleVersion
     }
 }
 

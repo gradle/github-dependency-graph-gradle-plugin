@@ -1,10 +1,9 @@
 package org.gradle.github.dependency.base
 
 
-import org.gradle.github.dependency.extractor.fixtures.SimpleGradleExecuter
-import org.gradle.integtests.fixtures.CompiledLanguage
-import org.gradle.integtests.fixtures.build.BuildTestFile
-import org.gradle.integtests.fixtures.build.BuildTestFixture
+import org.gradle.test.fixtures.SimpleGradleExecuter
+import org.gradle.test.fixtures.build.BuildTestFile
+import org.gradle.test.fixtures.build.BuildTestFixture
 import org.gradle.test.fixtures.file.TestFile
 import org.gradle.test.fixtures.file.TestNameTestDirectoryProvider
 import org.gradle.test.fixtures.maven.MavenFileRepository
@@ -76,11 +75,7 @@ class BaseIntegrationSpec extends Specification {
     }
 
     def multiProjectBuild(String projectName, List<String> subprojects, @DelegatesTo(value = BuildTestFile, strategy = Closure.DELEGATE_FIRST) Closure cl = {}) {
-        multiProjectBuild(projectName, subprojects, CompiledLanguage.JAVA, cl)
-    }
-
-    def multiProjectBuild(String projectName, List<String> subprojects, CompiledLanguage language, @DelegatesTo(value = BuildTestFile, strategy = Closure.DELEGATE_FIRST) Closure cl = {}) {
-        buildTestFixture.multiProjectBuild(projectName, subprojects, language, cl)
+        buildTestFixture.multiProjectBuild(projectName, subprojects, cl)
     }
 
     /**

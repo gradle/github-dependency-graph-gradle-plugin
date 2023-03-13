@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package org.gradle.integtests.fixtures.build
+package org.gradle.test.fixtures.build
 
-import org.gradle.integtests.fixtures.CompiledLanguage
+
 import org.gradle.test.fixtures.file.TestDirectoryProvider
 import org.gradle.test.fixtures.file.TestFile
 
@@ -71,10 +71,6 @@ class BuildTestFixture {
     }
 
     def multiProjectBuild(String projectName, List<String> subprojects, @DelegatesTo(value = BuildTestFile, strategy = Closure.DELEGATE_FIRST) Closure cl = {}) {
-        multiProjectBuild(projectName, subprojects, CompiledLanguage.JAVA, cl)
-    }
-
-    def multiProjectBuild(String projectName, List<String> subprojects, CompiledLanguage language, @DelegatesTo(value = BuildTestFile, strategy = Closure.DELEGATE_FIRST) Closure cl = {}) {
         def rootMulti = populate(projectName) {
             subprojects.each {
                 settingsFile << "include '$it'\n"
@@ -88,9 +84,9 @@ class BuildTestFixture {
                 """
         }
         rootMulti.with(cl)
-        rootMulti.file("src/main/${language.name}/Dummy.${language.name}") << "public class Dummy {}"
+        rootMulti.file("src/main/java/Dummy.java") << "public class Dummy {}"
         subprojects.each {
-            rootMulti.file(it.replace(':' as char, File.separatorChar), "src/main/${language.name}/Dummy.${language.name}") << "public class Dummy {}"
+            rootMulti.file(it.replace(':' as char, File.separatorChar), "src/main/java/Dummy.java") << "public class Dummy {}"
         }
         return rootMulti
     }

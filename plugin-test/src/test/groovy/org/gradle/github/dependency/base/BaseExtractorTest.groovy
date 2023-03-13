@@ -7,7 +7,7 @@ import groovy.json.JsonSlurper
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import groovy.transform.Memoized
-import org.gradle.github.dependency.extractor.fixtures.SimpleGradleExecuter
+import org.gradle.test.fixtures.SimpleGradleExecuter
 import org.gradle.github.dependency.fixture.TestConfig
 import org.gradle.internal.hash.Hashing
 import org.gradle.test.fixtures.file.TestFile

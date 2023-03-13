@@ -1,4 +1,4 @@
-package org.gradle.github.dependency.extractor.fixtures
+package org.gradle.test.fixtures
 
 import org.gradle.test.fixtures.file.TestDirectoryProvider
 import org.gradle.test.fixtures.file.TestFile

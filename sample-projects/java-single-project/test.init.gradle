@@ -1,0 +1,20 @@
+initscript {
+    def pluginFiles = fileTree("../../plugin/build/libs") {
+        include "**/*.jar"
+        exclude "*-test-fixtures.jar"
+    }
+    File pluginFile
+    try {
+        pluginFile = pluginFiles.singleFile
+    } catch (IllegalStateException e) {
+        if (pluginFiles.iterator().hasNext()) {
+            throw new GradleException("Multiple plugins found in ${pluginFiles.dir.absolutePath}. Run `clean build` task", e)
+        } else {
+            throw new GradleException("No plugins found in ${pluginFiles.dir.absolutePath}. Run `build` task", e)
+        }
+    }
+    dependencies {
+        classpath files(pluginFile)
+    }
+}
+apply plugin: org.gradle.github.dependency.extractor.GithubDependencyExtractorPlugin

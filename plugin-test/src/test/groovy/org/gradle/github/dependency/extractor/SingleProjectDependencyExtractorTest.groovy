@@ -37,21 +37,22 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         }
     }
 
-    def "build with single dependency"() {
+    def "build with implementation and test dependency"() {
         given:
         def foo = mavenRepo.module("org.test", "foo", "1.0").publish()
+        def bar = mavenRepo.module("org.test", "bar", "1.0").publish()
         singleProjectBuildWithDependencies """
         dependencies {
             implementation "org.test:foo:1.0"
+            testImplementation "org.test:bar:1.0"
         }
         """
         when:
-        succeeds("dependencies", "--configuration", "runtimeClasspath")
+        succeeds("dependencies")
 
         then:
         def runtimeClasspathManifest = jsonRepositorySnapshot(configuration: "runtimeClasspath")
-        def file = runtimeClasspathManifest.file as Map
-        file.source_location == "build.gradle"
+        (runtimeClasspathManifest.file as Map).source_location == "build.gradle"
         def resolved = runtimeClasspathManifest.resolved as Map
         def testFoo = resolved[gavFor(foo)]
         verifyAll(testFoo as Map) {
@@ -59,9 +60,23 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
             relationship == "direct"
             dependencies == []
         }
+        def testClasspathManifest = jsonRepositorySnapshot(configuration: "testRuntimeClasspath")
+        (testClasspathManifest.file as Map).source_location == "build.gradle"
+        def testResolved = testClasspathManifest.resolved as Map
+        def testBar = testResolved[gavFor(bar)]
+        verifyAll(testFoo as Map) {
+            purl == purlFor(foo)
+            relationship == "direct"
+            dependencies == []
+        }
+        verifyAll(testBar as Map) {
+            purl == purlFor(bar)
+            relationship == "direct"
+            dependencies == []
+        }
     }
 
-    def "build with single dependency compiled & built"() {
+    def "build with dependency compiled & built"() {
         given:
         def foo = mavenRepo.module("org.test", "foo", "1.0").publish()
         singleProjectBuildWithDependencies """

@@ -164,18 +164,17 @@ abstract class DependencyExtractorService :
     /**
      * Collects all the dependencies on a specific configuration.
      */
-    class ConfigurationDependencyCollector {
-
+    class ConfigurationDependencyCollector(private val rootComponent: ResolvedComponentResult) {
         private val dependencies: MutableMap<String, GitHubDependency> = mutableMapOf()
 
         fun walkComponentGraph(
-            rootComponent: ResolvedComponentResult,
             repositoryUrlLookup: (ResolvedComponentResult) -> String?
-        ) {
+        ): Map<String, GitHubDependency> {
             val resolvedDependencies = dependentComponents(rootComponent)
             resolvedDependencies.forEach {
                 walkComponent(it, GitHubDependency.Relationship.direct, repositoryUrlLookup)
             }
+            return dependencies
         }
 
         private fun walkComponent(
@@ -184,7 +183,7 @@ abstract class DependencyExtractorService :
             repositoryUrlLookup: (ResolvedComponentResult) -> String?
         ) {
             val componentId = component.id.displayName
-            if (dependencies.containsKey(componentId)) {
+            if (component.id == rootComponent.id || dependencies.containsKey(componentId)) {
                 return
             }
 
@@ -240,10 +239,6 @@ abstract class DependencyExtractorService :
                 dependencies[name] = ghDependency
             }
         }
-
-        fun dependencies(): Map<String, GitHubDependency> {
-            return dependencies
-        }
     }
 
     companion object {
@@ -252,11 +247,7 @@ abstract class DependencyExtractorService :
             resolvedComponentResult: ResolvedComponentResult,
             repositoryUrlLookup: (ResolvedComponentResult) -> String?
         ): Map<String, GitHubDependency> {
-            return ConfigurationDependencyCollector()
-                .apply {
-                    walkComponentGraph(resolvedComponentResult, repositoryUrlLookup)
-                }
-                .dependencies()
+            return ConfigurationDependencyCollector(resolvedComponentResult).walkComponentGraph(repositoryUrlLookup)
         }
 
         private fun ModuleVersionIdentifier.toPurl(repositoryUrl: String?) =

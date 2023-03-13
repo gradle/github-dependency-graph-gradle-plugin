@@ -7,7 +7,6 @@ import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
-import org.gradle.api.artifacts.result.ResolvedVariantResult
 import org.gradle.github.dependency.extractor.internal.json.BaseGitHubManifest
 import org.gradle.github.dependency.extractor.internal.json.GitHubDependency
 import org.gradle.internal.operations.BuildOperationDescriptor
@@ -16,7 +15,6 @@ import org.gradle.internal.operations.OperationFinishEvent
 import org.gradle.internal.operations.OperationIdentifier
 import org.gradle.internal.operations.OperationProgressEvent
 import org.gradle.internal.operations.OperationStartEvent
-import org.gradle.util.GradleVersion
 import java.io.File
 import java.net.URI
 import java.nio.file.Path
@@ -112,7 +110,6 @@ abstract class DependencyExtractorService :
         val dependencies =
             extractDependenciesFromResolvedComponentResult(
                 result.rootComponent,
-                GitHubDependency.Relationship.direct,
                 repositoryLookup::doLookup
             )
         // Feel free to change this. This is free-form and has no spec associated with it.
@@ -153,11 +150,11 @@ abstract class DependencyExtractorService :
         }
 
         /**
-         * Looks up the repository for the given [ResolvedDependencyResult].
+         * Looks up the repository for the given [ResolvedComponentResult].
          */
-        fun doLookup(resolvedDependencyResult: ResolvedDependencyResult): String? {
+        fun doLookup(resolvedComponentResult: ResolvedComponentResult): String? {
             // Get the repository id from the result
-            val repositoryId = result.getRepositoryId(resolvedDependencyResult.selected)
+            val repositoryId = result.getRepositoryId(resolvedComponentResult)
             return repositoryId?.let { getRepositoryUrlForId(it) }
         }
     }
@@ -174,53 +171,41 @@ abstract class DependencyExtractorService :
      */
     class ConfigurationDependencyCollector {
 
-        private val variantExtractor by lazy {
-            if (GradleVersion.current() >= GradleVersion.version("5.6")) {
-                VariantExtractor.VariantExtractor_5_6
-            } else {
-                VariantExtractor.Default
-            }
-        }
         private val dependencies: MutableMap<String, GitHubDependency> = mutableMapOf()
 
-        fun walkResolveComponentResults(
-            resolvedComponentResult: ResolvedComponentResult,
-            selectedVariant: ResolvedVariantResult? = null,
-            relationship: GitHubDependency.Relationship,
-            repositoryUrlLookup: (ResolvedDependencyResult) -> String?
-        ): List<String> {
-            val dependencies = mutableListOf<String>()
-            variantExtractor
-                .getDependencies(selectedVariant, resolvedComponentResult)
-                .forEach { dependency ->
-                    // We only care about resolve dependencies
-                    if (dependency is ResolvedDependencyResult) {
-                        val targetComponent = dependency.selected
-                        val dependencyName = targetComponent.id.displayName
-                        val moduleVersion = targetComponent.moduleVersion!!
-                        val resolvedSelectedVariant = variantExtractor.getSelectedVariant(dependency)
-                        val transitives = walkResolveComponentResults(
-                            targetComponent,
-                            resolvedSelectedVariant,
-                            GitHubDependency.Relationship.indirect,
-                            repositoryUrlLookup
-                        )
-                        val repositoryUrl = repositoryUrlLookup(dependency)
-                        val thisPurl = moduleVersion.toPurl(repositoryUrl).toString()
-                        addDependency(
-                            dependencyName,
-                            GitHubDependency(
-                                thisPurl,
-                                relationship,
-                                transitives,
-                                metaDataForComponentIdentifier(dependency.selected.id)
-                            )
-                        )
-                        dependencies.add(dependencyName)
-                    }
-                }
-            return dependencies
+        fun walkComponentGraph(
+            rootComponent: ResolvedComponentResult,
+            repositoryUrlLookup: (ResolvedComponentResult) -> String?
+        ) {
+            val resolvedDependencies = dependentComponents(rootComponent)
+            resolvedDependencies.forEach {
+                walkComponent(it, GitHubDependency.Relationship.direct, repositoryUrlLookup)
+            }
         }
+
+        private fun walkComponent(
+            component: ResolvedComponentResult,
+            relationship: GitHubDependency.Relationship,
+            repositoryUrlLookup: (ResolvedComponentResult) -> String?
+        ) {
+            val componentId = component.id.displayName
+            if (dependencies.containsKey(componentId)) {
+                return
+            }
+
+            val resolvedDependencies = dependentComponents(component)
+
+            val repositoryUrl = repositoryUrlLookup(component)
+            val thisPurl = component.moduleVersion!!.toPurl(repositoryUrl).toString()
+            addDependency(componentId, GitHubDependency(thisPurl, relationship, resolvedDependencies.map { it.id.displayName }, metaDataForComponentIdentifier(component.id)))
+
+            resolvedDependencies.forEach {
+                walkComponent(it, GitHubDependency.Relationship.indirect, repositoryUrlLookup)
+            }
+        }
+
+        private fun dependentComponents(component: ResolvedComponentResult) =
+            component.dependencies.filterIsInstance<ResolvedDependencyResult>().map { it.selected }
 
         private fun metaDataForComponentIdentifier(componentIdentifier: ComponentIdentifier): Map<String, Any> {
             return when (componentIdentifier) {
@@ -228,11 +213,13 @@ abstract class DependencyExtractorService :
                     "name" to componentIdentifier.build.name,
                     "projectPath" to componentIdentifier.projectPath
                 )
+
                 is ModuleComponentIdentifier -> mapOf(
                     "group" to componentIdentifier.group,
                     "module" to componentIdentifier.module,
                     "version" to componentIdentifier.version
                 )
+
                 else -> mapOf(
                     "display_name" to componentIdentifier.displayName,
                     "class" to componentIdentifier.javaClass.name
@@ -260,16 +247,11 @@ abstract class DependencyExtractorService :
         @JvmStatic
         fun extractDependenciesFromResolvedComponentResult(
             resolvedComponentResult: ResolvedComponentResult,
-            relationship: GitHubDependency.Relationship,
-            repositoryUrlLookup: (ResolvedDependencyResult) -> String?
+            repositoryUrlLookup: (ResolvedComponentResult) -> String?
         ): Map<String, GitHubDependency> {
             return ConfigurationDependencyCollector()
                 .apply {
-                    walkResolveComponentResults(
-                        resolvedComponentResult = resolvedComponentResult,
-                        relationship = relationship,
-                        repositoryUrlLookup = repositoryUrlLookup
-                    )
+                    walkComponentGraph(resolvedComponentResult, repositoryUrlLookup)
                 }
                 .dependencies()
         }

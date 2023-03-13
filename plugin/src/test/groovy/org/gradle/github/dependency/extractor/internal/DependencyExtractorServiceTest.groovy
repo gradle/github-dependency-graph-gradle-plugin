@@ -2,7 +2,6 @@ package org.gradle.github.dependency.extractor.internal
 
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
-import org.gradle.api.artifacts.ResolvedConfiguration
 import org.gradle.github.dependency.extractor.internal.json.GitHubDependency
 import org.gradle.testfixtures.ProjectBuilder
 import spock.lang.Specification
@@ -19,7 +18,6 @@ class DependencyExtractorServiceTest extends Specification {
         def gitHubDependencies =
                 DependencyExtractorService.extractDependenciesFromResolvedComponentResult(
                         testConfiguration.incoming.resolutionResult.root,
-                        GitHubDependency.Relationship.direct,
                         { null }
                 )
         then:

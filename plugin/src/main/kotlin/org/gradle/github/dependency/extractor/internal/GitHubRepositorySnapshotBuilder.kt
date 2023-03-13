@@ -1,11 +1,6 @@
 package org.gradle.github.dependency.extractor.internal
 
-import org.gradle.github.dependency.extractor.internal.json.BaseGitHubManifest
-import org.gradle.github.dependency.extractor.internal.json.GitHubDetector
-import org.gradle.github.dependency.extractor.internal.json.GitHubJob
-import org.gradle.github.dependency.extractor.internal.json.GitHubManifest
-import org.gradle.github.dependency.extractor.internal.json.GitHubManifestFile
-import org.gradle.github.dependency.extractor.internal.json.GitHubRepositorySnapshot
+import org.gradle.github.dependency.extractor.internal.json.*
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.ConcurrentHashMap

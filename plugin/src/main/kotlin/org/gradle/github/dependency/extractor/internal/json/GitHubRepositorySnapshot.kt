@@ -2,8 +2,7 @@ package org.gradle.github.dependency.extractor.internal.json
 
 import java.text.DateFormat
 import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.TimeZone
+import java.util.*
 
 data class GitHubRepositorySnapshot(
     val version: Int = 0,

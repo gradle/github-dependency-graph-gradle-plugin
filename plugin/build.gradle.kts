@@ -1,12 +1,12 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import java.util.jar.JarFile
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.util.jar.JarFile
 
 plugins {
     kotlin("jvm")
     `java-gradle-plugin`
     `java-test-fixtures`
-    `groovy`
+    groovy
     id("com.github.johnrengelman.shadow")
 }
 

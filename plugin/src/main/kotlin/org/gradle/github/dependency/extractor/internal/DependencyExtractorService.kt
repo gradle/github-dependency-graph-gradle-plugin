@@ -9,12 +9,7 @@ import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.github.dependency.extractor.internal.json.BaseGitHubManifest
 import org.gradle.github.dependency.extractor.internal.json.GitHubDependency
-import org.gradle.internal.operations.BuildOperationDescriptor
-import org.gradle.internal.operations.BuildOperationListener
-import org.gradle.internal.operations.OperationFinishEvent
-import org.gradle.internal.operations.OperationIdentifier
-import org.gradle.internal.operations.OperationProgressEvent
-import org.gradle.internal.operations.OperationStartEvent
+import org.gradle.internal.operations.*
 import java.io.File
 import java.net.URI
 import java.nio.file.Path
@@ -197,7 +192,15 @@ abstract class DependencyExtractorService :
 
             val repositoryUrl = repositoryUrlLookup(component)
             val thisPurl = component.moduleVersion!!.toPurl(repositoryUrl).toString()
-            addDependency(componentId, GitHubDependency(thisPurl, relationship, resolvedDependencies.map { it.id.displayName }, metaDataForComponentIdentifier(component.id)))
+            addDependency(
+                componentId,
+                GitHubDependency(
+                    thisPurl,
+                    relationship,
+                    resolvedDependencies.map { it.id.displayName },
+                    metaDataForComponentIdentifier(component.id)
+                )
+            )
 
             resolvedDependencies.forEach {
                 walkComponent(it, GitHubDependency.Relationship.indirect, repositoryUrlLookup)

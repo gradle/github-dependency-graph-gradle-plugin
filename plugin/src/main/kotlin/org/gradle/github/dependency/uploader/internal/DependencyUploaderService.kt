@@ -13,7 +13,7 @@ import org.gradle.github.dependency.uploader.GithubDependencyUploaderPlugin.Comp
 import java.io.File
 import java.net.URI
 
-abstract class DependencyUploaderService: AutoCloseable {
+abstract class DependencyUploaderService : AutoCloseable {
     companion object {
         private val LOGGER = Logging.getLogger(DependencyUploaderService::class.java)
     }

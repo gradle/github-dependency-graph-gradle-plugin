@@ -67,6 +67,9 @@ jobs:
           - name: Set up Gradle
             uses: gradle/gradle-build-action@v2
 
+          - name: Build plugin
+            run: ./gradlew build
+
           - name: Self Test :plugin
             run: ./gradlew --no-configuration-cache -S -I plugin-self-test.init.gradle :plugin:dependencies
             env:

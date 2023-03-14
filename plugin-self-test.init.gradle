@@ -1,4 +1,4 @@
-import org.gradle.github.dependency.uploader.GithubDependencyUploaderPlugin
+import org.gradle.github.dependency.extractor.GithubDependencyExtractorPlugin
 initscript {
     def pluginFiles = fileTree("plugin/build/libs") {
         include "**/*.jar"
@@ -18,4 +18,4 @@ initscript {
         classpath files(pluginFile)
     }
 }
-apply plugin: GithubDependencyUploaderPlugin
+apply plugin: GithubDependencyExtractorPlugin

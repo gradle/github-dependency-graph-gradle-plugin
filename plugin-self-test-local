@@ -8,4 +8,4 @@ export GITHUB_WORKSPACE=$( pwd )
 export GITHUB_REPOSITORY="gradle/github-dependency-extractor"
 
 # invoke whatever Gradle task you want to test here
-./gradlew -S --no-configuration-cache -I plugin-self-test.init.gradle :plugin-test:classes --no-scan
+./gradlew -S --no-configuration-cache --no-build-cache -I plugin-self-test.init.gradle --no-scan --console=plain $1

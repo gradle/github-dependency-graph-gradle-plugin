@@ -31,7 +31,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        gradle-version: [ "5.6.4", "6.9.4", "7.6.1"]
+        gradle-version: [ "5.6.4", "7.6.1"]
+        # Plugin not currently compatible with Gradle 6.9.x
     runs-on: ubuntu-latest
     env:
       GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
@@ -65,6 +66,9 @@ jobs:
 
           - name: Set up Gradle
             uses: gradle/gradle-build-action@v2
+
+          - name: Build plugin
+            run: ./gradlew build
 
           - name: Self Test :plugin
             run: ./gradlew --no-configuration-cache -S -I plugin-self-test.init.gradle :plugin:dependencies

@@ -75,7 +75,20 @@ jobs:
             env:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+          - name: Save plugin JSON report
+            uses: actions/upload-artifact@v3
+            with:
+                name: plugin-json
+                path: build/reports/github-dependency-report/github-dependency-manifest.json
+
           - name: Self Test :plugin-test
             run: ./gradlew --no-configuration-cache -S -I plugin-self-test.init.gradle :plugin-test:dependencies
             env:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+          - name: Save plugin-test JSON report
+            uses: actions/upload-artifact@v3
+            with:
+              name: plugin-test-json
+              path: build/reports/github-dependency-report/github-dependency-manifest.json
+

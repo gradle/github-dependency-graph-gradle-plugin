@@ -2,7 +2,10 @@ package org.gradle.github.dependency.extractor
 
 import org.gradle.github.dependency.base.BaseExtractorTest
 import org.gradle.internal.impldep.org.apache.commons.io.FileUtils
+import spock.lang.IgnoreIf
 
+@IgnoreIf({ System.getProperty("testGradleVersion") == "5.6.4"})
+// Samples aren't designed to run on Gradle 5.x
 class SampleProjectDependencyExtractorTest extends BaseExtractorTest {
     def setup() {
         applyExtractorPlugin()

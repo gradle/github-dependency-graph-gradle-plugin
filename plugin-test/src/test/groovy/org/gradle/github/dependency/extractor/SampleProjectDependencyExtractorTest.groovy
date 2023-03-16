@@ -18,7 +18,7 @@ class SampleProjectDependencyExtractorTest extends BaseExtractorTest {
         succeeds("build")
 
         then:
-        jsonManifests().keySet().sort() == [
+        resolvedConfigurations == [
                 "project : [annotationProcessor]",
                 "project : [compileClasspath]",
                 "project : [testAnnotationProcessor]",
@@ -36,7 +36,7 @@ class SampleProjectDependencyExtractorTest extends BaseExtractorTest {
         succeeds("build")
 
         then:
-        jsonManifests().keySet().sort() == [
+        resolvedConfigurations == [
                 "project :app [annotationProcessor]",
                 "project :app [compileClasspath]",
                 "project :app [runtimeClasspath]",
@@ -65,7 +65,7 @@ class SampleProjectDependencyExtractorTest extends BaseExtractorTest {
         succeeds("build")
 
         then:
-        jsonManifests().keySet().sort() == [
+        resolvedConfigurations == [
                 "project :app [annotationProcessor]",
                 "project :app [classpath]",
                 "project :app [compileClasspath]",
@@ -86,5 +86,15 @@ class SampleProjectDependencyExtractorTest extends BaseExtractorTest {
                 "project :utilities [testCompileClasspath]",
                 "project :utilities [testRuntimeClasspath]"
         ]
+    }
+
+    private List<String> getResolvedConfigurations() {
+        Set<String> resolved = jsonManifests().keySet()
+        return resolved
+                // `buildSrc` resolution changed in Gradle 8.x
+                .collect { it == "project :buildSrc [runtimeClasspath]"
+                            ? "project :buildSrc [buildScriptClasspath]"
+                            : it }
+                .sort()
     }
 }

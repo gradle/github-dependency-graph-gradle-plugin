@@ -7,5 +7,8 @@ export GITHUB_SHA=$( git rev-parse HEAD )
 export GITHUB_WORKSPACE=$( pwd )
 export GITHUB_REPOSITORY="gradle/github-dependency-extractor"
 
-# invoke whatever Gradle task you want to test here
-./gradlew -S --no-configuration-cache --no-build-cache -I plugin-self-test.init.gradle --no-scan --console=plain $1
+if [[ -z "${GITHUB_TOKEN}" ]]; then
+  echo "GITHUB_TOKEN must be set in order to submit dependency graph"
+else
+  ./plugin-self-test
+fi

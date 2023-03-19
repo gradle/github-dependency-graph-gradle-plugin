@@ -52,10 +52,6 @@ gradlePlugin {
         id = "org.gradle.github.dependency.extractor"
         implementationClass = "org.gradle.github.dependency.extractor.GithubDependencyExtractorPlugin"
     }
-    val uploader by plugins.creating {
-        id = "org.gradle.dependency.uploader"
-        implementationClass = "org.gradle.github.dependency.uploader.GithubDependencyUploaderPlugin"
-    }
 }
 
 // Add a source set for the functional test suite

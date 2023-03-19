@@ -73,7 +73,7 @@ abstract class BaseExtractorTest extends BaseIntegrationSpec {
         assert json.sha == environmentVars.sha
         assert json.ref == environmentVars.ref
         def job = json.job as Map
-        assert job.name == environmentVars.job
+        assert job.correlator == environmentVars.job
         assert job.id == environmentVars.runNumber
         def detector = json.detector as Map
         assert detector.name.contains("Gradle")

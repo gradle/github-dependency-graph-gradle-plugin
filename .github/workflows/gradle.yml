@@ -67,11 +67,8 @@ jobs:
           - name: Set up Gradle
             uses: gradle/gradle-build-action@v2
 
-          - name: Build plugin
-            run: ./gradlew build
-
           - name: Self Test :plugin
-            run: ./gradlew --no-configuration-cache -S -I plugin-self-test.init.gradle :plugin:dependencies
+            run: ./plugin-self-test :plugin:dependencies
             env:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -82,7 +79,7 @@ jobs:
                 path: build/reports/github-dependency-report/github-dependency-manifest.json
 
           - name: Self Test :plugin-test
-            run: ./gradlew --no-configuration-cache -S -I plugin-self-test.init.gradle :plugin-test:dependencies
+            run: ./plugin-self-test :plugin-test:dependencies
             env:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

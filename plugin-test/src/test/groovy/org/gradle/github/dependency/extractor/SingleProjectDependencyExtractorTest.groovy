@@ -56,7 +56,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         def resolved = runtimeClasspathManifest.resolved as Map
         def testFoo = resolved[gavFor(foo)]
         verifyAll(testFoo as Map) {
-            purl == purlFor(foo)
+            package_url == purlFor(foo)
             relationship == "direct"
             dependencies == []
         }
@@ -65,12 +65,12 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         def testResolved = testClasspathManifest.resolved as Map
         def testBar = testResolved[gavFor(bar)]
         verifyAll(testFoo as Map) {
-            purl == purlFor(foo)
+            package_url == purlFor(foo)
             relationship == "direct"
             dependencies == []
         }
         verifyAll(testBar as Map) {
-            purl == purlFor(bar)
+            package_url == purlFor(bar)
             relationship == "direct"
             dependencies == []
         }
@@ -95,7 +95,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
             def resolved = runtimeClasspathManifest.resolved as Map
             def testFoo = resolved[gavFor(foo)]
             verifyAll(testFoo as Map) {
-                purl == purlFor(foo)
+                package_url == purlFor(foo)
                 relationship == "direct"
                 dependencies == []
             }
@@ -129,13 +129,13 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         def resolved = runtimeClasspathManifest.resolved as Map
         def testFoo = resolved[gavFor(foo)] as Map
         verifyAll(testFoo) {
-            purl == purlFor(foo)
+            package_url == purlFor(foo)
             relationship == "direct"
             dependencies == []
         }
         def testBar = resolved[gavFor(bar)] as Map
         verifyAll(testBar) {
-            purl == purlFor(bar)
+            package_url == purlFor(bar)
             relationship == "direct"
             dependencies == []
         }
@@ -160,13 +160,13 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         def resolved = runtimeClasspathManifest.resolved as Map
         def testFoo = resolved[gavFor(foo)] as Map
         verifyAll(testFoo) {
-            purl == purlFor(foo)
+            package_url == purlFor(foo)
             relationship == "direct"
             dependencies == [gavFor(bar)]
         }
         def testBar = resolved[gavFor(bar)] as Map
         verifyAll(testBar) {
-            purl == purlFor(bar)
+            package_url == purlFor(bar)
             relationship == "indirect"
             dependencies == []
         }
@@ -195,13 +195,13 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
             def resolved = classpathManifest.resolved as Map
             def testFoo = resolved[gavFor(foo)] as Map
             verifyAll(testFoo) {
-                purl == purlFor(foo)
+                package_url == purlFor(foo)
                 relationship == "direct"
                 dependencies == [gavFor(bar)]
             }
             def testBar = resolved[gavFor(bar)] as Map
             verifyAll(testBar) {
-                purl == purlFor(bar)
+                package_url == purlFor(bar)
                 relationship == "indirect"
                 dependencies == []
             }
@@ -229,13 +229,13 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         def resolved = runtimeClasspathManifest.resolved as Map
         def testFoo = resolved[gavFor(foo)] as Map
         verifyAll(testFoo) {
-            purl == purlFor(foo)
+            package_url == purlFor(foo)
             relationship == "direct"
             dependencies == [gavFor(barNewer)]
         }
         def testBar = resolved[gavFor(barNewer)] as Map
         verifyAll(testBar) {
-            purl == purlFor(barNewer)
+            package_url == purlFor(barNewer)
             relationship == "direct"
             dependencies == []
         }
@@ -262,13 +262,13 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         def resolved = runtimeClasspathManifest.resolved as Map
         def testFoo = resolved[gavFor(foo)] as Map
         verifyAll(testFoo) {
-            purl == purlFor(foo)
+            package_url == purlFor(foo)
             relationship == "direct"
             dependencies == [gavFor(bar)]
         }
         def testBarIndirect = resolved[gavFor(bar)] as Map
         verifyAll(testBarIndirect) {
-            purl == purlFor(bar)
+            package_url == purlFor(bar)
             relationship == "direct"
             dependencies == []
         }
@@ -292,7 +292,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         def classpathResolved = classpathManifest.resolved as Map
         def testFoo = classpathResolved[gavFor(foo)] as Map
         verifyAll(testFoo) {
-            purl == purlFor(foo)
+            package_url == purlFor(foo)
             relationship == "direct"
             dependencies == []
         }

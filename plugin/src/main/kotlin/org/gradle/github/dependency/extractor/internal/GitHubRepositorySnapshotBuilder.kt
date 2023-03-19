@@ -18,7 +18,7 @@ class GitHubRepositorySnapshotBuilder(
     private val job by lazy {
         GitHubJob(
             id = gitHubRunNumber,
-            name = gitHubJobName
+            correlator = gitHubJobName
         )
     }
 

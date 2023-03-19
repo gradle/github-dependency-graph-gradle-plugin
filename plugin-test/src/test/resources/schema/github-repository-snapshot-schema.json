@@ -61,9 +61,9 @@
           "description": "The external ID of the job.",
           "example": "5622a2b0-63f6-4732-8c34-a1ab27e102a11"
         },
-        "name": {
+        "correlator": {
           "type": "string",
-          "description": "The name of the job.",
+          "description": "The correlator for the submission.",
           "example": "build"
         },
         "html_url": {
@@ -74,7 +74,7 @@
       },
       "required": [
         "id",
-        "name"
+        "correlator"
       ],
       "additionalProperties": false
     },
@@ -141,7 +141,7 @@
       "type": "object",
       "description": "A single package dependency.",
       "properties": {
-        "purl": {
+        "package_url": {
           "type": "string",
           "description": "Package-url (PURL) of dependency",
           "example": "pkg:/npm/%40actions/http-client@1.0.11",

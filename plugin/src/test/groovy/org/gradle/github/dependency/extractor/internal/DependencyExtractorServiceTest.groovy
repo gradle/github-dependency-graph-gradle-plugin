@@ -24,13 +24,13 @@ class DependencyExtractorServiceTest extends Specification {
         gitHubDependencies.size() == 2
         GitHubDependency junitDependency = gitHubDependencies["junit:junit:4.12"]
         verifyAll(junitDependency) {
-            purl.toString() == "pkg:maven/junit/junit@4.12"
+            package_url.toString() == "pkg:maven/junit/junit@4.12"
             relationship == GitHubDependency.Relationship.direct
             dependencies == ["org.hamcrest:hamcrest-core:1.3"]
         }
         GitHubDependency hamcrestDependency = gitHubDependencies["org.hamcrest:hamcrest-core:1.3"]
         verifyAll(hamcrestDependency) {
-            purl.toString() == "pkg:maven/org.hamcrest/hamcrest-core@1.3"
+            package_url.toString() == "pkg:maven/org.hamcrest/hamcrest-core@1.3"
             relationship == GitHubDependency.Relationship.indirect
             dependencies == []
         }

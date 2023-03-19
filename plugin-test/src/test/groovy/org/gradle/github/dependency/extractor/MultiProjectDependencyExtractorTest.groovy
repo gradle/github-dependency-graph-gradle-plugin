@@ -63,7 +63,7 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         def parentClasspathResolved = parentRuntimeClasspath.resolved as Map
         def parentTestFoo = parentClasspathResolved[gavFor(foo)] as Map
         verifyAll(parentTestFoo) {
-            purl == this.fooPurl
+            package_url == this.fooPurl
             relationship == "direct"
             dependencies == []
         }
@@ -74,7 +74,7 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
             def classpathResolved = runtimeClasspath.resolved as Map
             def testFoo = classpathResolved[gavFor(foo)] as Map
             verifyAll(testFoo) {
-                purl == this.fooPurl
+                package_url == this.fooPurl
                 relationship == "direct"
                 dependencies == []
             }
@@ -118,7 +118,7 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
             def aClasspathResolved = aRuntimeClasspath.resolved as Map
             def aTestFoo = aClasspathResolved[fooGav] as Map
             verifyAll(aTestFoo) {
-                purl == this.fooPurl
+                package_url == this.fooPurl
                 relationship == "direct"
                 dependencies == []
             }
@@ -131,14 +131,14 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         def bClasspathResolved = bRuntimeClasspath.resolved as Map
         def bTestFoo = bClasspathResolved[fooGav] as Map
         verifyAll(bTestFoo) {
-            purl == this.fooPurl
+            package_url == this.fooPurl
             relationship == "indirect"
             dependencies == []
         }
         def aTestProjectPurl = "pkg:maven/org.test/a@1.0"
         def aTestProject = bClasspathResolved["project :a"] as Map
         verifyAll(aTestProject) {
-            purl == aTestProjectPurl
+            package_url == aTestProjectPurl
             relationship == "direct"
             dependencies == [this.fooGav]
         }
@@ -196,7 +196,7 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         aCompileClasspathFile.source_location == "a/build.gradle"
         def aClasspathResolved = aCompileClasspath.resolved as Map
         verifyAll(aClasspathResolved[fooGav] as Map) {
-            purl == this.fooPurl
+            package_url == this.fooPurl
             relationship == "direct"
             dependencies == []
         }
@@ -206,12 +206,12 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         bCompileClasspathFile.source_location == "b/build.gradle"
         def bClasspathResolved = bCompileClasspath.resolved as Map
         verifyAll(bClasspathResolved[fooGav] as Map) {
-            purl == this.fooPurl
+            package_url == this.fooPurl
             relationship == "indirect"
             dependencies == []
         }
         verifyAll(bClasspathResolved["project :a"] as Map) {
-            purl == aTestProjectPurl
+            package_url == aTestProjectPurl
             relationship == "direct"
             dependencies == [this.fooGav]
         }
@@ -221,17 +221,17 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         cCompileClasspathFile.source_location == "c/build.gradle"
         def cClasspathResolved = cCompileClasspath.resolved as Map
         verifyAll(cClasspathResolved[fooGav] as Map) {
-            purl == this.fooPurl
+            package_url == this.fooPurl
             relationship == "indirect"
             dependencies == []
         }
         verifyAll(cClasspathResolved["project :a"] as Map) {
-            purl == aTestProjectPurl
+            package_url == aTestProjectPurl
             relationship == "indirect"
             dependencies == [this.fooGav]
         }
         verifyAll(cClasspathResolved["project :b"] as Map) {
-            purl == bTestProjectPurl
+            package_url == bTestProjectPurl
             relationship == "direct"
             dependencies == ["project :a"]
         }
@@ -278,7 +278,7 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         def buildSrcClasspathResolved = buildSrcClasspath.resolved as Map
         def testFoo = buildSrcClasspathResolved[fooGav] as Map
         verifyAll(testFoo) {
-            purl == this.fooPurl
+            package_url == this.fooPurl
             relationship == "direct"
             dependencies == []
         }
@@ -288,7 +288,7 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         def runtimeClasspathResolved = runtimeClasspath.resolved as Map
         def testBar = runtimeClasspathResolved[gavFor(bar)] as Map
         verifyAll(testBar) {
-            purl == purlFor(this.bar)
+            package_url == purlFor(this.bar)
             relationship == "direct"
             dependencies == []
         }
@@ -337,13 +337,13 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
             def runtimeClasspathResolved = runtimeClasspath.resolved as Map
             def testFoo = runtimeClasspathResolved[fooGav] as Map
             verifyAll(testFoo) {
-                purl == this.fooPurl
+                package_url == this.fooPurl
                 relationship == "indirect"
                 dependencies == []
             }
             def testIncludedChild = runtimeClasspathResolved["project :included-child"] as Map
             verifyAll(testIncludedChild) {
-                purl == "pkg:maven/org.test.included/included-child@1.0"
+                package_url == "pkg:maven/org.test.included/included-child@1.0"
                 relationship == "direct"
                 dependencies == [this.fooGav]
             }
@@ -357,7 +357,7 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
 
                 def testFoo = includedChildRuntimeClasspathResolved[fooGav] as Map
                 verifyAll(testFoo) {
-                    purl == this.fooPurl
+                    package_url == this.fooPurl
                     relationship == "direct"
                     dependencies == []
                 }

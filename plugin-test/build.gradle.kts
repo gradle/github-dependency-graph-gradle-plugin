@@ -10,12 +10,11 @@ dependencies {
     testImplementation(gradleTestKit())
     testImplementation("org.codehaus.groovy:groovy-json:3.0.9")
     testImplementation("com.networknt:json-schema-validator:1.0.64")
-    testImplementation("com.github.tomakehurst:wiremock-jre8:2.32.0")
-    testFixturesApi(libs.spock.junit4)
 
     testFixturesApi(gradleTestKit())
-    testFixturesApi(libs.spock.core)
     testFixturesApi("junit:junit:4.13.2")
+    testFixturesApi(libs.spock.junit4)
+    testFixturesApi(libs.spock.core)
     testFixturesApi("org.jetbrains:annotations:22.0.0")
 
     testFixturesImplementation(gradleApi())

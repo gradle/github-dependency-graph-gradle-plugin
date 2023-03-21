@@ -8,6 +8,7 @@ jackson-parameter-names = { group = "com.fasterxml.jackson.module", name = "jack
 jackson-kotlin = { group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin" }
 
 apache-httpclient = { group = "org.apache.httpcomponents.client5", name = "httpclient5", version = "5.1.2" }
+apache-commons-io = { group = "commons-io", name = "commons-io", version = "2.11.0" }
 
 spock_core = { group = "org.spockframework", name = "spock-core", version.ref = "spock" }
 spock_junit4 = { group = "org.spockframework", name = "spock-junit4", version.ref = "spock" }

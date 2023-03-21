@@ -254,7 +254,7 @@ abstract class DependencyExtractorService :
             PackageURLBuilder
                 .aPackageURL()
                 .withType("maven")
-                .withNamespace(group)
+                .withNamespace(group.ifEmpty { name }) // TODO: This is a sign of broken mapping from component -> PURL
                 .withName(name)
                 .withVersion(version)
                 .also {

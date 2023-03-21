@@ -10,11 +10,12 @@ dependencies {
     testImplementation(gradleTestKit())
     testImplementation("org.codehaus.groovy:groovy-json:3.0.9")
     testImplementation("com.networknt:json-schema-validator:1.0.64")
+    testImplementation(libs.apache.commons.io)
 
     testFixturesApi(gradleTestKit())
-    testFixturesApi("junit:junit:4.13.2")
-    testFixturesApi(libs.spock.junit4)
     testFixturesApi(libs.spock.core)
+    testFixturesApi(libs.spock.junit4)
+    testFixturesApi("junit:junit:4.13.2")
     testFixturesApi("org.jetbrains:annotations:22.0.0")
 
     testFixturesImplementation(gradleApi())
@@ -41,6 +42,9 @@ tasks.withType<Test>().configureEach {
     System.getProperty("testGradleVersion")?.let { testGradleVersion ->
         systemProperties["testGradleVersion"] = testGradleVersion
     }
+
+    // Re-run the tests when something from sample-projects changes
+    inputs.dir("../sample-projects")
 }
 
 abstract class WriteConfigTask : DefaultTask() {

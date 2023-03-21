@@ -41,6 +41,9 @@ tasks.withType<Test>().configureEach {
     System.getProperty("testGradleVersion")?.let { testGradleVersion ->
         systemProperties["testGradleVersion"] = testGradleVersion
     }
+
+    // Re-run the tests when something from sample-projects changes
+    inputs.dir("../sample-projects")
 }
 
 abstract class WriteConfigTask : DefaultTask() {

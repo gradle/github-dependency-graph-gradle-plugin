@@ -9,6 +9,7 @@ dependencies {
     extractorPlugin(project(":plugin", "shadowJar"))
     testImplementation(gradleTestKit())
     testImplementation("org.codehaus.groovy:groovy-json:3.0.9")
+    testImplementation(platform(libs.jackson.platform))
     testImplementation("com.networknt:json-schema-validator:1.0.64")
     testImplementation(libs.apache.commons.io)
 

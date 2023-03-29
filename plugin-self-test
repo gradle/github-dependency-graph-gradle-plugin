@@ -4,7 +4,7 @@
 ./gradlew :plugin:build
 
 # Invoke a build extracting the GitHub Dependency Graph
-./gradlew --no-configuration-cache --no-build-cache -I plugin-self-test.init.gradle --no-scan --console=plain $1
+./gradlew --no-configuration-cache --no-build-cache -I plugin-self-test.init.gradle --no-scan --console=plain $*
 
 # Submit the dependency graph to GitHub
 curl -L \

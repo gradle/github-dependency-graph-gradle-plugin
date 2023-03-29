@@ -2,11 +2,9 @@ package org.gradle.github.dependency.extractor.internal
 
 import com.github.packageurl.PackageURLBuilder
 import org.gradle.api.artifacts.ModuleVersionIdentifier
-import org.gradle.api.artifacts.component.ComponentIdentifier
-import org.gradle.api.artifacts.component.ModuleComponentIdentifier
-import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
+import org.gradle.api.internal.artifacts.DefaultProjectComponentIdentifier
 import org.gradle.github.dependency.extractor.internal.json.BaseGitHubManifest
 import org.gradle.github.dependency.extractor.internal.json.GitHubDependency
 import org.gradle.internal.operations.*
@@ -78,7 +76,7 @@ abstract class DependencyExtractorService :
         tailrec fun recursivelyExtractProjects(projects: Set<LoadProjectsBOT.Result.Project>) {
             if (projects.isEmpty()) return
             projects.forEach { project ->
-                gitHubRepositorySnapshotBuilder.addProject(details.buildPath, project.path, project.buildFile)
+                gitHubRepositorySnapshotBuilder.addProject(project.identityPath, project.buildFile)
             }
             val newProjects = projects.flatMap { it.children }.toSet()
             recursivelyExtractProjects(newProjects)
@@ -91,11 +89,9 @@ abstract class DependencyExtractorService :
         result: ResolveConfigurationDependenciesBOT.Result
     ) {
         val rootComponentId = result.rootComponent.id
-        val trueProjectPath =
-            (rootComponentId as? ProjectComponentIdentifier)?.projectPath
-                ?: details.projectPath
+        val projectIdentityPath = (rootComponentId as? DefaultProjectComponentIdentifier)?.identityPath?.path
         @Suppress("FoldInitializerAndIfToElvis") // Purely for documentation purposes
-        if (trueProjectPath == null) {
+        if (projectIdentityPath == null) {
             // TODO: We can actually handle this case, but it's more complicated than I have time to deal with
             // TODO: See the Gradle Enterprise Build Scan Plugin: `ConfigurationResolutionCapturer_5_0`
             return
@@ -110,8 +106,7 @@ abstract class DependencyExtractorService :
         val name = "${rootComponentId.displayName} [${details.configurationName}]"
         gitHubRepositorySnapshotBuilder.addManifest(
             name = name,
-            buildPath = details.buildPath,
-            projectPath = trueProjectPath,
+            projectIdentityPath = projectIdentityPath,
             manifest = BaseGitHubManifest(
                 name = name,
                 resolved = dependencies

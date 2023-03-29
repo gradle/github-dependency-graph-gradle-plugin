@@ -4,8 +4,7 @@ import com.fasterxml.jackson.annotation.JsonUnwrapped
 
 data class BaseGitHubManifest(
     val name: String,
-    val resolved: Map<String, GitHubDependency>,
-    val metadata: Map<String, Any?>
+    val resolved: Map<String, GitHubDependency>
 )
 
 data class GitHubManifest(

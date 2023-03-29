@@ -68,7 +68,7 @@ jobs:
             uses: gradle/gradle-build-action@v2
 
           - name: Self Test :plugin
-            run: ./plugin-self-test :plugin:dependencies
+            run: ./plugin-self-test :plugin:dependencies :plugin-test:dependencies
             env:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -77,15 +77,4 @@ jobs:
             with:
                 name: plugin-json
                 path: build/reports/github-dependency-report/github-dependency-manifest.json
-
-          - name: Self Test :plugin-test
-            run: ./plugin-self-test :plugin-test:dependencies
-            env:
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-          - name: Save plugin-test JSON report
-            uses: actions/upload-artifact@v3
-            with:
-              name: plugin-test-json
-              path: build/reports/github-dependency-report/github-dependency-manifest.json
 

@@ -88,11 +88,11 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         succeeds("build")
 
         then:
-        def runtimeClasspathManifest = jsonRepositorySnapshot(configuration: "compileClasspath")
+        def compileClasspath = jsonRepositorySnapshot(configuration: "compileClasspath")
         verifyAll {
-            def file = runtimeClasspathManifest.file as Map
+            def file = compileClasspath.file as Map
             file.source_location == "build.gradle"
-            def resolved = runtimeClasspathManifest.resolved as Map
+            def resolved = compileClasspath.resolved as Map
             def testFoo = resolved[gavFor(foo)]
             verifyAll(testFoo as Map) {
                 package_url == purlFor(foo)

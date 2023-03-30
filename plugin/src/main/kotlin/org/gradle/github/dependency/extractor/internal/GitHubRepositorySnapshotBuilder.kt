@@ -29,7 +29,11 @@ class GitHubRepositorySnapshotBuilder(
      * Map of the project identifier to the relative path of the git workspace directory [gitWorkspaceDirectory].
      */
     private val projectToRelativeBuildFile = ConcurrentHashMap<String, String>()
-    private val bundledManifests: MutableMap<String, BundledManifest> = ConcurrentHashMap()
+
+    /**
+     * Map of all resolved configurations by name
+     */
+    private val resolvedConfigurations: MutableMap<String, ResolvedConfiguration> = ConcurrentHashMap()
 
     fun addProject(identityPath: String, buildFileAbsolutePath: String) {
         val buildFilePath = Paths.get(buildFileAbsolutePath)
@@ -37,41 +41,20 @@ class GitHubRepositorySnapshotBuilder(
     }
 
     fun addResolvedConfiguration(configuration: ResolvedConfiguration) {
-        val dependencyCollector = DependencyCollector(configuration.getRootComponent())
-        for (component in configuration.components) {
-            dependencyCollector.addDependency(component)
-        }
         val name = "${configuration.rootId} [${configuration.name}]"
-        addManifest(
-            name = name,
-            projectIdentityPath = configuration.identityPath,
-            manifest = BaseGitHubManifest(
-                name = name,
-                resolved = dependencyCollector.resolved
-            )
-        )
-    }
-
-    private fun addManifest(
-        name: String,
-        projectIdentityPath: String,
-        manifest: BaseGitHubManifest
-    ) {
-        bundledManifests[name] = BundledManifest(
-            projectIdentityPath = projectIdentityPath,
-            manifest = manifest
-        )
+        resolvedConfigurations[name] = configuration
     }
 
     fun build(): GitHubRepositorySnapshot {
-        val manifests = bundledManifests.mapValues { (_, value) ->
+        val manifests = resolvedConfigurations.mapValues { (name, configuration) ->
+            val dependencyCollector = DependencyCollector(configuration.getRootComponent())
+            for (component in configuration.components) {
+                dependencyCollector.addDependency(component)
+            }
             GitHubManifest(
-                base = value.manifest,
-                file = projectToRelativeBuildFile[value.projectIdentityPath]?.let {
-                    // Cleanup the path for Windows systems
-                    val sourceLocation = it.replace('\\', '/')
-                    GitHubManifestFile(sourceLocation = sourceLocation)
-                }
+                name = name,
+                resolved = dependencyCollector.resolved,
+                file = buildFileForProject(configuration)
             )
         }
         return GitHubRepositorySnapshot(
@@ -81,6 +64,15 @@ class GitHubRepositorySnapshotBuilder(
             detector = detector,
             manifests = manifests
         )
+    }
+
+    private fun buildFileForProject(configuration: ResolvedConfiguration): GitHubManifestFile? {
+        val file = projectToRelativeBuildFile[configuration.identityPath]?.let {
+            // Cleanup the path for Windows systems
+            val sourceLocation = it.replace('\\', '/')
+            GitHubManifestFile(sourceLocation = sourceLocation)
+        }
+        return file
     }
 
     private class DependencyCollector(rootComponent: ResolvedComponent) {
@@ -121,13 +113,4 @@ class GitHubRepositorySnapshotBuilder(
                 .build()
                 .toString()
     }
-
-
-    private data class BundledManifest(
-        /**
-         * Used to look up the file path of the build file in the [projectToRelativeBuildFile] map.
-         */
-        val projectIdentityPath: String,
-        val manifest: BaseGitHubManifest
-    )
 }

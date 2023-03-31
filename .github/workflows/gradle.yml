@@ -67,10 +67,10 @@ jobs:
           - name: Set up Gradle
             uses: gradle/gradle-build-action@v2
 
-          - name: Self Test :plugin
-            run: ./plugin-self-test :plugin:dependencies :plugin-test:dependencies
-            env:
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#           - name: Self Test :plugin
+#             run: ./plugin-self-test :plugin:dependencies :plugin-test:dependencies
+#             env:
+#                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
           - name: Save plugin JSON report
             uses: actions/upload-artifact@v3

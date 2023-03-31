@@ -83,21 +83,7 @@ abstract class BaseExtractorTest extends BaseIntegrationSpec {
         return json["manifests"] as Map
     }
 
-    protected String manifestKey(Map args) {
-        String build = args.getOrDefault("build", "")
-        String project = args.getOrDefault("project", "")
-        if (build.isEmpty() && project.isEmpty()) {
-            project = ":"
-        }
-        String configuration = args.get("configuration")
-        if (!configuration) {
-            throw new IllegalArgumentException("Missing 'configuration' parameter")
-        }
-        return "project ${build}${project} [${configuration}]"
-    }
-
-    protected Map jsonRepositorySnapshot(Map args) {
-        String manifestName = manifestKey(args)
+    protected Map jsonManifest(String manifestName) {
         Map manifests = jsonManifests()
         assert manifests.keySet().contains(manifestName)
         Map manifest = manifests[manifestName] as Map

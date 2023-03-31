@@ -21,13 +21,7 @@ class SampleProjectDependencyExtractorTest extends BaseExtractorTest {
         succeeds("build")
 
         then:
-        resolvedConfigurations == [
-                "project : [annotationProcessor]",
-                "project : [compileClasspath]",
-                "project : [testAnnotationProcessor]",
-                "project : [testCompileClasspath]",
-                "project : [testRuntimeClasspath]"
-        ]
+        manifestNames == ["project :"]
     }
 
     def "check java-multi-project sample"() {
@@ -39,23 +33,11 @@ class SampleProjectDependencyExtractorTest extends BaseExtractorTest {
         succeeds("build")
 
         then:
-        resolvedConfigurations == [
-                "project :app [annotationProcessor]",
-                "project :app [compileClasspath]",
-                "project :app [runtimeClasspath]",
-                "project :app [testAnnotationProcessor]",
-                "project :app [testCompileClasspath]",
-                "project :app [testRuntimeClasspath]",
-                "project :buildSrc [annotationProcessor]",
-                "project :buildSrc [buildScriptClasspath]",
-                "project :buildSrc [compileClasspath]",
-                "project :list [annotationProcessor]",
-                "project :list [compileClasspath]",
-                "project :list [testAnnotationProcessor]",
-                "project :list [testCompileClasspath]",
-                "project :list [testRuntimeClasspath]",
-                "project :utilities [annotationProcessor]",
-                "project :utilities [compileClasspath]"
+        manifestNames == [
+                "project :app",
+                "project :buildSrc",
+                "project :list",
+                "project :utilities"
         ]
     }
 
@@ -68,36 +50,15 @@ class SampleProjectDependencyExtractorTest extends BaseExtractorTest {
         succeeds("build")
 
         then:
-        resolvedConfigurations == [
-                "project :app [annotationProcessor]",
-                "project :app [classpath]",
-                "project :app [compileClasspath]",
-                "project :app [runtimeClasspath]",
-                "project :app [testAnnotationProcessor]",
-                "project :app [testCompileClasspath]",
-                "project :app [testRuntimeClasspath]",
-                "project :build-logic [annotationProcessor]",
-                "project :build-logic [classpath]",
-                "project :build-logic [compileClasspath]",
-                "project :list [annotationProcessor]",
-                "project :list [classpath]",
-                "project :list [compileClasspath]",
-                "project :utilities [annotationProcessor]",
-                "project :utilities [classpath]",
-                "project :utilities [compileClasspath]",
-                "project :utilities [testAnnotationProcessor]",
-                "project :utilities [testCompileClasspath]",
-                "project :utilities [testRuntimeClasspath]"
+        manifestNames == [
+                "project :app",
+                "project :build-logic",
+                "project :list",
+                "project :utilities"
         ]
     }
 
-    private List<String> getResolvedConfigurations() {
-        Set<String> resolved = jsonManifests().keySet()
-        return resolved
-                // `buildSrc` resolution changed in Gradle 8.x
-                .collect { it == "project :buildSrc [runtimeClasspath]"
-                            ? "project :buildSrc [buildScriptClasspath]"
-                            : it }
-                .sort()
+    private List<String> getManifestNames() {
+        return jsonManifests().keySet() as List
     }
 }

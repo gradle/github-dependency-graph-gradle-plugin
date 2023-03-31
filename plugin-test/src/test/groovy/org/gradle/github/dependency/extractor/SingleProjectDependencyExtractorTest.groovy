@@ -51,25 +51,16 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         succeeds("dependencies")
 
         then:
-        def runtimeClasspathManifest = jsonRepositorySnapshot(configuration: "runtimeClasspath")
-        (runtimeClasspathManifest.file as Map).source_location == "build.gradle"
-        def resolved = runtimeClasspathManifest.resolved as Map
-        def testFoo = resolved[gavFor(foo)]
-        verifyAll(testFoo as Map) {
+        def manifest = jsonManifest("project :")
+        (manifest.file as Map).source_location == "build.gradle"
+        def resolved = manifest.resolved as Map
+        resolved.keySet() == ["org.test:foo:1.0", "org.test:bar:1.0"] as Set
+        verifyAll(resolved["org.test:foo:1.0"] as Map) {
             package_url == purlFor(foo)
             relationship == "direct"
             dependencies == []
         }
-        def testClasspathManifest = jsonRepositorySnapshot(configuration: "testRuntimeClasspath")
-        (testClasspathManifest.file as Map).source_location == "build.gradle"
-        def testResolved = testClasspathManifest.resolved as Map
-        def testBar = testResolved[gavFor(bar)]
-        verifyAll(testFoo as Map) {
-            package_url == purlFor(foo)
-            relationship == "direct"
-            dependencies == []
-        }
-        verifyAll(testBar as Map) {
+        verifyAll(resolved["org.test:bar:1.0"] as Map) {
             package_url == purlFor(bar)
             relationship == "direct"
             dependencies == []
@@ -88,24 +79,16 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         succeeds("build")
 
         then:
-        def compileClasspath = jsonRepositorySnapshot(configuration: "compileClasspath")
+        def manifest = jsonManifest("project :")
         verifyAll {
-            def file = compileClasspath.file as Map
-            file.source_location == "build.gradle"
-            def resolved = compileClasspath.resolved as Map
-            def testFoo = resolved[gavFor(foo)]
-            verifyAll(testFoo as Map) {
+            (manifest.file as Map).source_location == "build.gradle"
+            def resolved = manifest.resolved as Map
+            resolved.keySet() == ["org.test:foo:1.0"] as Set
+            verifyAll(resolved["org.test:foo:1.0"] as Map) {
                 package_url == purlFor(foo)
                 relationship == "direct"
                 dependencies == []
             }
-        }
-        def annotationProcessorManifest = jsonRepositorySnapshot(configuration: "annotationProcessor")
-        verifyAll {
-            def file = annotationProcessorManifest.file as Map
-            file.source_location == "build.gradle"
-            def resolved = annotationProcessorManifest.resolved as Map
-            resolved.isEmpty()
         }
     }
 
@@ -123,18 +106,16 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         succeeds("dependencies", "--configuration", "runtimeClasspath")
 
         then:
-        def runtimeClasspathManifest = jsonRepositorySnapshot(configuration: "runtimeClasspath")
-        def file = runtimeClasspathManifest.file as Map
-        file.source_location == "build.gradle"
-        def resolved = runtimeClasspathManifest.resolved as Map
-        def testFoo = resolved[gavFor(foo)] as Map
-        verifyAll(testFoo) {
+        def manifest = jsonManifest("project :")
+        (manifest.file as Map).source_location == "build.gradle"
+        def resolved = manifest.resolved as Map
+        resolved.keySet() == ["org.test:foo:1.0", "org.test:bar:1.0"] as Set
+        verifyAll(resolved["org.test:foo:1.0"] as Map) {
             package_url == purlFor(foo)
             relationship == "direct"
             dependencies == []
         }
-        def testBar = resolved[gavFor(bar)] as Map
-        verifyAll(testBar) {
+        verifyAll(resolved["org.test:bar:1.0"] as Map) {
             package_url == purlFor(bar)
             relationship == "direct"
             dependencies == []
@@ -154,18 +135,16 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         succeeds("dependencies", "--configuration", "runtimeClasspath")
 
         then:
-        def runtimeClasspathManifest = jsonRepositorySnapshot(configuration: "runtimeClasspath")
-        def file = runtimeClasspathManifest.file as Map
-        file.source_location == "build.gradle"
-        def resolved = runtimeClasspathManifest.resolved as Map
-        def testFoo = resolved[gavFor(foo)] as Map
-        verifyAll(testFoo) {
+        def manifest = jsonManifest("project :")
+        (manifest.file as Map).source_location == "build.gradle"
+        def resolved = manifest.resolved as Map
+        resolved.keySet() == ["org.test:foo:1.0", "org.test:bar:1.0"] as Set
+        verifyAll(resolved["org.test:foo:1.0"] as Map) {
             package_url == purlFor(foo)
             relationship == "direct"
-            dependencies == [gavFor(bar)]
+            dependencies == ["org.test:bar:1.0"]
         }
-        def testBar = resolved[gavFor(bar)] as Map
-        verifyAll(testBar) {
+        verifyAll(resolved["org.test:bar:1.0"] as Map) {
             package_url == purlFor(bar)
             relationship == "indirect"
             dependencies == []
@@ -188,23 +167,19 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         succeeds("build")
 
         then:
-        ["compileClasspath", "testCompileClasspath"].forEach {
-            def classpathManifest = jsonRepositorySnapshot(configuration: it)
-            def file = classpathManifest.file as Map
-            file.source_location == "build.gradle"
-            def resolved = classpathManifest.resolved as Map
-            def testFoo = resolved[gavFor(foo)] as Map
-            verifyAll(testFoo) {
-                package_url == purlFor(foo)
-                relationship == "direct"
-                dependencies == [gavFor(bar)]
-            }
-            def testBar = resolved[gavFor(bar)] as Map
-            verifyAll(testBar) {
-                package_url == purlFor(bar)
-                relationship == "indirect"
-                dependencies == []
-            }
+        def manifest = jsonManifest("project :")
+        (manifest.file as Map).source_location == "build.gradle"
+        def resolved = manifest.resolved as Map
+        resolved.keySet() == ["org.test:foo:1.0", "org.test:bar:1.0"] as Set
+        verifyAll(resolved["org.test:foo:1.0"] as Map) {
+            package_url == purlFor(foo)
+            relationship == "direct"
+            dependencies == ["org.test:bar:1.0"]
+        }
+        verifyAll(resolved["org.test:bar:1.0"] as Map) {
+            package_url == purlFor(bar)
+            relationship == "indirect"
+            dependencies == []
         }
     }
 
@@ -223,17 +198,17 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         succeeds("dependencies", "--configuration", "runtimeClasspath")
 
         then:
-        def runtimeClasspathManifest = jsonRepositorySnapshot(configuration: "runtimeClasspath")
-        def file = runtimeClasspathManifest.file as Map
-        file.source_location == "build.gradle"
-        def resolved = runtimeClasspathManifest.resolved as Map
-        def testFoo = resolved[gavFor(foo)] as Map
+        def manifest = jsonManifest("project :")
+        (manifest.file as Map).source_location == "build.gradle"
+        def resolved = manifest.resolved as Map
+        resolved.keySet() == ["org.test:foo:1.0", "org.test:bar:1.1"] as Set
+        def testFoo = resolved["org.test:foo:1.0"] as Map
         verifyAll(testFoo) {
             package_url == purlFor(foo)
             relationship == "direct"
-            dependencies == [gavFor(barNewer)]
+            dependencies == ["org.test:bar:1.1"]
         }
-        def testBar = resolved[gavFor(barNewer)] as Map
+        def testBar = resolved["org.test:bar:1.1"] as Map
         verifyAll(testBar) {
             package_url == purlFor(barNewer)
             relationship == "direct"
@@ -256,18 +231,16 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         succeeds("dependencies", "--configuration", "runtimeClasspath")
 
         then:
-        def runtimeClasspathManifest = jsonRepositorySnapshot(configuration: "runtimeClasspath")
-        def file = runtimeClasspathManifest.file as Map
-        file.source_location == "build.gradle"
-        def resolved = runtimeClasspathManifest.resolved as Map
-        def testFoo = resolved[gavFor(foo)] as Map
-        verifyAll(testFoo) {
+        def manifest = jsonManifest("project :")
+        (manifest.file as Map).source_location == "build.gradle"
+        def resolved = manifest.resolved as Map
+        resolved.keySet() == ["org.test:foo:1.0", "org.test:bar:1.1"] as Set
+        verifyAll(resolved["org.test:foo:1.0"] as Map) {
             package_url == purlFor(foo)
             relationship == "direct"
-            dependencies == [gavFor(bar)]
+            dependencies == ["org.test:bar:1.1"]
         }
-        def testBarIndirect = resolved[gavFor(bar)] as Map
-        verifyAll(testBarIndirect) {
+        verifyAll(resolved["org.test:bar:1.1"] as Map) {
             package_url == purlFor(bar)
             relationship == "direct"
             dependencies == []
@@ -286,20 +259,14 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         succeeds("dependencies", "--configuration", "runtimeClasspath")
 
         then:
-        def classpathManifest = jsonRepositorySnapshot(configuration: "classpath")
-        def buildScriptFile = classpathManifest.file as Map
-        buildScriptFile.source_location == "build.gradle"
-        def classpathResolved = classpathManifest.resolved as Map
-        def testFoo = classpathResolved[gavFor(foo)] as Map
-        verifyAll(testFoo) {
+        def manifest = jsonManifest("project :")
+        (manifest.file as Map).source_location == "build.gradle"
+        def resolved = manifest.resolved as Map
+        resolved.keySet() == ["org.test:foo:1.0"] as Set
+        verifyAll(resolved["org.test:foo:1.0"] as Map) {
             package_url == purlFor(foo)
             relationship == "direct"
             dependencies == []
         }
-        def runtimeClasspathManifest = jsonRepositorySnapshot(configuration: "runtimeClasspath")
-        def runtimeClasspathFile = runtimeClasspathManifest.file as Map
-        runtimeClasspathFile.source_location == "build.gradle"
-        def runtimeClasspathResolved = runtimeClasspathManifest.resolved as Map
-        runtimeClasspathResolved.isEmpty()
     }
 }

@@ -1,6 +1,9 @@
 package org.gradle.github.dependency.extractor.internal
 
+import com.github.packageurl.PackageURLBuilder
 import org.gradle.github.dependency.extractor.internal.json.*
+import org.gradle.github.dependency.extractor.internal.model.ResolvedComponent
+import org.gradle.github.dependency.extractor.internal.model.ResolvedConfiguration
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.ConcurrentHashMap
@@ -25,39 +28,33 @@ class GitHubRepositorySnapshotBuilder(
     /**
      * Map of the project identifier to the relative path of the git workspace directory [gitWorkspaceDirectory].
      */
-    private val projectToRelativeBuildFile = ConcurrentHashMap<SimpleProjectIdentifier, String>()
-    private val bundledManifests: MutableMap<String, BundledManifest> = ConcurrentHashMap()
+    private val projectToRelativeBuildFile = ConcurrentHashMap<String, String>()
 
-    fun addManifest(
-        name: String,
-        buildPath: String,
-        projectPath: String,
-        manifest: BaseGitHubManifest
-    ) {
-        bundledManifests[name] = BundledManifest(
-            projectIdentifier = SimpleProjectIdentifier(
-                buildPath = buildPath,
-                projectPath = projectPath
-            ),
-            manifest = manifest
-        )
+    /**
+     * Map of all resolved configurations by name
+     */
+    private val resolvedConfigurations: MutableMap<String, ResolvedConfiguration> = ConcurrentHashMap()
+
+    fun addProject(identityPath: String, buildFileAbsolutePath: String) {
+        val buildFilePath = Paths.get(buildFileAbsolutePath)
+        projectToRelativeBuildFile[identityPath] = gitWorkspaceDirectory.relativize(buildFilePath).toString()
     }
 
-    fun addProject(buildPath: String, projectPath: String, buildFileAbsolutePath: String) {
-        val projectIdentifier = SimpleProjectIdentifier(buildPath, projectPath)
-        val buildFilePath = Paths.get(buildFileAbsolutePath)
-        projectToRelativeBuildFile[projectIdentifier] = gitWorkspaceDirectory.relativize(buildFilePath).toString()
+    fun addResolvedConfiguration(configuration: ResolvedConfiguration) {
+        val name = "${configuration.rootId} [${configuration.name}]"
+        resolvedConfigurations[name] = configuration
     }
 
     fun build(): GitHubRepositorySnapshot {
-        val manifests = bundledManifests.mapValues { (_, value) ->
+        val manifests = resolvedConfigurations.mapValues { (name, configuration) ->
+            val dependencyCollector = DependencyCollector(configuration.getRootComponent())
+            for (component in configuration.components) {
+                dependencyCollector.addDependency(component)
+            }
             GitHubManifest(
-                base = value.manifest,
-                file = projectToRelativeBuildFile[value.projectIdentifier]?.let {
-                    // Cleanup the path for Windows systems
-                    val sourceLocation = it.replace('\\', '/')
-                    GitHubManifestFile(sourceLocation = sourceLocation)
-                }
+                name = name,
+                resolved = dependencyCollector.resolved,
+                file = buildFileForProject(configuration)
             )
         }
         return GitHubRepositorySnapshot(
@@ -69,16 +66,51 @@ class GitHubRepositorySnapshotBuilder(
         )
     }
 
-    private data class BundledManifest(
-        /**
-         * Used to look up the file path of the build file in the [projectToRelativeBuildFile] map.
-         */
-        val projectIdentifier: SimpleProjectIdentifier,
-        val manifest: BaseGitHubManifest
-    )
+    private fun buildFileForProject(configuration: ResolvedConfiguration): GitHubManifestFile? {
+        val file = projectToRelativeBuildFile[configuration.identityPath]?.let {
+            // Cleanup the path for Windows systems
+            val sourceLocation = it.replace('\\', '/')
+            GitHubManifestFile(sourceLocation = sourceLocation)
+        }
+        return file
+    }
 
-    private data class SimpleProjectIdentifier(
-        val buildPath: String,
-        val projectPath: String
-    )
+    private class DependencyCollector(rootComponent: ResolvedComponent) {
+        private val rootComponentId = rootComponent.id
+        private val directDependencies = rootComponent.dependencies
+        private val collected: MutableMap<String, GitHubDependency> = mutableMapOf()
+
+        val resolved: Map<String, GitHubDependency> get() = collected
+
+        fun addDependency(component: ResolvedComponent) {
+            val name = component.id
+            if (name == rootComponentId) {
+                return
+            }
+            val existing = collected[name]
+            if (existing?.relationship == GitHubDependency.Relationship.direct) {
+                // Don't overwrite a direct dependency
+                return
+            }
+            collected[name] = GitHubDependency(packageUrl(component), relationship(component), component.dependencies)
+        }
+
+        private fun relationship(component: ResolvedComponent) =
+            if (directDependencies.contains(component.id)) GitHubDependency.Relationship.direct else GitHubDependency.Relationship.indirect
+
+        private fun packageUrl(component: ResolvedComponent) =
+            PackageURLBuilder
+                .aPackageURL()
+                .withType("maven")
+                .withNamespace(component.coordinates.group.ifEmpty { component.coordinates.module }) // TODO: This is a sign of broken mapping from component -> PURL
+                .withName(component.coordinates.module)
+                .withVersion(component.coordinates.version)
+                .also {
+                    if (component.repositoryUrl != null) {
+                        it.withQualifier("repository_url", component.repositoryUrl)
+                    }
+                }
+                .build()
+                .toString()
+    }
 }

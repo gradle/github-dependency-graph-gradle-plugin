@@ -1,14 +1,12 @@
 package org.gradle.github.dependency.extractor.internal
 
-import com.github.packageurl.PackageURLBuilder
-import org.gradle.api.artifacts.ModuleVersionIdentifier
-import org.gradle.api.artifacts.component.ComponentIdentifier
-import org.gradle.api.artifacts.component.ModuleComponentIdentifier
-import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
-import org.gradle.github.dependency.extractor.internal.json.BaseGitHubManifest
-import org.gradle.github.dependency.extractor.internal.json.GitHubDependency
+import org.gradle.api.internal.artifacts.DefaultProjectComponentIdentifier
+import org.gradle.api.internal.artifacts.configurations.ResolveConfigurationDependenciesBuildOperationType
+import org.gradle.github.dependency.extractor.internal.model.ComponentCoordinates
+import org.gradle.github.dependency.extractor.internal.model.ResolvedComponent
+import org.gradle.github.dependency.extractor.internal.model.ResolvedConfiguration
 import org.gradle.internal.operations.*
 import java.io.File
 import java.net.URI
@@ -64,7 +62,7 @@ abstract class DependencyExtractorService :
         handleBuildOperationType<
             ResolveConfigurationDependenciesBOT.Details,
             ResolveConfigurationDependenciesBOT.Result
-            >(buildOperation, finishEvent) { details, result -> extractDependencies(details, result) }
+            >(buildOperation, finishEvent) { details, result -> extractConfigurationDependencies(details, result) }
 
         handleBuildOperationType<
             LoadProjectsBOT.Details,
@@ -78,7 +76,7 @@ abstract class DependencyExtractorService :
         tailrec fun recursivelyExtractProjects(projects: Set<LoadProjectsBOT.Result.Project>) {
             if (projects.isEmpty()) return
             projects.forEach { project ->
-                gitHubRepositorySnapshotBuilder.addProject(details.buildPath, project.path, project.buildFile)
+                gitHubRepositorySnapshotBuilder.addProject(project.identityPath, project.buildFile)
             }
             val newProjects = projects.flatMap { it.children }.toSet()
             recursivelyExtractProjects(newProjects)
@@ -86,47 +84,55 @@ abstract class DependencyExtractorService :
         recursivelyExtractProjects(setOf(result.rootProject))
     }
 
-    private fun extractDependencies(
-        details: ResolveConfigurationDependenciesBOT.Details,
-        result: ResolveConfigurationDependenciesBOT.Result
+    private fun extractConfigurationDependencies(
+        details: ResolveConfigurationDependenciesBuildOperationType.Details,
+        result: ResolveConfigurationDependenciesBuildOperationType.Result
     ) {
-        val rootComponentId = result.rootComponent.id
-        val trueProjectPath =
-            (rootComponentId as? ProjectComponentIdentifier)?.projectPath
-                ?: details.projectPath
+        val repositoryLookup = RepositoryUrlLookup(details, result)
+        val rootComponent = result.rootComponent
+        val projectIdentityPath = (rootComponent.id as? DefaultProjectComponentIdentifier)?.identityPath?.path
         @Suppress("FoldInitializerAndIfToElvis") // Purely for documentation purposes
-        if (trueProjectPath == null) {
+        if (projectIdentityPath == null) {
             // TODO: We can actually handle this case, but it's more complicated than I have time to deal with
             // TODO: See the Gradle Enterprise Build Scan Plugin: `ConfigurationResolutionCapturer_5_0`
             return
         }
 
-        val repositoryLookup = RepositoryUrlLookup(details, result)
-        val dependencies =
-            extractDependenciesFromResolvedComponentResult(
-                result.rootComponent,
-                repositoryLookup::doLookup
-            )
-        // Feel free to change this. This is free-form and has no spec associated with it.
-        val metaData = mapOf(
-            "project_path" to details.projectPath,
-            "configuration" to details.configurationName,
-            "build_path" to details.buildPath,
-            "configuration_description" to details.configurationDescription,
-            "is_script_configuration" to details.isScriptConfiguration,
-            "true_project_path" to trueProjectPath
-        )
-        val name = "${rootComponentId.displayName} [${details.configurationName}]"
-        gitHubRepositorySnapshotBuilder.addManifest(
-            name = name,
-            buildPath = details.buildPath,
-            projectPath = trueProjectPath,
-            manifest = BaseGitHubManifest(
-                name = name,
-                resolved = dependencies,
-                metadata = metaData
-            )
-        )
+        val resolvedConfiguration = ResolvedConfiguration(componentId(rootComponent), projectIdentityPath, details.configurationName)
+        walkResolvedComponentResult(rootComponent, repositoryLookup, resolvedConfiguration)
+
+        gitHubRepositorySnapshotBuilder.addResolvedConfiguration(resolvedConfiguration)
+    }
+
+    private fun walkResolvedComponentResult(
+        component: ResolvedComponentResult,
+        repositoryLookup: RepositoryUrlLookup,
+        resolvedConfiguration: ResolvedConfiguration
+    ) {
+        val componentId = componentId(component)
+        if (resolvedConfiguration.hasComponent(componentId)) {
+            return
+        }
+
+        val repositoryUrl = repositoryLookup.doLookup(component)
+        val resolvedDependencies = component.dependencies.filterIsInstance<ResolvedDependencyResult>().map { it.selected }
+
+        resolvedConfiguration.components.add(ResolvedComponent(componentId, coordinates(component), repositoryUrl, resolvedDependencies.map { componentId(it) }))
+
+        resolvedDependencies
+            .forEach {
+                walkResolvedComponentResult(it, repositoryLookup, resolvedConfiguration)
+            }
+    }
+
+    private fun componentId(component: ResolvedComponentResult): String {
+        return component.id.displayName
+    }
+
+    private fun coordinates(component: ResolvedComponentResult): ComponentCoordinates {
+        // TODO: Consider and handle null moduleVersion
+        val moduleVersionIdentifier = component.moduleVersion!!
+        return ComponentCoordinates(moduleVersionIdentifier.group, moduleVersionIdentifier.name, moduleVersionIdentifier.version)
     }
 
     private class RepositoryUrlLookup(
@@ -159,110 +165,6 @@ abstract class DependencyExtractorService :
 
     override fun close() {
         writeAndGetSnapshotFile()
-    }
-
-    /**
-     * Collects all the dependencies on a specific configuration.
-     */
-    class ConfigurationDependencyCollector(private val rootComponent: ResolvedComponentResult) {
-        private val dependencies: MutableMap<String, GitHubDependency> = mutableMapOf()
-
-        fun walkComponentGraph(
-            repositoryUrlLookup: (ResolvedComponentResult) -> String?
-        ): Map<String, GitHubDependency> {
-            val resolvedDependencies = dependentComponents(rootComponent)
-            resolvedDependencies.forEach {
-                walkComponent(it, GitHubDependency.Relationship.direct, repositoryUrlLookup)
-            }
-            return dependencies
-        }
-
-        private fun walkComponent(
-            component: ResolvedComponentResult,
-            relationship: GitHubDependency.Relationship,
-            repositoryUrlLookup: (ResolvedComponentResult) -> String?
-        ) {
-            val componentId = component.id.displayName
-            if (component.id == rootComponent.id || dependencies.containsKey(componentId)) {
-                return
-            }
-
-            val resolvedDependencies = dependentComponents(component)
-
-            val repositoryUrl = repositoryUrlLookup(component)
-            val thisPurl = component.moduleVersion!!.toPurl(repositoryUrl).toString()
-            addDependency(
-                componentId,
-                GitHubDependency(
-                    thisPurl,
-                    relationship,
-                    resolvedDependencies.map { it.id.displayName },
-                    metaDataForComponentIdentifier(component.id)
-                )
-            )
-
-            resolvedDependencies.forEach {
-                walkComponent(it, GitHubDependency.Relationship.indirect, repositoryUrlLookup)
-            }
-        }
-
-        private fun dependentComponents(component: ResolvedComponentResult) =
-            component.dependencies.filterIsInstance<ResolvedDependencyResult>().map { it.selected }
-
-        private fun metaDataForComponentIdentifier(componentIdentifier: ComponentIdentifier): Map<String, Any> {
-            return when (componentIdentifier) {
-                is ProjectComponentIdentifier -> mapOf(
-                    "name" to componentIdentifier.build.name,
-                    "projectPath" to componentIdentifier.projectPath
-                )
-
-                is ModuleComponentIdentifier -> mapOf(
-                    "group" to componentIdentifier.group,
-                    "module" to componentIdentifier.module,
-                    "version" to componentIdentifier.version
-                )
-
-                else -> mapOf(
-                    "display_name" to componentIdentifier.displayName,
-                    "class" to componentIdentifier.javaClass.name
-                )
-            }
-        }
-
-        private fun addDependency(name: String, ghDependency: GitHubDependency) {
-            val existing = dependencies[name]
-            if (existing != null) {
-                if (existing.relationship != GitHubDependency.Relationship.direct) {
-                    dependencies[name] = ghDependency
-                }
-            } else {
-                dependencies[name] = ghDependency
-            }
-        }
-    }
-
-    companion object {
-        @JvmStatic
-        fun extractDependenciesFromResolvedComponentResult(
-            resolvedComponentResult: ResolvedComponentResult,
-            repositoryUrlLookup: (ResolvedComponentResult) -> String?
-        ): Map<String, GitHubDependency> {
-            return ConfigurationDependencyCollector(resolvedComponentResult).walkComponentGraph(repositoryUrlLookup)
-        }
-
-        private fun ModuleVersionIdentifier.toPurl(repositoryUrl: String?) =
-            PackageURLBuilder
-                .aPackageURL()
-                .withType("maven")
-                .withNamespace(group.ifEmpty { name }) // TODO: This is a sign of broken mapping from component -> PURL
-                .withName(name)
-                .withVersion(version)
-                .also {
-                    if (repositoryUrl != null) {
-                        it.withQualifier("repository_url", repositoryUrl)
-                    }
-                }
-                .build()
     }
 }
 

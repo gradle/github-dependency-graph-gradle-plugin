@@ -1,4 +1,4 @@
-package org.gradle.github.dependency.base
+package org.gradle.github.dependency.extractor
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -10,18 +10,49 @@ import groovy.transform.Memoized
 import org.gradle.test.fixtures.SimpleGradleExecuter
 import org.gradle.github.dependency.fixture.TestConfig
 import org.gradle.internal.hash.Hashing
+import org.gradle.test.fixtures.build.BuildTestFile
+import org.gradle.test.fixtures.build.BuildTestFixture
 import org.gradle.test.fixtures.file.TestFile
+import org.gradle.test.fixtures.file.TestNameTestDirectoryProvider
+import org.gradle.test.fixtures.maven.MavenFileRepository
+import org.gradle.testkit.runner.BuildResult
 import org.gradle.util.GradleVersion
+import org.intellij.lang.annotations.Language
+import org.junit.Rule
+import spock.lang.Specification
 
 import java.util.stream.Collectors
 
-abstract class BaseExtractorTest extends BaseIntegrationSpec {
+abstract class BaseExtractorTest extends Specification {
+
+    @Rule
+    public final TestNameTestDirectoryProvider temporaryFolder = new TestNameTestDirectoryProvider(getClass())
 
     private static final TestConfig TEST_CONFIG = new TestConfig()
     protected TestEnvironmentVars environmentVars = new TestEnvironmentVars(testDirectory)
     private JsonRepositorySnapshotLoader loader
 
-    @Override
+
+    public final MavenFileRepository mavenRepo = new MavenFileRepository(temporaryFolder.testDirectory.file("maven-repo"))
+    BuildTestFixture buildTestFixture = new BuildTestFixture(temporaryFolder)
+
+    private SimpleGradleExecuter executer
+    private BuildResult result
+
+    def setup() {
+        if (System.getProperty("os.name").containsIgnoreCase("windows")) {
+            // Suppress file cleanup check on windows
+            temporaryFolder.suppressCleanupErrors()
+        }
+    }
+
+    SimpleGradleExecuter getExecuter() {
+        if (executer == null) {
+            executer = createExecuter()
+        }
+        return executer
+    }
+
     SimpleGradleExecuter createExecuter() {
         // Create a new JsonManifestLoader for each invocation of the executer
         File manifestFile =
@@ -29,6 +60,51 @@ abstract class BaseExtractorTest extends BaseIntegrationSpec {
         loader = new JsonRepositorySnapshotLoader(manifestFile)
         def gradleVersion = System.getProperty("testGradleVersion", GradleVersion.current().version)
         return createExecuter(gradleVersion)
+    }
+
+
+    SimpleGradleExecuter createExecuter(String gradleVersion) {
+        println("Executing test with Gradle $gradleVersion")
+        def testKitDir = file("test-kit")
+        return new SimpleGradleExecuter(temporaryFolder, testKitDir, gradleVersion)
+    }
+
+
+    TestFile getTestDirectory() {
+        temporaryFolder.testDirectory
+    }
+
+    TestFile file(Object... path) {
+        if (path.length == 1 && path[0] instanceof TestFile) {
+            return path[0] as TestFile
+        }
+        getTestDirectory().file(path)
+    }
+
+    def singleProjectBuild(String projectName, @DelegatesTo(value = BuildTestFile, strategy = Closure.DELEGATE_FIRST) Closure cl = {}) {
+        buildTestFixture.singleProjectBuild(projectName, cl)
+    }
+
+    def multiProjectBuild(String projectName, List<String> subprojects, @DelegatesTo(value = BuildTestFile, strategy = Closure.DELEGATE_FIRST) Closure cl = {}) {
+        buildTestFixture.multiProjectBuild(projectName, subprojects, cl)
+    }
+
+    protected SimpleGradleExecuter args(String... args) {
+        getExecuter().withArguments(args)
+    }
+
+    protected SimpleGradleExecuter withDebugLogging() {
+        getExecuter().withArgument("-d")
+    }
+
+    protected BuildResult succeeds(String... tasks) {
+        result = getExecuter().withTasks(*tasks).run()
+        return result
+    }
+
+    protected BuildResult fails(String... tasks) {
+        result = getExecuter().withTasks(*tasks).runWithFailure()
+        return result
     }
 
     @CompileDynamic

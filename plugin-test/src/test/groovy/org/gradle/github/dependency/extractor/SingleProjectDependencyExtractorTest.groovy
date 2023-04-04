@@ -1,7 +1,5 @@
 package org.gradle.github.dependency.extractor
 
-import org.gradle.github.dependency.base.BaseExtractorTest
-
 class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
     def setup() {
         applyExtractorPlugin()
@@ -160,7 +158,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
             implementation "org.test:foo:1.0"
         }
         """
-        javaTestSourceFile """
+        file("src/test/java/Test.java") << """
         public class Test {}
         """
         when:

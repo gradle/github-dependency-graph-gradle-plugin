@@ -1,6 +1,6 @@
 package org.gradle.github.dependency.extractor
 
-import org.gradle.github.dependency.base.BaseExtractorTest
+
 import org.gradle.test.fixtures.build.BuildTestFile
 import org.gradle.test.fixtures.maven.MavenModule
 

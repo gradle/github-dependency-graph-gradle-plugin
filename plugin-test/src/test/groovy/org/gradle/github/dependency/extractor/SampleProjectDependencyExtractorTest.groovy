@@ -1,7 +1,6 @@
 package org.gradle.github.dependency.extractor
 
 import org.apache.commons.io.FileUtils
-import org.gradle.github.dependency.base.BaseExtractorTest
 import spock.lang.IgnoreIf
 
 @IgnoreIf({ System.getProperty("testGradleVersion") == "5.6.4"})

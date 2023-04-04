@@ -85,17 +85,32 @@ class GitHubRepositorySnapshotBuilder(
     private class DependencyCollector {
         val resolved: MutableMap<String, GitHubDependency> = mutableMapOf()
 
+        /**
+         * Merge each resolved component with the same ID into a single GitHubDependency.
+         */
         fun addResolved(component: ResolvedComponent, rootComponent: ResolvedComponent) {
             if (component.id == rootComponent.id) {
                 return
             }
-            val existing = resolved[component.id]
-            if (existing?.relationship == GitHubDependency.Relationship.direct) {
-                // Don't overwrite a direct dependency
-                return
+            val relationship = relationship(rootComponent, component)
+            val gitHubDependency = resolved.getOrPut(component.id) {
+                GitHubDependency(
+                    packageUrl(component),
+                    relationship
+                )
             }
-            resolved[component.id] =
-                GitHubDependency(packageUrl(component), relationship(rootComponent, component), component.dependencies)
+            // Direct relationship trumps indirect
+            if (relationship == GitHubDependency.Relationship.direct
+                && gitHubDependency.relationship == GitHubDependency.Relationship.indirect) {
+                gitHubDependency.relationship = GitHubDependency.Relationship.direct
+            }
+            // Add any new dependencies
+            val existing = gitHubDependency.dependencies.toSet()
+            for (dependency in component.dependencies) {
+                if (!existing.contains(dependency)) {
+                    gitHubDependency.dependencies.add(dependency)
+                }
+            }
         }
 
         private fun relationship(rootComponent: ResolvedComponent, component: ResolvedComponent) =

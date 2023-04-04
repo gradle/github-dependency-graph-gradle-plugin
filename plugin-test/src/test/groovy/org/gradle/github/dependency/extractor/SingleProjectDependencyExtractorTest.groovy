@@ -245,6 +245,36 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         }
     }
 
+    def "build with two versions of the same dependency"() {
+        given:
+        def bar10 = mavenRepo.module("org.test", "bar", "1.0").publish()
+        def bar11 = mavenRepo.module("org.test", "bar", "1.1").publish()
+        singleProjectBuildWithDependencies """
+        dependencies {
+            implementation "org.test:bar:1.0"
+            testImplementation "org.test:bar:1.1"
+        }
+        """
+        when:
+        succeeds("dependencies")
+
+        then:
+        def manifest = jsonManifest("project :")
+        (manifest.file as Map).source_location == "build.gradle"
+        def resolved = manifest.resolved as Map
+        resolved.keySet() == ["org.test:bar:1.0", "org.test:bar:1.1"] as Set
+        verifyAll(resolved["org.test:bar:1.0"] as Map) {
+            package_url == purlFor(bar10)
+            relationship == "direct"
+            dependencies == []
+        }
+        verifyAll(resolved["org.test:bar:1.1"] as Map) {
+            package_url == purlFor(bar11)
+            relationship == "direct"
+            dependencies == []
+        }
+    }
+
     def "build with buildscript dependencies"() {
         given:
         def foo = mavenRepo.module("org.test", "foo", "1.0").publish()

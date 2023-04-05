@@ -68,7 +68,7 @@ jobs:
             uses: gradle/gradle-build-action@v2
 
           - name: Self Test :plugin
-            run: ./plugin-self-test :plugin:dependencies :plugin-test:dependencies
+            run: ./plugin-self-test
             env:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

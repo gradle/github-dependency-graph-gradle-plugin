@@ -19,12 +19,12 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 /**
- * A plugin that extracts the dependencies from the Gradle build and exports it using the GitHub API format.
+ * A plugin that collects all resolved dependencies in a Gradle build and exports it using the GitHub API format.
  */
 @Suppress("unused")
-class GithubDependencyExtractorPlugin : Plugin<Gradle> {
+class GitHubDependencyExtractorPlugin : Plugin<Gradle> {
     private companion object : PluginCompanionUtils() {
-        private val LOGGER = Logging.getLogger(GithubDependencyExtractorPlugin::class.java)
+        private val LOGGER = Logging.getLogger(GitHubDependencyExtractorPlugin::class.java)
 
         const val ENV_GITHUB_JOB = "GITHUB_JOB"
         const val ENV_GITHUB_RUN_NUMBER = "GITHUB_RUN_NUMBER"
@@ -40,12 +40,6 @@ class GithubDependencyExtractorPlugin : Plugin<Gradle> {
     internal lateinit var dependencyExtractorServiceProvider: Provider<out DependencyExtractorService>
 
     override fun apply(gradle: Gradle) {
-        LOGGER.lifecycle("Applying Plugin: GithubDependencyExtractorPlugin")
-        if (gradle.parent != null) {
-            LOGGER.lifecycle("Not applying plugin to included build")
-            return
-        }
-
         val gradleVersion = GradleVersion.current()
         // Create the adapter based upon the version of Gradle
         val applicatorStrategy = when {

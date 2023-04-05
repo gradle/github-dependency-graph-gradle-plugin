@@ -83,13 +83,8 @@ abstract class BaseExtractorTest extends Specification {
         getExecuter().withArgument("-d")
     }
 
-    protected BuildResult succeeds(String... tasks) {
-        result = getExecuter().withTasks(*tasks).run()
-        return result
-    }
-
-    protected BuildResult fails(String... tasks) {
-        result = getExecuter().withTasks(*tasks).runWithFailure()
+    protected BuildResult run() {
+        result = getExecuter().run()
         return result
     }
 
@@ -99,13 +94,13 @@ abstract class BaseExtractorTest extends Specification {
         String cleanedAbsolutePath = pluginJar.absolutePath.replace('\\',  '/')
         assert (pluginJar.exists())
         file("init.gradle") << """
-        import org.gradle.github.dependency.extractor.GithubDependencyExtractorPlugin
+        import org.gradle.github.dependency.GitHubDependencySubmissionPlugin
         initscript {
             dependencies {
                 classpath files('${cleanedAbsolutePath}')
             }
         }
-        apply plugin: GithubDependencyExtractorPlugin
+        apply plugin: GitHubDependencySubmissionPlugin
         """.stripMargin()
         args("--init-script", "init.gradle")
     }

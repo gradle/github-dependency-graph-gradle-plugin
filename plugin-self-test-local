@@ -10,5 +10,5 @@ export GITHUB_REPOSITORY="gradle/github-dependency-extractor"
 if [[ -z "${GITHUB_TOKEN}" ]]; then
   echo "GITHUB_TOKEN must be set in order to submit dependency graph"
 else
-  ./plugin-self-test $*
+  ./plugin-self-test
 fi

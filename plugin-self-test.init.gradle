@@ -1,4 +1,4 @@
-import org.gradle.github.dependency.extractor.GithubDependencyExtractorPlugin
+import org.gradle.github.dependency.GitHubDependencySubmissionPlugin
 initscript {
     def pluginFiles = fileTree("plugin/build/libs") {
         include "**/*.jar"
@@ -18,4 +18,4 @@ initscript {
         classpath files(pluginFile)
     }
 }
-apply plugin: GithubDependencyExtractorPlugin
+apply plugin: GitHubDependencySubmissionPlugin

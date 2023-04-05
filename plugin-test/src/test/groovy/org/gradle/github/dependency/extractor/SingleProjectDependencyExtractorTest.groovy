@@ -41,7 +41,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         """
 
         when:
-        succeeds("dependencies")
+        run()
 
         then:
         def manifest = gitHubManifest("project :")
@@ -71,7 +71,8 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         """
 
         when:
-        succeeds("dependencies", "--configuration", "runtimeClasspath")
+        executer.withTasks("dependencies", "--configuration", "runtimeClasspath")
+        run()
 
         then:
         def manifest = gitHubManifest("project :")
@@ -94,7 +95,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         }
         """
         when:
-        succeeds("dependencies")
+        run()
 
         then:
         def manifest = gitHubManifest("project :")
@@ -119,7 +120,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         }
         """
         when:
-        succeeds("dependencies")
+        run()
 
         then:
         def manifest = gitHubManifest("project :")
@@ -150,7 +151,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         }
         """
         when:
-        succeeds("dependencies")
+        run()
 
         then:
         def manifest = gitHubManifest("project :")
@@ -177,7 +178,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         }
         """
         when:
-        succeeds("dependencies")
+        run()
 
         then:
         def manifest = gitHubManifest("project :")
@@ -207,7 +208,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         }
         """
         when:
-        succeeds("dependencies")
+        run()
 
         then:
         def manifest = gitHubManifest("project :")
@@ -244,7 +245,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         """
 
         when:
-        succeeds("dependencies")
+        run()
 
         then:
         def manifest = gitHubManifest("project :")

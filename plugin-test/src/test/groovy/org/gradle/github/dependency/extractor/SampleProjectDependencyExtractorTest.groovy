@@ -17,7 +17,7 @@ class SampleProjectDependencyExtractorTest extends BaseExtractorTest {
         FileUtils.copyDirectory(sampleDir, testDirectory)
 
         when:
-        succeeds("build")
+        run()
 
         then:
         manifestNames == ["project :"]
@@ -29,7 +29,7 @@ class SampleProjectDependencyExtractorTest extends BaseExtractorTest {
         FileUtils.copyDirectory(sampleDir, testDirectory)
 
         when:
-        succeeds("build")
+        run()
 
         then:
         manifestNames == [
@@ -46,7 +46,7 @@ class SampleProjectDependencyExtractorTest extends BaseExtractorTest {
         FileUtils.copyDirectory(sampleDir, testDirectory)
 
         when:
-        succeeds("build")
+        run()
 
         then:
         manifestNames == [

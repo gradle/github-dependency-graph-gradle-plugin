@@ -106,8 +106,13 @@ abstract class BaseExtractorTest extends Specification {
 
     protected String purlFor(org.gradle.test.fixtures.Module module) {
         // NOTE: Don't use this in production, this is purely for test code. The escaping here may be insufficient.
+        return purlFor(module.group, module.module, module.version)
+    }
+
+    protected String purlFor(String group, String module, String version) {
+        // NOTE: Don't use this in production, this is purely for test code. The escaping here may be insufficient.
         String repositoryUrlEscaped = URLEncoder.encode(mavenRepo.rootDir.toURI().toASCIIString(), "UTF-8")
-        return "pkg:maven/${module.group}/${module.module}@${module.version}?repository_url=$repositoryUrlEscaped"
+        return "pkg:maven/${group}/${module}@${version}?repository_url=$repositoryUrlEscaped"
     }
 
     @CompileDynamic
@@ -172,7 +177,9 @@ abstract class BaseExtractorTest extends Specification {
                 def actual = resolved[key]
                 def expected = expectedResolved[key]
 
-                assert actual.package_url == expected.package_url
+                if (expected.package_url != null) {
+                    assert actual.package_url == expected.package_url
+                }
                 assert actual.relationship == (expected.relationship ?: "direct")
                 assert actual.dependencies == (expected.dependencies ?: [])
             }

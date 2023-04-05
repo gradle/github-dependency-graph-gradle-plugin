@@ -1,6 +1,7 @@
 package org.gradle.github.dependency.extractor
 
 import org.gradle.test.fixtures.maven.MavenModule
+import org.gradle.test.fixtures.PluginPublisher
 
 class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
     private MavenModule foo
@@ -247,6 +248,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         run()
 
         then:
+        manifestNames == ["project :"]
         def manifest = gitHubManifest("project :")
         manifest.sourceFile == "build.gradle"
 
@@ -260,5 +262,121 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
                 relationship: "indirect"
             ]
         ])
+    }
+
+    def "extracts buildscript dependencies from settings script"() {
+        given:
+        settingsFile << """
+            buildscript {
+                repositories {
+                    maven { url "${mavenRepo.uri}" }
+                }
+                dependencies {
+                    classpath "org.test:baz:1.0"
+                }
+            }
+        """
+
+        when:
+        run()
+
+        then:
+        manifestNames == ["build :", "project :"]
+        def settingsManifest = gitHubManifest("build :")
+        settingsManifest.sourceFile == "build.gradle"
+
+        settingsManifest.assertResolved([
+            "org.test:baz:1.0": [
+                package_url : purlFor(baz),
+                dependencies: ["org.test:bar:1.0"]
+            ],
+            "org.test:bar:1.0": [
+                package_url : purlFor(bar),
+                relationship: "indirect"
+            ]
+        ])
+    }
+
+    def "extracts project plugin dependency"() {
+        given:
+        new PluginPublisher(mavenRepo, testDirectory).publishProjectPlugin("plugin", "my.project.plugin")
+
+        settingsFile.text = """
+            pluginManagement {
+                repositories {
+                    maven { url '${mavenRepo.uri}' }
+                }
+            }
+        """ + settingsFile.text
+        buildFile.text = """
+            plugins {
+                id("my.project.plugin") version("1.0")    
+            }
+        """ + buildFile.text
+
+        when:
+        run()
+
+        then:
+        manifestNames == ["build :", "project :"]
+        def buildManifest = gitHubManifest("build :")
+        buildManifest.sourceFile == "build.gradle"
+        buildManifest.assertResolved([
+            "my.project.plugin:my.project.plugin.gradle.plugin:1.0": [
+                package_url : purlFor("my.project.plugin", "my.project.plugin.gradle.plugin", "1.0"),
+                dependencies: []
+            ]
+        ])
+
+        def manifest = gitHubManifest("project :")
+        manifest.sourceFile == "build.gradle"
+        manifest.assertResolved([
+            "my.project.plugin:my.project.plugin.gradle.plugin:1.0": [
+                package_url : purlFor("my.project.plugin", "my.project.plugin.gradle.plugin", "1.0"),
+                dependencies: ["com.example:plugin:1.0"]
+            ],
+            "com.example:plugin:1.0": [
+                package_url : purlFor("com.example", "plugin", "1.0"),
+                relationship: "indirect"
+            ]
+        ])
+    }
+
+    def "extracts settings plugin dependency"() {
+        given:
+        new PluginPublisher(mavenRepo, testDirectory).publishSettingsPlugin("plugin", "my.settings.plugin")
+
+        settingsFile.text = """
+            pluginManagement {
+                repositories {
+                    maven { url '${mavenRepo.uri}' }
+                }
+            }
+            plugins {
+                id("my.settings.plugin") version("1.0")
+            }
+        """ + settingsFile.text
+
+        when:
+        run()
+
+        then:
+        manifestNames == ["build :", "project :"]
+        def buildManifest = gitHubManifest("build :")
+        buildManifest.sourceFile == "build.gradle"
+        buildManifest.assertResolved([
+            "my.settings.plugin:my.settings.plugin.gradle.plugin:1.0": [
+                package_url : purlFor("my.settings.plugin", "my.settings.plugin.gradle.plugin", "1.0"),
+                dependencies: ["com.example:plugin:1.0"]
+            ],
+            "com.example:plugin:1.0": [
+                package_url : purlFor("com.example", "plugin", "1.0"),
+                relationship: "indirect"
+            ]
+        ])
+
+        def manifest = gitHubManifest("project :")
+        manifest.sourceFile == "build.gradle"
+        manifest.assertResolved([:])
     }
 }

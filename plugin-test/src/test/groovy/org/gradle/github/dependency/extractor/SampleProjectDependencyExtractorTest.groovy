@@ -20,7 +20,23 @@ class SampleProjectDependencyExtractorTest extends BaseExtractorTest {
         run()
 
         then:
-        manifestNames == ["project :"]
+        manifestNames == ["build :", "project :"]
+        def buildManifest = jsonManifest("build :")
+        def buildDependencies = (buildManifest.resolved as Map).keySet()
+        buildDependencies.containsAll([
+                "com.gradle.enterprise:com.gradle.enterprise.gradle.plugin:3.12.6"
+        ])
+
+        def projectManifest = jsonManifest("project :")
+        def projectDependencies = (projectManifest.resolved as Map).keySet()
+        projectDependencies.containsAll([
+                "com.diffplug.spotless:spotless-plugin-gradle:4.5.1", // 'plugins' dependency
+                "com.diffplug.durian:durian-core:1.2.0", // transitive 'plugins' dependency
+                "org.apache.commons:commons-math3:3.6.1", // 'api' dependency
+                "com.google.guava:guava:31.1-jre", // 'implementation' dependency
+                "com.google.guava:failureaccess:1.0.1", // transitive 'implementation' dependency
+                "org.junit.jupiter:junit-jupiter:5.9.1" // testImplementation dependency
+        ])
     }
 
     def "check java-multi-project sample"() {

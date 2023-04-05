@@ -149,6 +149,75 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         }
     }
 
+    def "build with transitive dependency updated by constraint"() {
+        given:
+        def bar10 = mavenRepo.module("org.test", "bar", "1.0").publish()
+        def bar11 = mavenRepo.module("org.test", "bar", "1.1").publish()
+        def foo = mavenRepo.module("org.test", "foo", "1.0").dependsOn(bar10).publish()
+        singleProjectBuildWithDependencies """
+        dependencies {
+            implementation "org.test:foo:1.0"
+            
+            constraints {
+                implementation "org.test:bar:1.1"
+            }
+        }
+        """
+        when:
+        succeeds("dependencies", "--configuration", "runtimeClasspath")
+
+        then:
+        def manifest = jsonManifest("project :")
+        (manifest.file as Map).source_location == "build.gradle"
+        def resolved = manifest.resolved as Map
+        resolved.keySet() == ["org.test:foo:1.0", "org.test:bar:1.1"] as Set
+        verifyAll(resolved["org.test:foo:1.0"] as Map) {
+            package_url == purlFor(foo)
+            relationship == "direct"
+            dependencies == ["org.test:bar:1.1"]
+        }
+        verifyAll(resolved["org.test:bar:1.1"] as Map) {
+            package_url == purlFor(bar11)
+            relationship == "direct" // Constraint is a type of direct dependency
+            dependencies == []
+        }
+    }
+
+    def "build with transitive dependency updated by rule"() {
+        given:
+        def bar10 = mavenRepo.module("org.test", "bar", "1.0").publish()
+        def bar11 = mavenRepo.module("org.test", "bar", "1.1").publish()
+        def foo = mavenRepo.module("org.test", "foo", "1.0").dependsOn(bar10).publish()
+        singleProjectBuildWithDependencies """
+        configurations {
+            runtimeClasspath {
+                resolutionStrategy.force("org.test:bar:1.1")
+            }
+        }
+        dependencies {
+            implementation "org.test:foo:1.0"
+        }
+        """
+        when:
+        succeeds("dependencies", "--configuration", "runtimeClasspath")
+
+        then:
+        def manifest = jsonManifest("project :")
+        (manifest.file as Map).source_location == "build.gradle"
+        def resolved = manifest.resolved as Map
+        resolved.keySet() == ["org.test:foo:1.0", "org.test:bar:1.1"] as Set
+        verifyAll(resolved["org.test:foo:1.0"] as Map) {
+            package_url == purlFor(foo)
+            relationship == "direct"
+            dependencies == ["org.test:bar:1.1"]
+        }
+        verifyAll(resolved["org.test:bar:1.1"] as Map) {
+            package_url == purlFor(bar11)
+            relationship == "indirect"
+            dependencies == []
+        }
+    }
+
     def "build with one dependency and one transitive when multiple configurations are resolved"() {
         given:
         def bar = mavenRepo.module("org.test", "bar", "1.0").publish()
@@ -271,6 +340,46 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         verifyAll(resolved["org.test:bar:1.1"] as Map) {
             package_url == purlFor(bar11)
             relationship == "direct"
+            dependencies == []
+        }
+    }
+
+    def "build with two versions of the same transitive dependency"() {
+        given:
+        def bar10 = mavenRepo.module("org.test", "bar", "1.0").publish()
+        def bar11 = mavenRepo.module("org.test", "bar", "1.1").publish()
+        def foo = mavenRepo.module("org.test", "foo", "1.0").dependsOn(bar10).publish()
+        singleProjectBuildWithDependencies """
+        configurations {
+            testCompileClasspath {
+                resolutionStrategy.force("org.test:bar:1.1")
+            }
+        }
+        dependencies {
+            implementation "org.test:foo:1.0"
+        }
+        """
+        when:
+        succeeds("dependencies")
+
+        then:
+        def manifest = jsonManifest("project :")
+        (manifest.file as Map).source_location == "build.gradle"
+        def resolved = manifest.resolved as Map
+        resolved.keySet() == ["org.test:foo:1.0", "org.test:bar:1.0", "org.test:bar:1.1"] as Set
+        verifyAll(resolved["org.test:foo:1.0"] as Map) {
+            package_url == purlFor(foo)
+            relationship == "direct"
+            dependencies == ["org.test:bar:1.0", "org.test:bar:1.1"]
+        }
+        verifyAll(resolved["org.test:bar:1.0"] as Map) {
+            package_url == purlFor(bar10)
+            relationship == "indirect"
+            dependencies == []
+        }
+        verifyAll(resolved["org.test:bar:1.1"] as Map) {
+            package_url == purlFor(bar11)
+            relationship == "indirect"
             dependencies == []
         }
     }

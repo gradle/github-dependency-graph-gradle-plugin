@@ -1,16 +1,20 @@
 package org.gradle.github.dependency.extractor.internal
 
+import org.gradle.api.GradleException
 import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.internal.artifacts.DefaultProjectComponentIdentifier
 import org.gradle.api.internal.artifacts.configurations.ResolveConfigurationDependenciesBuildOperationType
+import org.gradle.github.dependency.extractor.GithubDependencyExtractorPlugin
 import org.gradle.github.dependency.extractor.internal.model.ComponentCoordinates
 import org.gradle.github.dependency.extractor.internal.model.ResolvedComponent
 import org.gradle.github.dependency.extractor.internal.model.ResolvedConfiguration
+import org.gradle.internal.exceptions.DefaultMultiCauseException
 import org.gradle.internal.operations.*
 import java.io.File
 import java.net.URI
 import java.nio.file.Path
+import java.util.*
 import org.gradle.api.internal.artifacts.configurations.ResolveConfigurationDependenciesBuildOperationType as ResolveConfigurationDependenciesBOT
 import org.gradle.initialization.LoadProjectsBuildOperationType as LoadProjectsBOT
 
@@ -40,6 +44,8 @@ abstract class DependencyExtractorService :
         )
     }
 
+    private val thrownExceptions = Collections.synchronizedList(mutableListOf<Throwable>())
+
     init {
         println("Creating: DependencyExtractorService")
     }
@@ -60,13 +66,26 @@ abstract class DependencyExtractorService :
 
     override fun finished(buildOperation: BuildOperationDescriptor, finishEvent: OperationFinishEvent) {
         handleBuildOperationType<
-            ResolveConfigurationDependenciesBOT.Details,
-            ResolveConfigurationDependenciesBOT.Result
-            >(buildOperation, finishEvent) { details, result -> extractConfigurationDependencies(details, result) }
+                ResolveConfigurationDependenciesBOT.Details,
+                ResolveConfigurationDependenciesBOT.Result
+                >(buildOperation, finishEvent) { details, result -> extractConfigurationDependencies(details, result) }
 
         handleBuildOperationType<
-            LoadProjectsBOT.Details,
-            LoadProjectsBOT.Result>(buildOperation, finishEvent) { details, result -> extractProjects(details, result) }
+                LoadProjectsBOT.Details,
+                LoadProjectsBOT.Result>(buildOperation, finishEvent) { details, result -> extractProjects(details, result) }
+    }
+
+    private inline fun <reified D, reified R> handleBuildOperationType(
+            buildOperation: BuildOperationDescriptor,
+            finishEvent: OperationFinishEvent,
+            handler: (details: D, result: R) -> Unit
+    ) {
+        try {
+            handleBuildOperationTypeRaw<D, R>(buildOperation, finishEvent, handler)
+        } catch (e: Throwable) {
+            thrownExceptions.add(e)
+            throw e
+        }
     }
 
     private fun extractProjects(
@@ -160,15 +179,30 @@ abstract class DependencyExtractorService :
         }
     }
 
-    fun writeAndGetSnapshotFile(): File =
+    private fun writeAndGetSnapshotFile(): File =
         fileWriter.writeDependencyManifest(gitHubRepositorySnapshotBuilder.build())
 
     override fun close() {
-        writeAndGetSnapshotFile()
+        if (thrownExceptions.isNotEmpty()) {
+            throw DefaultMultiCauseException(
+                    "The ${GithubDependencyExtractorPlugin::class.simpleName} plugin encountered errors while extracting dependencies. " +
+                            "Please report this issue at: https://github.com/gradle/github-dependency-extractor/issues",
+                    thrownExceptions
+            )
+        }
+        try {
+            writeAndGetSnapshotFile()
+        } catch (e: RuntimeException) {
+            throw GradleException(
+                    "The ${GithubDependencyExtractorPlugin::class.simpleName} plugin encountered errors while writing the dependency snapshot json file. " +
+                            "Please report this issue at: https://github.com/gradle/github-dependency-extractor/issues",
+                    e
+            )
+        }
     }
 }
 
-private inline fun <reified D, reified R> handleBuildOperationType(
+private inline fun <reified D, reified R> handleBuildOperationTypeRaw(
     buildOperation: BuildOperationDescriptor,
     finishEvent: OperationFinishEvent,
     handler: (details: D, result: R) -> Unit

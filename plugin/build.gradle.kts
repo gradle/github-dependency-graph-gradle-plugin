@@ -46,34 +46,6 @@ tasks.withType<KotlinCompile>() {
     }
 }
 
-gradlePlugin {
-    // Define the plugin
-    val extractor by plugins.creating {
-        id = "org.gradle.github.dependency.extractor"
-        implementationClass = "org.gradle.github.dependency.extractor.GithubDependencyExtractorPlugin"
-    }
-}
-
-// Add a source set for the functional test suite
-val functionalTestSourceSet = sourceSets.create("functionalTest") {
-}
-
-gradlePlugin.testSourceSets(functionalTestSourceSet)
-configurations["functionalTestImplementation"].extendsFrom(configurations["testImplementation"])
-
-// Add a task to run the functional tests
-val functionalTest by tasks.registering(Test::class) {
-    testClassesDirs = functionalTestSourceSet.output.classesDirs
-    classpath = functionalTestSourceSet.runtimeClasspath
-    useJUnitPlatform()
-    dependsOn(tasks.named("shadowJar"))
-}
-
-tasks.check {
-    // Run the functional tests as part of `check`
-    dependsOn(functionalTest)
-}
-
 tasks.test {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()

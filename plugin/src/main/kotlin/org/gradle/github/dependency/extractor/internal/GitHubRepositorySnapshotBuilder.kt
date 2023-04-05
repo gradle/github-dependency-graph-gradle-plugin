@@ -61,7 +61,7 @@ class GitHubRepositorySnapshotBuilder(
         val manifests = manifestDependencies.mapValues { (name, collector) ->
             GitHubManifest(
                 name,
-                collector.resolved,
+                collector.getDependencies(),
                 manifestFiles[name]
             )
         }
@@ -83,7 +83,7 @@ class GitHubRepositorySnapshotBuilder(
     }
 
     private class DependencyCollector {
-        val resolved: MutableMap<String, GitHubDependency> = mutableMapOf()
+        private val dependencyBuilders: MutableMap<String, GitHubDependencyBuilder> = mutableMapOf()
 
         /**
          * Merge each resolved component with the same ID into a single GitHubDependency.
@@ -92,24 +92,19 @@ class GitHubRepositorySnapshotBuilder(
             if (component.id == rootComponent.id) {
                 return
             }
-            val relationship = relationship(rootComponent, component)
-            val gitHubDependency = resolved.getOrPut(component.id) {
-                GitHubDependency(
-                    packageUrl(component),
-                    relationship
-                )
+            val dep = dependencyBuilders.getOrPut(component.id) {
+                GitHubDependencyBuilder(packageUrl(component))
             }
-            // Direct relationship trumps indirect
-            if (relationship == GitHubDependency.Relationship.direct
-                && gitHubDependency.relationship == GitHubDependency.Relationship.indirect) {
-                gitHubDependency.relationship = GitHubDependency.Relationship.direct
-            }
-            // Add any new dependencies
-            val existing = gitHubDependency.dependencies.toSet()
-            for (dependency in component.dependencies) {
-                if (!existing.contains(dependency)) {
-                    gitHubDependency.dependencies.add(dependency)
-                }
+            dep.addRelationship(relationship(rootComponent, component))
+            dep.addDependencies(component.dependencies)
+        }
+
+        /**
+         * Build the GitHubDependency instances
+         */
+        fun getDependencies(): Map<String, GitHubDependency> {
+            return dependencyBuilders.mapValues { (_, builder) ->
+                builder.build()
             }
         }
 
@@ -130,5 +125,28 @@ class GitHubRepositorySnapshotBuilder(
                 }
                 .build()
                 .toString()
+
+        private class GitHubDependencyBuilder(val package_url: String) {
+            var relationship: GitHubDependency.Relationship = GitHubDependency.Relationship.indirect
+            val dependencies = mutableListOf<String>()
+
+            fun addRelationship(newRelationship: GitHubDependency.Relationship) {
+                // Direct relationship trumps indirect
+                if (relationship == GitHubDependency.Relationship.indirect) {
+                    relationship = newRelationship
+                }
+            }
+
+            fun addDependencies(newDependencies: List<String>) {
+                // Add any dependencies that are not in the existing set
+                for (newDependency in newDependencies.subtract(dependencies.toSet())) {
+                    dependencies.add(newDependency)
+                }
+            }
+
+            fun build(): GitHubDependency {
+                return GitHubDependency(package_url, relationship, dependencies)
+            }
+        }
     }
 }

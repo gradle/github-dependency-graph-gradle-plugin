@@ -1,370 +1,238 @@
 package org.gradle.github.dependency.extractor
 
 
-import org.gradle.test.fixtures.build.BuildTestFile
 import org.gradle.test.fixtures.maven.MavenModule
 
 class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
-
     private MavenModule foo
-    private String fooPurl
-    private String fooGav
     private MavenModule bar
+    private MavenModule baz
+
+    private File settingsFile
+    private File buildFile
 
     def setup() {
         applyExtractorPlugin()
         establishEnvironmentVariables()
 
-        foo = mavenRepo.module("org.test-published", "foo", "1.0").publish()
-        fooPurl = purlFor(foo)
-        fooGav = gavFor(foo)
-        bar = mavenRepo.module("org.test-published", "bar", "2.0").publish()
-    }
+        foo = mavenRepo.module("org.test", "foo", "1.0").publish()
+        bar = mavenRepo.module("org.test", "bar", "1.0").publish()
+        baz = mavenRepo.module("org.test", "baz", "1.0").dependsOn(bar).publish()
 
-    void setupBuildFile(BuildTestFile buildTestFile) {
-        buildTestFile.buildFile """
-        repositories {
-            maven { url "${mavenRepo.uri}" }
-        }
+        settingsFile = file("settings.gradle") << """
+            rootProject.name = 'parent'    
+        """
 
-        task validate {
-            doLast {
-                configurations.runtimeClasspath.resolvedConfiguration.files
+        buildFile = file("build.gradle") << """
+            allprojects {
+                group "org.test"
+                version "1.0"
+
+                repositories {
+                    maven { url "${mavenRepo.uri}" }
+                }
+        
+                task validate {
+                    dependsOn "dependencies"
+                }
             }
-        }
         """
     }
 
-    def "multiple projects with single dependency each"() {
+    def "extracts dependencies from multiple unrelated projects"() {
         given:
-        List<String> subprojects = ["a", "b"]
-        multiProjectBuild("parent", subprojects) {
-            List<BuildTestFile> projects = subprojects.collect { project(it) }.plus(it)
-            projects.forEach {
-                it.buildFile """
+        settingsFile << "include 'a', 'b'"
+
+        buildFile << """
+            allprojects {
                 apply plugin: 'java'
                 dependencies {
-                    implementation 'org.test-published:foo:1.0'
+                    implementation 'org.test:foo:1.0'
                 }
-                """
-                setupBuildFile(it)
             }
-        }
+"""
 
         when:
         succeeds("validate")
 
         then:
-        def manifests = jsonManifests()
-        manifests.size() == 3
-        def parentRuntimeClasspath = jsonManifest("project :")
-        def parentRuntimeClasspathFile = parentRuntimeClasspath.file as Map
-        parentRuntimeClasspathFile.source_location == "build.gradle"
-        def parentClasspathResolved = parentRuntimeClasspath.resolved as Map
-        def parentTestFoo = parentClasspathResolved[gavFor(foo)] as Map
-        verifyAll(parentTestFoo) {
-            package_url == this.fooPurl
-            relationship == "direct"
-            dependencies == []
-        }
-        subprojects.each { name ->
-            def runtimeClasspath = jsonManifest("project :${name}")
-            def runtimeClasspathFile = runtimeClasspath.file as Map
-            runtimeClasspathFile.source_location == name + "/build.gradle"
-            def classpathResolved = runtimeClasspath.resolved as Map
-            def testFoo = classpathResolved[gavFor(foo)] as Map
-            verifyAll(testFoo) {
-                package_url == this.fooPurl
-                relationship == "direct"
-                dependencies == []
-            }
+        manifestNames == ["project :", "project :a", "project :b"]
+
+        def rootProjectManifest = gitHubManifest("project :")
+        rootProjectManifest.sourceFile == "build.gradle"
+        rootProjectManifest.assertResolved([
+            "org.test:foo:1.0": [package_url: purlFor(foo)]
+        ])
+
+        ["a", "b"].each { name ->
+            def manifest = gitHubManifest("project :${name}")
+            manifest.sourceFile == name + "/build.gradle"
+            manifest.assertResolved([
+                "org.test:foo:1.0": [package_url: purlFor(foo)]
+            ])
         }
     }
 
-    def "multi-project build where one project depends upon another"(String taskInvocation, boolean resolveProjectA) {
+    def "extracts transitive project dependencies in multi-project build"() {
         given:
-        multiProjectBuild("parent", ["a", "b"]) {
-            List<BuildTestFile> projects = []
-            projects.add project("a").tap {
-                buildFile """
-                apply plugin: 'java'
-                dependencies {
-                    implementation 'org.test-published:foo:1.0'
-                }
-                """
-            }
-            projects.add project("b").tap {
-                buildFile """
-                apply plugin: 'java'
-                dependencies {
-                    implementation project(':a')
-                }
-                """
-            }
-            projects.forEach {
-                setupBuildFile(it)
-            }
-        }
-        when:
-        succeeds(taskInvocation)
-
-        then:
-        def manifests = jsonManifests()
-        if (resolveProjectA) {
-            manifests.size() == 2
-            def aRuntimeClasspath = jsonManifest("project :a")
-            def aRuntimeClasspathFile = aRuntimeClasspath.file as Map
-            aRuntimeClasspathFile.source_location == "a/build.gradle"
-            def aClasspathResolved = aRuntimeClasspath.resolved as Map
-            def aTestFoo = aClasspathResolved[fooGav] as Map
-            verifyAll(aTestFoo) {
-                package_url == this.fooPurl
-                relationship == "direct"
-                dependencies == []
-            }
-        } else {
-            manifests.size() == 1
-        }
-        def bRuntimeClasspath = jsonManifest("project :b")
-        def bRuntimeClasspathFile = bRuntimeClasspath.file as Map
-        bRuntimeClasspathFile.source_location == "b/build.gradle"
-        def bClasspathResolved = bRuntimeClasspath.resolved as Map
-        def bTestFoo = bClasspathResolved[fooGav] as Map
-        verifyAll(bTestFoo) {
-            package_url == this.fooPurl
-            relationship == "indirect"
-            dependencies == []
-        }
-        def aTestProjectPurl = "pkg:maven/org.test/a@1.0"
-        def aTestProject = bClasspathResolved["project :a"] as Map
-        verifyAll(aTestProject) {
-            package_url == aTestProjectPurl
-            relationship == "direct"
-            dependencies == [this.fooGav]
-        }
-        where:
-        // Running just the 'validate' task on 'b' will not implicitly cause 'a' to be resolved.
-        // This is because the configuration 'runtimeClasspath' on 'b' relies upon the 'runtimeElements' of 'a',
-        // not the 'runtimeClasspath'. The 'runtimeElements' configuration is not itself resolvable.
-        // https://docs.gradle.org/current/userguide/java_library_plugin.html#sec:java_library_configurations_graph
-        taskInvocation | resolveProjectA
-        "validate"     | true
-        ":b:validate"  | false
-    }
-
-    def "multi-project build with transitive project dependencies"(String taskInvocation) {
-        given:
-        multiProjectBuild("parent", ["a", "b", "c"]) {
-            List<BuildTestFile> projects = []
-            projects.add project("a").tap {
-                buildFile """
+        settingsFile << "include 'a', 'b', 'c'"
+        buildFile << """
+            project(':a') {
                 apply plugin: 'java-library'
                 dependencies {
-                    api 'org.test-published:foo:1.0'
+                    api 'org.test:foo:1.0'
                 }
-                """
             }
-            projects.add project("b").tap {
-                buildFile """
+            project(':b') {
                 apply plugin: 'java-library'
                 dependencies {
                     api project(':a')
                 }
-                """
             }
-            projects.add project("c").tap {
-                buildFile """
+            project(':c') {
                 apply plugin: 'java'
                 dependencies {
                     implementation project(':b')
                 }
-                """
             }
-            projects.forEach {
-                setupBuildFile(it)
-            }
-        }
-        when:
-        succeeds(taskInvocation)
+        """
 
-        then:
-        def aTestProjectPurl = "pkg:maven/org.test/a@1.0"
-        def bTestProjectPurl = "pkg:maven/org.test/b@1.0"
-
-        def aCompileClasspath = jsonManifest("project :a")
-        def aCompileClasspathFile = aCompileClasspath.file as Map
-        aCompileClasspathFile.source_location == "a/build.gradle"
-        def aClasspathResolved = aCompileClasspath.resolved as Map
-        verifyAll(aClasspathResolved[fooGav] as Map) {
-            package_url == this.fooPurl
-            relationship == "direct"
-            dependencies == []
-        }
-
-        def bCompileClasspath = jsonManifest("project :b")
-        def bCompileClasspathFile = bCompileClasspath.file as Map
-        bCompileClasspathFile.source_location == "b/build.gradle"
-        def bClasspathResolved = bCompileClasspath.resolved as Map
-        verifyAll(bClasspathResolved[fooGav] as Map) {
-            package_url == this.fooPurl
-            relationship == "indirect"
-            dependencies == []
-        }
-        verifyAll(bClasspathResolved["project :a"] as Map) {
-            package_url == aTestProjectPurl
-            relationship == "direct"
-            dependencies == [this.fooGav]
-        }
-
-        def cCompileClasspath = jsonManifest("project :c")
-        def cCompileClasspathFile = cCompileClasspath.file as Map
-        cCompileClasspathFile.source_location == "c/build.gradle"
-        def cClasspathResolved = cCompileClasspath.resolved as Map
-        verifyAll(cClasspathResolved[fooGav] as Map) {
-            package_url == this.fooPurl
-            relationship == "indirect"
-            dependencies == []
-        }
-        verifyAll(cClasspathResolved["project :a"] as Map) {
-            package_url == aTestProjectPurl
-            relationship == "indirect"
-            dependencies == [this.fooGav]
-        }
-        verifyAll(cClasspathResolved["project :b"] as Map) {
-            package_url == bTestProjectPurl
-            relationship == "direct"
-            dependencies == ["project :a"]
-        }
-        where:
-        taskInvocation | _
-        "classes"      | _
-        ":c:classes"   | _
-    }
-
-    def "project with buildSrc"() {
-        given:
-        multiProjectBuild("parent", []) {
-            project("buildSrc").tap {
-                buildFile """
-                apply plugin: 'java'
-                group = 'org.test.buildSrc'
-                version = '1.0'
-                dependencies {
-                    implementation 'org.test-published:foo:1.0'
-                }
-                """
-                setupBuildFile(it)
-            }
-
-            buildFile """
-            apply plugin: 'java'
-            dependencies {
-                implementation 'org.test-published:bar:2.0'
-            }
-            """
-            setupBuildFile(it)
-        }
         when:
         succeeds("validate")
 
         then:
-        Map manifests = jsonManifests()
-        def buildSrcClasspath = manifests["project :buildSrc"]
+        manifestNames == ["project :a", "project :b", "project :c"]
 
-        def buildSrcRuntimeFile = buildSrcClasspath.file as Map
-        buildSrcRuntimeFile.source_location == "buildSrc/build.gradle"
-        def buildSrcClasspathResolved = buildSrcClasspath.resolved as Map
-        def testFoo = buildSrcClasspathResolved[fooGav] as Map
-        verifyAll(testFoo) {
-            package_url == this.fooPurl
-            relationship == "direct"
-            dependencies == []
-        }
-        def runtimeClasspath = jsonManifest("project :")
-        def runtimeFile = runtimeClasspath.file as Map
-        runtimeFile.source_location == "build.gradle"
-        def runtimeClasspathResolved = runtimeClasspath.resolved as Map
-        def testBar = runtimeClasspathResolved[gavFor(bar)] as Map
-        verifyAll(testBar) {
-            package_url == purlFor(this.bar)
-            relationship == "direct"
-            dependencies == []
-        }
+        def manifestA = gitHubManifest("project :a")
+        manifestA.sourceFile == "a/build.gradle"
+        manifestA.assertResolved([
+            "org.test:foo:1.0": [package_url: purlFor(foo)]
+        ])
+
+        def manifestB = gitHubManifest("project :b")
+        manifestB.sourceFile == "b/build.gradle"
+        manifestB.assertResolved([
+            "project :a"      : [
+                package_url : "pkg:maven/org.test/a@1.0",
+                dependencies: ["org.test:foo:1.0"]
+            ],
+            "org.test:foo:1.0": [
+                package_url : purlFor(foo),
+                relationship: "indirect"
+            ]
+        ])
+
+        def manifestC = gitHubManifest("project :c")
+        manifestC.sourceFile == "c/build.gradle"
+        manifestC.assertResolved([
+            "project :b"      : [
+                package_url : "pkg:maven/org.test/b@1.0",
+                dependencies: ["project :a"]
+            ],
+            "project :a"      : [
+                package_url : "pkg:maven/org.test/a@1.0",
+                relationship: "indirect",
+                dependencies: ["org.test:foo:1.0"]
+            ],
+            "org.test:foo:1.0": [
+                package_url : purlFor(foo),
+                relationship: "indirect"
+            ]
+
+        ])
     }
 
-    def "project leveraging included builds"(boolean includedBuildTaskDependency, boolean resolveIncludedBuild) {
+    def "extracts dependencies from buildSrc project"() {
         given:
-        multiProjectBuild("parent", []) {
-            includedBuild("included-child").tap {
-                buildFile """
-                apply plugin: 'java'
-
-                group = 'org.test.included'
-                version = '1.0'
-                dependencies {
-                    implementation 'org.test-published:foo:1.0'
-                }
-                """
-                setupBuildFile(it)
-            }
-
-            buildFile """
+        file("buildSrc/settings.gradle") << "rootProject.name = 'buildSrc'"
+        file("buildSrc/build.gradle") << """
             apply plugin: 'java'
+            group = 'org.test.buildSrc'
+            version = '1.0'
+            repositories {
+                maven { url "${mavenRepo.uri}" }
+            }
+            dependencies {
+                implementation 'org.test:foo:1.0'
+            }
+        """
 
+        buildFile << """
+            apply plugin: 'java'
+            dependencies {
+                implementation 'org.test:bar:1.0'
+            }
+        """
+
+        when:
+        succeeds("validate")
+
+        then:
+        manifestNames == ["project :", "project :buildSrc"]
+
+        def buildSrcManifest = gitHubManifest("project :buildSrc")
+        buildSrcManifest.sourceFile == "buildSrc/build.gradle"
+        buildSrcManifest.assertResolved([
+            "org.test:foo:1.0": [package_url: purlFor(foo)]
+        ])
+
+        def projectManifest = gitHubManifest("project :")
+        projectManifest.sourceFile == "build.gradle"
+        projectManifest.assertResolved([
+            "org.test:bar:1.0": [package_url: purlFor(bar)]
+        ])
+    }
+
+    def "extracts dependencies from included build"() {
+        given:
+        file("included-child/settings.gradle") << "rootProject.name = 'included-child'"
+        file("included-child/build.gradle") << """
+            apply plugin: 'java-library'
+            group = 'org.test.included'
+            version = '1.0'
+
+            repositories {
+                maven { url "${mavenRepo.uri}" }
+            }
+            dependencies {
+                implementation 'org.test:foo:1.0'
+            }
+        """
+
+        settingsFile << "includeBuild 'included-child'"
+        buildFile << """
+            apply plugin: 'java'
             dependencies {
                 implementation 'org.test.included:included-child'
             }
-            """
-            setupBuildFile(it)
-            if (includedBuildTaskDependency) {
-                buildFile """
-                tasks.validate {
-                    dependsOn gradle.includedBuild("included-child").task(":validate")
-                }
-                """
+            tasks.validate {
+                dependsOn gradle.includedBuild("included-child").task(":dependencies")
             }
-        }
+        """
+
         when:
         succeeds("validate")
 
         then:
-        def runtimeClasspath = jsonManifest("project :")
-        def runtimeFile = runtimeClasspath.file as Map
-        verifyAll {
-            runtimeFile.source_location == "build.gradle"
-            def runtimeClasspathResolved = runtimeClasspath.resolved as Map
-            def testFoo = runtimeClasspathResolved[fooGav] as Map
-            verifyAll(testFoo) {
-                package_url == this.fooPurl
-                relationship == "indirect"
-                dependencies == []
-            }
-            def testIncludedChild = runtimeClasspathResolved["project :included-child"] as Map
-            verifyAll(testIncludedChild) {
-                package_url == "pkg:maven/org.test.included/included-child@1.0"
-                relationship == "direct"
-                dependencies == [this.fooGav]
-            }
-        }
-        if (resolveIncludedBuild) {
-            def includedChildRuntimeClasspath = jsonManifest("project :included-child")
-            def includedChildRuntimeFile = includedChildRuntimeClasspath.file as Map
-            verifyAll {
-                includedChildRuntimeFile.source_location == "included-child/build.gradle"
-                def includedChildRuntimeClasspathResolved = includedChildRuntimeClasspath.resolved as Map
+        manifestNames == ["project :", "project :included-child"]
 
-                def testFoo = includedChildRuntimeClasspathResolved[fooGav] as Map
-                verifyAll(testFoo) {
-                    package_url == this.fooPurl
-                    relationship == "direct"
-                    dependencies == []
-                }
-            }
-        }
+        def projectManifest = gitHubManifest("project :")
+        projectManifest.sourceFile == "build.gradle"
+        projectManifest.assertResolved([
+            "project :included-child": [
+                package_url : "pkg:maven/org.test.included/included-child@1.0",
+                dependencies: ["org.test:foo:1.0"]
+            ],
+            "org.test:foo:1.0"       : [
+                package_url : purlFor(foo),
+                relationship: "indirect"
+            ]
+        ])
 
-        where:
-        includedBuildTaskDependency | resolveIncludedBuild
-        false                       | false
-        true                        | true
+        def includedManifest = gitHubManifest("project :included-child")
+        includedManifest.sourceFile == "included-child/build.gradle"
+        includedManifest.assertResolved([
+            "org.test:foo:1.0": [package_url: purlFor(foo)]
+        ])
     }
 }

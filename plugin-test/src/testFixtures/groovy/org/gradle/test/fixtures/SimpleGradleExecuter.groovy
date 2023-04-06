@@ -1,6 +1,6 @@
 package org.gradle.test.fixtures
 
-import org.gradle.test.fixtures.file.TestDirectoryProvider
+
 import org.gradle.test.fixtures.file.TestFile
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
@@ -11,18 +11,18 @@ class SimpleGradleExecuter {
     private final List<String> tasks = new ArrayList<>()
     private final Map<String, String> environmentVars = new HashMap<>()
 
-    private final TestDirectoryProvider testDirectoryProvider
+    private final TestFile testDirectory
     private final TestFile testKitDir
     private final String gradleVersion
     private boolean showStacktrace = true
     private boolean debug = false
 
     SimpleGradleExecuter(
-            TestDirectoryProvider testDirectoryProvider,
+            TestFile testDirectory,
             TestFile testKitDir,
             String gradleVersion
     ) {
-        this.testDirectoryProvider = testDirectoryProvider
+        this.testDirectory = testDirectory
         this.testKitDir = testKitDir
         this.gradleVersion = gradleVersion
     }
@@ -141,7 +141,7 @@ class SimpleGradleExecuter {
         def runner = GradleRunner.create()
         runner.withGradleVersion(gradleVersion.toString())
         runner.withTestKitDir(testKitDir)
-        runner.withProjectDir(testDirectoryProvider.testDirectory)
+        runner.withProjectDir(testDirectory)
         def args = getAllArgs()
         if (!environmentVars.isEmpty()) {
             if (debug) {

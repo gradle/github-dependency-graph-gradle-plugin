@@ -7,43 +7,37 @@ import groovy.json.JsonSlurper
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import groovy.transform.Memoized
-import org.gradle.test.fixtures.SimpleGradleExecuter
 import org.gradle.github.dependency.fixture.TestConfig
 import org.gradle.internal.hash.Hashing
-import org.gradle.test.fixtures.build.BuildTestFile
-import org.gradle.test.fixtures.build.BuildTestFixture
+import org.gradle.test.fixtures.SimpleGradleExecuter
 import org.gradle.test.fixtures.file.TestFile
-import org.gradle.test.fixtures.file.TestNameTestDirectoryProvider
 import org.gradle.test.fixtures.maven.MavenFileRepository
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.util.GradleVersion
-import org.intellij.lang.annotations.Language
-import org.junit.Rule
 import spock.lang.Specification
+import spock.lang.TempDir
 
 import java.util.stream.Collectors
 
 abstract class BaseExtractorTest extends Specification {
 
-    @Rule
-    public final TestNameTestDirectoryProvider temporaryFolder = new TestNameTestDirectoryProvider(getClass())
+    @TempDir
+    File testDir
 
     private static final TestConfig TEST_CONFIG = new TestConfig()
-    protected TestEnvironmentVars environmentVars = new TestEnvironmentVars(testDirectory)
+    public TestEnvironmentVars environmentVars
+    public MavenFileRepository mavenRepo
+
     private JsonRepositorySnapshotLoader loader
-
-
-    public final MavenFileRepository mavenRepo = new MavenFileRepository(temporaryFolder.testDirectory.file("maven-repo"))
-    BuildTestFixture buildTestFixture = new BuildTestFixture(temporaryFolder)
 
     private SimpleGradleExecuter executer
     private BuildResult result
 
-    def setup() {
-        if (System.getProperty("os.name").containsIgnoreCase("windows")) {
-            // Suppress file cleanup check on windows
-            temporaryFolder.suppressCleanupErrors()
+    MavenFileRepository getMavenRepo() {
+        if (mavenRepo == null) {
+            mavenRepo = new MavenFileRepository(testDirectory.file("maven-repo"))
         }
+        return mavenRepo
     }
 
     SimpleGradleExecuter getExecuter() {
@@ -66,12 +60,12 @@ abstract class BaseExtractorTest extends Specification {
     SimpleGradleExecuter createExecuter(String gradleVersion) {
         println("Executing test with Gradle $gradleVersion")
         def testKitDir = file("test-kit")
-        return new SimpleGradleExecuter(temporaryFolder, testKitDir, gradleVersion)
+        return new SimpleGradleExecuter(testDirectory, testKitDir, gradleVersion)
     }
 
 
     TestFile getTestDirectory() {
-        temporaryFolder.testDirectory
+        new TestFile(testDir)
     }
 
     TestFile file(Object... path) {
@@ -79,14 +73,6 @@ abstract class BaseExtractorTest extends Specification {
             return path[0] as TestFile
         }
         getTestDirectory().file(path)
-    }
-
-    def singleProjectBuild(String projectName, @DelegatesTo(value = BuildTestFile, strategy = Closure.DELEGATE_FIRST) Closure cl = {}) {
-        buildTestFixture.singleProjectBuild(projectName, cl)
-    }
-
-    def multiProjectBuild(String projectName, List<String> subprojects, @DelegatesTo(value = BuildTestFile, strategy = Closure.DELEGATE_FIRST) Closure cl = {}) {
-        buildTestFixture.multiProjectBuild(projectName, subprojects, cl)
     }
 
     protected SimpleGradleExecuter args(String... args) {
@@ -125,6 +111,7 @@ abstract class BaseExtractorTest extends Specification {
     }
 
     protected void establishEnvironmentVariables() {
+        environmentVars = new TestEnvironmentVars(testDirectory)
         executer.withEnvironmentVars(environmentVars.asEnvironmentMap())
     }
 
@@ -132,10 +119,6 @@ abstract class BaseExtractorTest extends Specification {
         // NOTE: Don't use this in production, this is purely for test code. The escaping here may be insufficient.
         String repositoryUrlEscaped = URLEncoder.encode(mavenRepo.rootDir.toURI().toASCIIString(), "UTF-8")
         return "pkg:maven/${module.group}/${module.module}@${module.version}?repository_url=$repositoryUrlEscaped"
-    }
-
-    protected String gavFor(org.gradle.test.fixtures.Module module) {
-        return "${module.group}:${module.module}:${module.version}"
     }
 
     @CompileDynamic
@@ -165,6 +148,48 @@ abstract class BaseExtractorTest extends Specification {
         Map manifest = manifests[manifestName] as Map
         assert manifest.name == manifestName
         return manifest
+    }
+
+    protected List<String> getManifestNames() {
+        return jsonManifests().keySet() as List
+    }
+
+    protected GitHubManifest gitHubManifest(String manifestName) {
+        def jsonManifest = jsonManifest(manifestName)
+        return new GitHubManifest(jsonManifest)
+    }
+
+    protected static class GitHubManifest {
+        Map manifestData
+
+        GitHubManifest(Map manifestData) {
+            this.manifestData = manifestData
+        }
+
+        def getName() {
+            return manifestData.name
+        }
+
+        def getSourceFile() {
+            return (manifestData.file as Map).source_location
+        }
+
+        def assertResolved(Map<String, Map> expectedResolved = [:]) {
+            def resolved = manifestData.resolved as Map<String, Map>
+
+            assert resolved.keySet() == expectedResolved.keySet()
+
+            for (String key : expectedResolved.keySet()) {
+                def actual = resolved[key]
+                def expected = expectedResolved[key]
+
+                assert actual.package_url == expected.package_url
+                assert actual.relationship == (expected.relationship ?: "direct")
+                assert actual.dependencies == (expected.dependencies ?: [])
+            }
+
+            return true
+        }
     }
 
     @CompileStatic

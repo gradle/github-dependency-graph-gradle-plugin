@@ -56,8 +56,4 @@ class SampleProjectDependencyExtractorTest extends BaseExtractorTest {
                 "project :utilities"
         ]
     }
-
-    private List<String> getManifestNames() {
-        return jsonManifests().keySet() as List
-    }
 }

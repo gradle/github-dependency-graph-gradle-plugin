@@ -1,7 +1,6 @@
 package org.gradle.github.dependency
 
 import org.gradle.api.Plugin
-import org.gradle.api.internal.GradleInternal
 import org.gradle.api.invocation.Gradle
 import org.gradle.api.logging.Logging
 import org.gradle.github.dependency.extractor.ForceDependencyResolutionPlugin
@@ -19,7 +18,7 @@ class GitHubDependencySubmissionPlugin : Plugin<Gradle> {
             gradle.pluginManager.apply(GitHubDependencyExtractorPlugin::class.java)
         }
 
-        // Apply the dependency resolver to all builds
+        // Apply the dependency resolver to each build
         gradle.pluginManager.apply(ForceDependencyResolutionPlugin::class.java)
     }
 }

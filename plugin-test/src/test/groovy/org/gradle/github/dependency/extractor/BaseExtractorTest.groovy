@@ -134,10 +134,6 @@ abstract class BaseExtractorTest extends Specification {
         return "pkg:maven/${module.group}/${module.module}@${module.version}?repository_url=$repositoryUrlEscaped"
     }
 
-    protected String gavFor(org.gradle.test.fixtures.Module module) {
-        return "${module.group}:${module.module}:${module.version}"
-    }
-
     @CompileDynamic
     protected Map jsonRepositorySnapshot() {
         return loader.jsonRepositorySnapshot()
@@ -165,6 +161,51 @@ abstract class BaseExtractorTest extends Specification {
         Map manifest = manifests[manifestName] as Map
         assert manifest.name == manifestName
         return manifest
+    }
+
+    protected List<String> getManifestNames() {
+        return jsonManifests().keySet() as List
+    }
+
+    protected GitHubManifest gitHubManifest(String manifestName) {
+        def jsonManifest = jsonManifest(manifestName)
+        return new GitHubManifest(jsonManifest)
+    }
+
+    protected static class GitHubManifest {
+        Map manifestData
+
+        GitHubManifest(Map manifestData) {
+            this.manifestData = manifestData
+        }
+
+        def getName() {
+            return manifestData.name
+        }
+
+        def getSourceFile() {
+            return (manifestData.file as Map).source_location
+        }
+
+        def getResolved() {
+            def resolved = manifestData.resolved as Map
+            return resolved.keySet() as List
+        }
+
+        def resolved(String key) {
+            def resolved = manifestData.resolved as Map<String, Map>
+            return resolved[key]
+        }
+
+        def checkResolved(String key, String packageUrl, Map checks = [:]) {
+            def resolved = manifestData.resolved as Map<String, Map>
+            def dep = resolved[key]
+            assert dep != null
+            assert dep.package_url == packageUrl
+            assert dep.relationship == (checks.relationship ?: "direct")
+            assert dep.dependencies == (checks.dependencies ?: [])
+            return true
+        }
     }
 
     @CompileStatic

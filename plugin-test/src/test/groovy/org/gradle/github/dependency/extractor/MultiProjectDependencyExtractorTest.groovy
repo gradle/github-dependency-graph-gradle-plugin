@@ -1,55 +1,63 @@
 package org.gradle.github.dependency.extractor
 
 
-import org.gradle.test.fixtures.build.BuildTestFile
 import org.gradle.test.fixtures.maven.MavenModule
 
 class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
-
     private MavenModule foo
+    private MavenModule bar
+    private MavenModule baz
+
     private String fooPurl
     private String fooGav
-    private MavenModule bar
+
+    private File settingsFile
+    private File buildFile
 
     def setup() {
         applyExtractorPlugin()
         establishEnvironmentVariables()
 
-        foo = mavenRepo.module("org.test-published", "foo", "1.0").publish()
+        foo = mavenRepo.module("org.test", "foo", "1.0").publish()
+        bar = mavenRepo.module("org.test", "bar", "1.0").publish()
+        baz = mavenRepo.module("org.test", "baz", "1.0").dependsOn(bar).publish()
+
         fooPurl = purlFor(foo)
-        fooGav = "org.test-published:foo:1.0"
-        bar = mavenRepo.module("org.test-published", "bar", "2.0").publish()
-    }
+        fooGav = "org.test:foo:1.0"
 
-    void setupBuildFile(BuildTestFile buildTestFile) {
-        buildTestFile.buildFile """
-        repositories {
-            maven { url "${mavenRepo.uri}" }
-        }
 
-        task validate {
-            doLast {
-                configurations.runtimeClasspath.resolvedConfiguration.files
+        settingsFile = file("settings.gradle") << """
+            rootProject.name = 'parent'    
+        """
+
+        buildFile = file("build.gradle") << """
+            allprojects {
+                group "org.test"
+                version "1.0"
+
+                repositories {
+                    maven { url "${mavenRepo.uri}" }
+                }
+        
+                task validate {
+                    dependsOn "dependencies"
+                }
             }
-        }
         """
     }
 
     def "extracts dependencies from multiple unrelated projects"() {
         given:
-        List<String> subprojects = ["a", "b"]
-        multiProjectBuild("parent", subprojects) {
-            List<BuildTestFile> projects = subprojects.collect { project(it) }.plus(it)
-            projects.forEach {
-                it.buildFile """
+        settingsFile << "include 'a', 'b'"
+
+        buildFile << """
+            allprojects {
                 apply plugin: 'java'
                 dependencies {
-                    implementation 'org.test-published:foo:1.0'
+                    implementation 'org.test:foo:1.0'
                 }
-                """
-                setupBuildFile(it)
             }
-        }
+"""
 
         when:
         succeeds("validate")
@@ -59,10 +67,10 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
 
         def rootProjectManifest = gitHubManifest("project :")
         rootProjectManifest.sourceFile == "build.gradle"
-        rootProjectManifest.resolved == ["org.test-published:foo:1.0"]
-        rootProjectManifest.checkResolved("org.test-published:foo:1.0", fooPurl)
+        rootProjectManifest.resolved == ["org.test:foo:1.0"]
+        rootProjectManifest.checkResolved("org.test:foo:1.0", fooPurl)
 
-        subprojects.each { name ->
+        ["a", "b"].each { name ->
             def manifest = gitHubManifest("project :${name}")
             manifest.sourceFile == name + "/build.gradle"
             manifest.resolved == [fooGav]
@@ -72,38 +80,30 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
 
     def "extracts transitive project dependencies in multi-project build"() {
         given:
-        multiProjectBuild("parent", ["a", "b", "c"]) {
-            List<BuildTestFile> projects = []
-            projects.add project("a").tap {
-                buildFile """
+        settingsFile << "include 'a', 'b', 'c'"
+        buildFile << """
+            project(':a') {
                 apply plugin: 'java-library'
                 dependencies {
-                    api 'org.test-published:foo:1.0'
+                    api 'org.test:foo:1.0'
                 }
-                """
             }
-            projects.add project("b").tap {
-                buildFile """
+            project(':b') {
                 apply plugin: 'java-library'
                 dependencies {
                     api project(':a')
                 }
-                """
             }
-            projects.add project("c").tap {
-                buildFile """
+            project(':c') {
                 apply plugin: 'java'
                 dependencies {
                     implementation project(':b')
                 }
-                """
             }
-            projects.forEach {
-                setupBuildFile(it)
-            }
-        }
+        """
+
         when:
-        succeeds("classes")
+        succeeds("validate")
 
         then:
         manifestNames == ["project :a", "project :b", "project :c"]
@@ -144,27 +144,26 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
 
     def "extracts dependencies from buildSrc project"() {
         given:
-        multiProjectBuild("parent", []) {
-            project("buildSrc").tap {
-                buildFile """
-                apply plugin: 'java'
-                group = 'org.test.buildSrc'
-                version = '1.0'
-                dependencies {
-                    implementation 'org.test-published:foo:1.0'
-                }
-                """
-                setupBuildFile(it)
+        file("buildSrc/settings.gradle") << "rootProject.name = 'buildSrc'"
+        file("buildSrc/build.gradle") << """
+            apply plugin: 'java'
+            group = 'org.test.buildSrc'
+            version = '1.0'
+            repositories {
+                maven { url "${mavenRepo.uri}" }
             }
+            dependencies {
+                implementation 'org.test:foo:1.0'
+            }
+        """
 
-            buildFile """
+        buildFile << """
             apply plugin: 'java'
             dependencies {
-                implementation 'org.test-published:bar:2.0'
+                implementation 'org.test:bar:1.0'
             }
-            """
-            setupBuildFile(it)
-        }
+        """
+
         when:
         succeeds("validate")
 
@@ -173,59 +172,53 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
 
         def buildSrcManifest = gitHubManifest("project :buildSrc")
         buildSrcManifest.sourceFile == "buildSrc/build.gradle"
-        buildSrcManifest.resolved == ["org.test-published:foo:1.0"]
-        buildSrcManifest.checkResolved("org.test-published:foo:1.0", fooPurl)
+        buildSrcManifest.resolved == ["org.test:foo:1.0"]
+        buildSrcManifest.checkResolved("org.test:foo:1.0", fooPurl)
 
         def projectManifest = gitHubManifest("project :")
         projectManifest.sourceFile == "build.gradle"
-        projectManifest.resolved == ["org.test-published:bar:2.0"]
-        projectManifest.checkResolved("org.test-published:bar:2.0", purlFor(bar))
+        projectManifest.resolved == ["org.test:bar:1.0"]
+        projectManifest.checkResolved("org.test:bar:1.0", purlFor(bar))
     }
 
-    def "project leveraging included builds"() {
+    def "extracts dependencies from included build"() {
         given:
-        multiProjectBuild("parent", []) {
-            includedBuild("included-child").tap {
-                buildFile """
-                apply plugin: 'java-library'
+        file("included-child/settings.gradle") << "rootProject.name = 'included-child'"
+        file("included-child/build.gradle") << """
+            apply plugin: 'java-library'
+            group = 'org.test.included'
+            version = '1.0'
 
-                group = 'org.test.included'
-                version = '1.0'
-                dependencies {
-                    implementation 'org.test-published:foo:1.0'
-                }
-                """
-                setupBuildFile(it)
+            repositories {
+                maven { url "${mavenRepo.uri}" }
             }
+            dependencies {
+                implementation 'org.test:foo:1.0'
+            }
+        """
 
-            buildFile """
+        settingsFile << "includeBuild 'included-child'"
+        buildFile << """
             apply plugin: 'java'
-
             dependencies {
                 implementation 'org.test.included:included-child'
             }
-            """
-            setupBuildFile(it)
-            buildFile """
-            tasks.validate {
-                dependsOn gradle.includedBuild("included-child").task(":validate")
-            }
-            """
-        }
+        """
+
         when:
-        succeeds("validate")
+        succeeds(":dependencies", ":included-child:dependencies")
 
         then:
         manifestNames == ["project :", "project :included-child"]
 
         def projectManifest = gitHubManifest("project :")
         projectManifest.sourceFile == "build.gradle"
-        projectManifest.resolved == ["project :included-child", "org.test-published:foo:1.0"]
+        projectManifest.resolved == ["project :included-child", "org.test:foo:1.0"]
         projectManifest.checkResolved("project :included-child", "pkg:maven/org.test.included/included-child@1.0", [
                 relationship: "direct",
-                dependencies: ["org.test-published:foo:1.0"]
+                dependencies: ["org.test:foo:1.0"]
         ])
-        projectManifest.checkResolved("org.test-published:foo:1.0", fooPurl, [
+        projectManifest.checkResolved("org.test:foo:1.0", fooPurl, [
                 relationship: "indirect",
                 dependencies: []
         ])

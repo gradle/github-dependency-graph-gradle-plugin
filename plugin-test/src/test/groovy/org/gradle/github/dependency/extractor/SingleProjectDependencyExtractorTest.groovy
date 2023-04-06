@@ -1,38 +1,45 @@
 package org.gradle.github.dependency.extractor
 
+import org.gradle.test.fixtures.maven.MavenModule
+
 class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
+    private MavenModule foo
+    private MavenModule bar
+    private MavenModule baz
+    private File settingsFile
+    private File buildFile
+
     def setup() {
         applyExtractorPlugin()
         establishEnvironmentVariables()
-    }
 
-    private def singleProjectBuildWithDependencies(String dependenciesDeclaration) {
-        singleProjectBuild("a") {
-            buildFile """
+        foo = mavenRepo.module("org.test", "foo", "1.0").publish()
+        bar = mavenRepo.module("org.test", "bar", "1.0").publish()
+        baz = mavenRepo.module("org.test", "baz", "1.0").dependsOn(bar).publish()
+
+        settingsFile = file("settings.gradle") << """
+            rootProject.name = 'a'    
+        """
+
+        buildFile = file("build.gradle") << """
             apply plugin: 'java'
 
             repositories {
-                repositories {
-                    maven { url "${mavenRepo.uri}" }
-                }
-            }
-            $dependenciesDeclaration
-            """
-        }
+                maven { url "${mavenRepo.uri}" }
+            }            
+        """
     }
 
     def "extracts implementation and test dependencies for a java project"() {
         given:
-        def foo = mavenRepo.module("org.test", "foo", "1.0").publish()
-        def bar = mavenRepo.module("org.test", "bar", "1.0").publish()
-        def baz = mavenRepo.module("org.test", "baz", "1.0").publish()
-        singleProjectBuildWithDependencies """
+        buildFile << """
         dependencies {
             implementation "org.test:foo:1.0"
             implementation "org.test:bar:1.0"
             testImplementation "org.test:baz:1.0"
         }
         """
+
         when:
         succeeds("dependencies")
 
@@ -43,19 +50,21 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         manifest.resolved == ["org.test:foo:1.0", "org.test:bar:1.0", "org.test:baz:1.0"]
         manifest.checkResolved("org.test:foo:1.0", purlFor(foo))
         manifest.checkResolved("org.test:bar:1.0", purlFor(bar))
-        manifest.checkResolved("org.test:baz:1.0", purlFor(baz))
+        manifest.checkResolved("org.test:baz:1.0", purlFor(baz), [
+                relationship: "direct",
+                dependencies: ["org.test:bar:1.0"]
+        ])
     }
 
     def "extracts only those dependencies resolved during project execution"() {
         given:
-        def foo = mavenRepo.module("org.test", "foo", "1.0").publish()
-        def bar = mavenRepo.module("org.test", "bar", "1.0").publish()
-        singleProjectBuildWithDependencies """
+        buildFile << """
         dependencies {
             implementation "org.test:foo:1.0"
             testImplementation "org.test:bar:1.0"
         }
         """
+
         when:
         succeeds("dependencies", "--configuration", "runtimeClasspath")
 
@@ -69,9 +78,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
 
     def "extracts dependencies from custom configuration"() {
         given:
-        def foo = mavenRepo.module("org.test", "foo", "1.0").publish()
-        def bar = mavenRepo.module("org.test", "bar", "1.0").publish()
-        singleProjectBuildWithDependencies """
+        buildFile << """
         configurations {
             custom
         }
@@ -94,11 +101,10 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
 
     def "extracts transitive dependencies"() {
         given:
-        def bar = mavenRepo.module("org.test", "bar", "1.0").publish()
-        def foo = mavenRepo.module("org.test", "foo", "1.0").dependsOn(bar).publish()
-        singleProjectBuildWithDependencies """
+        def foo2 = mavenRepo.module("org.test", "foo", "2.0").dependsOn(bar).publish()
+        buildFile << """
         dependencies {
-            implementation "org.test:foo:1.0"
+            implementation "org.test:foo:2.0"
         }
         """
         when:
@@ -108,8 +114,8 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         def manifest = gitHubManifest("project :")
         manifest.sourceFile == "build.gradle"
 
-        manifest.resolved == ["org.test:foo:1.0", "org.test:bar:1.0"]
-        manifest.checkResolved("org.test:foo:1.0", purlFor(foo), [
+        manifest.resolved == ["org.test:foo:2.0", "org.test:bar:1.0"]
+        manifest.checkResolved("org.test:foo:2.0", purlFor(foo2), [
                 relationship: "direct",
                 dependencies: ["org.test:bar:1.0"]
         ])
@@ -121,12 +127,10 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
 
     def "extracts direct dependency for transitive dependency updated by constraint"() {
         given:
-        def bar10 = mavenRepo.module("org.test", "bar", "1.0").publish()
         def bar11 = mavenRepo.module("org.test", "bar", "1.1").publish()
-        def foo = mavenRepo.module("org.test", "foo", "1.0").dependsOn(bar10).publish()
-        singleProjectBuildWithDependencies """
+        buildFile << """
         dependencies {
-            implementation "org.test:foo:1.0"
+            implementation "org.test:baz:1.0"
             
             constraints {
                 implementation "org.test:bar:1.1"
@@ -140,8 +144,8 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         def manifest = gitHubManifest("project :")
         manifest.sourceFile == "build.gradle"
 
-        manifest.resolved == ["org.test:foo:1.0", "org.test:bar:1.1"]
-        manifest.checkResolved("org.test:foo:1.0", purlFor(foo), [
+        manifest.resolved == ["org.test:baz:1.0", "org.test:bar:1.1"]
+        manifest.checkResolved("org.test:baz:1.0", purlFor(baz), [
                 relationship: "direct",
                 dependencies: ["org.test:bar:1.1"]
         ])
@@ -153,9 +157,8 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
 
     def "extracts both versions from build with two versions of the same dependency"() {
         given:
-        def bar10 = mavenRepo.module("org.test", "bar", "1.0").publish()
         def bar11 = mavenRepo.module("org.test", "bar", "1.1").publish()
-        singleProjectBuildWithDependencies """
+        buildFile << """
         dependencies {
             implementation "org.test:bar:1.0"
             testImplementation "org.test:bar:1.1"
@@ -169,23 +172,21 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         manifest.sourceFile == "build.gradle"
 
         manifest.resolved == ["org.test:bar:1.0", "org.test:bar:1.1"]
-        manifest.checkResolved("org.test:bar:1.0", purlFor(bar10))
+        manifest.checkResolved("org.test:bar:1.0", purlFor(bar))
         manifest.checkResolved("org.test:bar:1.1", purlFor(bar11))
     }
 
     def "extracts both versions from build with two versions of the same transitive dependency"() {
         given:
-        def bar10 = mavenRepo.module("org.test", "bar", "1.0").publish()
         def bar11 = mavenRepo.module("org.test", "bar", "1.1").publish()
-        def foo = mavenRepo.module("org.test", "foo", "1.0").dependsOn(bar10).publish()
-        singleProjectBuildWithDependencies """
+        buildFile << """
         configurations {
             testCompileClasspath {
                 resolutionStrategy.force("org.test:bar:1.1")
             }
         }
         dependencies {
-            implementation "org.test:foo:1.0"
+            implementation "org.test:baz:1.0"
         }
         """
         when:
@@ -195,12 +196,12 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         def manifest = gitHubManifest("project :")
         manifest.sourceFile == "build.gradle"
 
-        manifest.resolved == ["org.test:foo:1.0", "org.test:bar:1.0", "org.test:bar:1.1"]
-        manifest.checkResolved("org.test:foo:1.0", purlFor(foo), [
+        manifest.resolved == ["org.test:baz:1.0", "org.test:bar:1.0", "org.test:bar:1.1"]
+        manifest.checkResolved("org.test:baz:1.0", purlFor(baz), [
                 relationship: "direct",
                 dependencies: ["org.test:bar:1.0", "org.test:bar:1.1"]
         ])
-        manifest.checkResolved("org.test:bar:1.0", purlFor(bar10), [
+        manifest.checkResolved("org.test:bar:1.0", purlFor(bar), [
                 relationship: "indirect"
         ])
         manifest.checkResolved("org.test:bar:1.1", purlFor(bar11), [
@@ -210,22 +211,18 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
 
     def "extracts direct and transitive dependencies from buildscript"() {
         given:
-        def bar = mavenRepo.module("org.test", "bar", "1.0").publish()
-        def foo = mavenRepo.module("org.test", "foo", "1.0").dependsOn(bar).publish()
-        singleProjectBuild("a") {
-            buildFile """
+        buildFile << """
             buildscript {
                 repositories {
                     maven { url "${mavenRepo.uri}" }
                 }
                 
                 dependencies {
-                    classpath "org.test:foo:1.0"
+                    classpath "org.test:baz:1.0"
                 }        
             }
-            apply plugin: 'java'
-            """
-        }
+        """
+
         when:
         succeeds("dependencies")
 
@@ -233,8 +230,8 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         def manifest = gitHubManifest("project :")
         manifest.sourceFile == "build.gradle"
 
-        manifest.resolved == ["org.test:foo:1.0", "org.test:bar:1.0"]
-        manifest.checkResolved("org.test:foo:1.0", purlFor(foo), [
+        manifest.resolved == ["org.test:baz:1.0", "org.test:bar:1.0"]
+        manifest.checkResolved("org.test:baz:1.0", purlFor(baz), [
                 relationship: "direct",
                 dependencies: ["org.test:bar:1.0"]
         ])

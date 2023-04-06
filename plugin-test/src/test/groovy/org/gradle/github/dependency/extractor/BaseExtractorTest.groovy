@@ -7,17 +7,14 @@ import groovy.json.JsonSlurper
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import groovy.transform.Memoized
-import org.gradle.test.fixtures.SimpleGradleExecuter
 import org.gradle.github.dependency.fixture.TestConfig
 import org.gradle.internal.hash.Hashing
-import org.gradle.test.fixtures.build.BuildTestFile
-import org.gradle.test.fixtures.build.BuildTestFixture
+import org.gradle.test.fixtures.SimpleGradleExecuter
 import org.gradle.test.fixtures.file.TestFile
 import org.gradle.test.fixtures.file.TestNameTestDirectoryProvider
 import org.gradle.test.fixtures.maven.MavenFileRepository
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.util.GradleVersion
-import org.intellij.lang.annotations.Language
 import org.junit.Rule
 import spock.lang.Specification
 
@@ -32,9 +29,7 @@ abstract class BaseExtractorTest extends Specification {
     protected TestEnvironmentVars environmentVars = new TestEnvironmentVars(testDirectory)
     private JsonRepositorySnapshotLoader loader
 
-
     public final MavenFileRepository mavenRepo = new MavenFileRepository(temporaryFolder.testDirectory.file("maven-repo"))
-    BuildTestFixture buildTestFixture = new BuildTestFixture(temporaryFolder)
 
     private SimpleGradleExecuter executer
     private BuildResult result
@@ -79,14 +74,6 @@ abstract class BaseExtractorTest extends Specification {
             return path[0] as TestFile
         }
         getTestDirectory().file(path)
-    }
-
-    def singleProjectBuild(String projectName, @DelegatesTo(value = BuildTestFile, strategy = Closure.DELEGATE_FIRST) Closure cl = {}) {
-        buildTestFixture.singleProjectBuild(projectName, cl)
-    }
-
-    def multiProjectBuild(String projectName, List<String> subprojects, @DelegatesTo(value = BuildTestFile, strategy = Closure.DELEGATE_FIRST) Closure cl = {}) {
-        buildTestFixture.multiProjectBuild(projectName, subprojects, cl)
     }
 
     protected SimpleGradleExecuter args(String... args) {

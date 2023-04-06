@@ -14,15 +14,12 @@ class GitHubDependencySubmissionPlugin : Plugin<Gradle> {
 
     override fun apply(gradle: Gradle) {
         LOGGER.lifecycle("Applying Plugin: GitHubDependencySubmissionPlugin")
-        val buildPath = (gradle as GradleInternal).identityPath
         // Only apply the dependency extractor to the root build
         if (gradle.parent == null) {
-            LOGGER.info("Applying Plugin: GitHubDependencyExtractorPlugin to root build")
             gradle.pluginManager.apply(GitHubDependencyExtractorPlugin::class.java)
         }
 
         // Apply the dependency resolver to all builds
-        LOGGER.info("Applying Plugin: ForceDependencyResolutionPlugin to build $buildPath")
         gradle.pluginManager.apply(ForceDependencyResolutionPlugin::class.java)
     }
 }

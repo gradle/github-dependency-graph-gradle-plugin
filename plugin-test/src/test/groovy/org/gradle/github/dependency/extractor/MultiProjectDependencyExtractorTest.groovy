@@ -203,10 +203,13 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
             dependencies {
                 implementation 'org.test.included:included-child'
             }
+            tasks.validate {
+                dependsOn gradle.includedBuild("included-child").task(":dependencies")
+            }
         """
 
         when:
-        succeeds(":dependencies", ":included-child:dependencies")
+        succeeds("validate")
 
         then:
         manifestNames == ["project :", "project :included-child"]

@@ -11,34 +11,33 @@ import org.gradle.github.dependency.fixture.TestConfig
 import org.gradle.internal.hash.Hashing
 import org.gradle.test.fixtures.SimpleGradleExecuter
 import org.gradle.test.fixtures.file.TestFile
-import org.gradle.test.fixtures.file.TestNameTestDirectoryProvider
 import org.gradle.test.fixtures.maven.MavenFileRepository
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.util.GradleVersion
-import org.junit.Rule
 import spock.lang.Specification
+import spock.lang.TempDir
 
 import java.util.stream.Collectors
 
 abstract class BaseExtractorTest extends Specification {
 
-    @Rule
-    public final TestNameTestDirectoryProvider temporaryFolder = new TestNameTestDirectoryProvider(getClass())
+    @TempDir
+    File testDir
 
     private static final TestConfig TEST_CONFIG = new TestConfig()
-    protected TestEnvironmentVars environmentVars = new TestEnvironmentVars(testDirectory)
-    private JsonRepositorySnapshotLoader loader
+    public TestEnvironmentVars environmentVars
+    public MavenFileRepository mavenRepo
 
-    public final MavenFileRepository mavenRepo = new MavenFileRepository(temporaryFolder.testDirectory.file("maven-repo"))
+    private JsonRepositorySnapshotLoader loader
 
     private SimpleGradleExecuter executer
     private BuildResult result
 
-    def setup() {
-        if (System.getProperty("os.name").containsIgnoreCase("windows")) {
-            // Suppress file cleanup check on windows
-            temporaryFolder.suppressCleanupErrors()
+    MavenFileRepository getMavenRepo() {
+        if (mavenRepo == null) {
+            mavenRepo = new MavenFileRepository(testDirectory.file("maven-repo"))
         }
+        return mavenRepo
     }
 
     SimpleGradleExecuter getExecuter() {
@@ -61,12 +60,12 @@ abstract class BaseExtractorTest extends Specification {
     SimpleGradleExecuter createExecuter(String gradleVersion) {
         println("Executing test with Gradle $gradleVersion")
         def testKitDir = file("test-kit")
-        return new SimpleGradleExecuter(temporaryFolder, testKitDir, gradleVersion)
+        return new SimpleGradleExecuter(testDirectory, testKitDir, gradleVersion)
     }
 
 
     TestFile getTestDirectory() {
-        temporaryFolder.testDirectory
+        new TestFile(testDir)
     }
 
     TestFile file(Object... path) {
@@ -112,6 +111,7 @@ abstract class BaseExtractorTest extends Specification {
     }
 
     protected void establishEnvironmentVariables() {
+        environmentVars = new TestEnvironmentVars(testDirectory)
         executer.withEnvironmentVars(environmentVars.asEnvironmentMap())
     }
 

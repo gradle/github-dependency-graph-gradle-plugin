@@ -174,23 +174,20 @@ abstract class BaseExtractorTest extends Specification {
             return (manifestData.file as Map).source_location
         }
 
-        def getResolved() {
-            def resolved = manifestData.resolved as Map
-            return resolved.keySet() as List
-        }
-
-        def resolved(String key) {
+        def assertResolved(Map<String, Map> expectedResolved = [:]) {
             def resolved = manifestData.resolved as Map<String, Map>
-            return resolved[key]
-        }
 
-        def checkResolved(String key, String packageUrl, Map checks = [:]) {
-            def resolved = manifestData.resolved as Map<String, Map>
-            def dep = resolved[key]
-            assert dep != null
-            assert dep.package_url == packageUrl
-            assert dep.relationship == (checks.relationship ?: "direct")
-            assert dep.dependencies == (checks.dependencies ?: [])
+            assert resolved.keySet() == expectedResolved.keySet()
+
+            for (String key : expectedResolved.keySet()) {
+                def actual = resolved[key]
+                def expected = expectedResolved[key]
+
+                assert actual.package_url == expected.package_url
+                assert actual.relationship == (expected.relationship ?: "direct")
+                assert actual.dependencies == (expected.dependencies ?: [])
+            }
+
             return true
         }
     }

@@ -47,12 +47,17 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         def manifest = gitHubManifest("project :")
         manifest.sourceFile == "build.gradle"
 
-        manifest.resolved == ["org.test:foo:1.0", "org.test:bar:1.0", "org.test:baz:1.0"]
-        manifest.checkResolved("org.test:foo:1.0", purlFor(foo))
-        manifest.checkResolved("org.test:bar:1.0", purlFor(bar))
-        manifest.checkResolved("org.test:baz:1.0", purlFor(baz), [
-                relationship: "direct",
+        manifest.assertResolved([
+            "org.test:foo:1.0": [
+                package_url: purlFor(foo)
+            ],
+            "org.test:bar:1.0": [
+                package_url: purlFor(bar)
+            ],
+            "org.test:baz:1.0": [
+                package_url : purlFor(baz),
                 dependencies: ["org.test:bar:1.0"]
+            ]
         ])
     }
 
@@ -72,8 +77,9 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         def manifest = gitHubManifest("project :")
         manifest.sourceFile == "build.gradle"
 
-        manifest.resolved == ["org.test:foo:1.0"] // "org.test:bar" is not in the runtime classpath, and so is not extracted
-        manifest.checkResolved("org.test:foo:1.0", purlFor(foo))
+        manifest.assertResolved([
+            "org.test:foo:1.0": [package_url: purlFor(foo)]
+        ])
     }
 
     def "extracts dependencies from custom configuration"() {
@@ -94,9 +100,14 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         def manifest = gitHubManifest("project :")
         manifest.sourceFile == "build.gradle"
 
-        manifest.resolved == ["org.test:foo:1.0", "org.test:bar:1.0"]
-        manifest.checkResolved("org.test:foo:1.0", purlFor(foo))
-        manifest.checkResolved("org.test:bar:1.0", purlFor(bar))
+        manifest.assertResolved([
+            "org.test:foo:1.0": [
+                package_url: purlFor(foo)
+            ],
+            "org.test:bar:1.0": [
+                package_url: purlFor(bar)
+            ]
+        ])
     }
 
     def "extracts transitive dependencies"() {
@@ -114,14 +125,15 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         def manifest = gitHubManifest("project :")
         manifest.sourceFile == "build.gradle"
 
-        manifest.resolved == ["org.test:foo:2.0", "org.test:bar:1.0"]
-        manifest.checkResolved("org.test:foo:2.0", purlFor(foo2), [
-                relationship: "direct",
+        manifest.assertResolved([
+            "org.test:foo:2.0": [
+                package_url : purlFor(foo2),
                 dependencies: ["org.test:bar:1.0"]
-        ])
-        manifest.checkResolved("org.test:bar:1.0", purlFor(bar), [
-                relationship: "indirect",
-                dependencies: []
+            ],
+            "org.test:bar:1.0": [
+                package_url : purlFor(bar),
+                relationship: "indirect"
+            ]
         ])
     }
 
@@ -143,15 +155,15 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         then:
         def manifest = gitHubManifest("project :")
         manifest.sourceFile == "build.gradle"
-
-        manifest.resolved == ["org.test:baz:1.0", "org.test:bar:1.1"]
-        manifest.checkResolved("org.test:baz:1.0", purlFor(baz), [
-                relationship: "direct",
+        manifest.assertResolved([
+            "org.test:baz:1.0": [
+                package_url : purlFor(baz),
                 dependencies: ["org.test:bar:1.1"]
-        ])
-        manifest.checkResolved("org.test:bar:1.1", purlFor(bar11), [
-                relationship: "direct", // Constraint is a type of direct dependency
-                dependencies: []
+            ],
+            "org.test:bar:1.1": [
+                package_url : purlFor(bar11),
+                relationship: "direct" // Constraint creates a direct dependency relationship
+            ]
         ])
     }
 
@@ -171,9 +183,14 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         def manifest = gitHubManifest("project :")
         manifest.sourceFile == "build.gradle"
 
-        manifest.resolved == ["org.test:bar:1.0", "org.test:bar:1.1"]
-        manifest.checkResolved("org.test:bar:1.0", purlFor(bar))
-        manifest.checkResolved("org.test:bar:1.1", purlFor(bar11))
+        manifest.assertResolved([
+            "org.test:bar:1.0": [
+                package_url: purlFor(bar)
+            ],
+            "org.test:bar:1.1": [
+                package_url: purlFor(bar11)
+            ]
+        ])
     }
 
     def "extracts both versions from build with two versions of the same transitive dependency"() {
@@ -196,16 +213,19 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         def manifest = gitHubManifest("project :")
         manifest.sourceFile == "build.gradle"
 
-        manifest.resolved == ["org.test:baz:1.0", "org.test:bar:1.0", "org.test:bar:1.1"]
-        manifest.checkResolved("org.test:baz:1.0", purlFor(baz), [
-                relationship: "direct",
+        manifest.assertResolved([
+            "org.test:baz:1.0": [
+                package_url : purlFor(baz),
                 dependencies: ["org.test:bar:1.0", "org.test:bar:1.1"]
-        ])
-        manifest.checkResolved("org.test:bar:1.0", purlFor(bar), [
+            ],
+            "org.test:bar:1.0": [
+                package_url : purlFor(bar),
                 relationship: "indirect"
-        ])
-        manifest.checkResolved("org.test:bar:1.1", purlFor(bar11), [
+            ],
+            "org.test:bar:1.1": [
+                package_url : purlFor(bar11),
                 relationship: "indirect"
+            ]
         ])
     }
 
@@ -230,14 +250,15 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         def manifest = gitHubManifest("project :")
         manifest.sourceFile == "build.gradle"
 
-        manifest.resolved == ["org.test:baz:1.0", "org.test:bar:1.0"]
-        manifest.checkResolved("org.test:baz:1.0", purlFor(baz), [
-                relationship: "direct",
+        manifest.assertResolved([
+            "org.test:baz:1.0": [
+                package_url : purlFor(baz),
                 dependencies: ["org.test:bar:1.0"]
-        ])
-        manifest.checkResolved("org.test:bar:1.0", purlFor(bar), [
-                relationship: "indirect",
-                dependencies: []
+            ],
+            "org.test:bar:1.0": [
+                package_url : purlFor(bar),
+                relationship: "indirect"
+            ]
         ])
     }
 }

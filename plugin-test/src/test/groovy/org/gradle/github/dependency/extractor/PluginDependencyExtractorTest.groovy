@@ -3,6 +3,7 @@ package org.gradle.github.dependency.extractor
 
 import org.gradle.test.fixtures.PluginPublisher
 import org.gradle.test.fixtures.file.TestFile
+import org.gradle.util.GradleVersion
 
 class PluginDependencyExtractorTest extends BaseExtractorTest {
     private static final SETTINGS_PLUGIN = "my.settings.plugin"
@@ -103,15 +104,18 @@ class PluginDependencyExtractorTest extends BaseExtractorTest {
     }
 
     private void createMultiProjectBuildWithPlugins(TestFile rootDir) {
+        def settingsPluginDeclaration = settingsPluginsAreSupported() ? """
+            plugins {
+                id("$SETTINGS_PLUGIN") version("1.0")
+            }
+""" : ""
         rootDir.file("settings.gradle") << """
             pluginManagement {
                 repositories {
                     maven { url '${mavenRepo.uri}' }
                 }
             }
-            plugins {
-                id("$SETTINGS_PLUGIN") version("1.0")
-            }
+            $settingsPluginDeclaration
             include 'a', 'b'
 """
 
@@ -127,36 +131,51 @@ class PluginDependencyExtractorTest extends BaseExtractorTest {
 """
         rootDir.file("b/build.gradle") << """
             plugins {
-                id("$PROJECT_PLUGIN_1") version("1.0")
+                id("$PROJECT_PLUGIN_1")
             }
 """
     }
 
     private boolean manifestHasSettingsPlugin(String manifestName) {
-        gitHubManifest(manifestName).assertResolved([
-            "my.settings.plugin:my.settings.plugin.gradle.plugin:1.0": [
-                relationship: "direct",
-                dependencies: ["com.example:settingPlugin:1.0"]
-            ],
-            "com.example:settingPlugin:1.0"                          : [
-                relationship: "indirect",
-                dependencies: ["org.test:foo:1.0"]
-            ],
-            "org.test:foo:1.0"                                       : [
-                relationship: "indirect",
-                dependencies: []
-            ],
+        if (settingsPluginsAreSupported()) {
+            gitHubManifest(manifestName).assertResolved([
+                "my.settings.plugin:my.settings.plugin.gradle.plugin:1.0": [
+                    relationship: "direct",
+                    dependencies: ["com.example:settingPlugin:1.0"]
+                ],
+                "com.example:settingPlugin:1.0"                          : [
+                    relationship: "indirect",
+                    dependencies: ["org.test:foo:1.0"]
+                ],
+                "org.test:foo:1.0"                                       : [
+                    relationship: "indirect",
+                    dependencies: []
+                ],
 
-            // The project plugins are resolved at build level without any transitive deps
-            "my.project.plugin1:my.project.plugin1.gradle.plugin:1.0": [
-                relationship: "direct",
-                dependencies: []
-            ],
-            "my.project.plugin2:my.project.plugin2.gradle.plugin:1.0": [
-                relationship: "direct",
-                dependencies: []
-            ]
-        ])
+                // The project plugins are resolved at build level without any transitive deps
+                "my.project.plugin1:my.project.plugin1.gradle.plugin:1.0": [
+                    relationship: "direct",
+                    dependencies: []
+                ],
+                "my.project.plugin2:my.project.plugin2.gradle.plugin:1.0": [
+                    relationship: "direct",
+                    dependencies: []
+                ]
+            ])
+        } else {
+            gitHubManifest(manifestName).assertResolved([
+                // The project plugins are resolved at build level without any transitive deps
+                "my.project.plugin1:my.project.plugin1.gradle.plugin:1.0": [
+                    relationship: "direct",
+                    dependencies: []
+                ],
+                "my.project.plugin2:my.project.plugin2.gradle.plugin:1.0": [
+                    relationship: "direct",
+                    dependencies: []
+                ]
+            ])
+
+        }
     }
 
     private boolean manifestHasPlugin1(String manifestName) {

@@ -2,6 +2,7 @@ package org.gradle.github.dependency.extractor
 
 import org.gradle.test.fixtures.maven.MavenModule
 import org.gradle.test.fixtures.PluginPublisher
+import spock.lang.IgnoreIf
 
 class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
     private MavenModule foo
@@ -342,6 +343,9 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         ])
     }
 
+    @IgnoreIf({
+        !settingsPluginsAreSupported()
+    })
     def "extracts settings plugin dependency"() {
         given:
         new PluginPublisher(mavenRepo, testDirectory).publishSettingsPlugin("plugin", "my.settings.plugin")

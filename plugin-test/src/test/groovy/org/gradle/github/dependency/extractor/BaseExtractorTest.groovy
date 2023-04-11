@@ -52,8 +52,15 @@ abstract class BaseExtractorTest extends Specification {
         File manifestFile =
                 testDirectory.file("build/reports/github-dependency-report/github-dependency-manifest.json")
         loader = new JsonRepositorySnapshotLoader(manifestFile)
-        def gradleVersion = System.getProperty("testGradleVersion", GradleVersion.current().version)
-        return createExecuter(gradleVersion)
+        return createExecuter(testGradleVersion)
+    }
+
+    static String getTestGradleVersion() {
+        System.getProperty("testGradleVersion", GradleVersion.current().version)
+    }
+
+    static settingsPluginsAreSupported() {
+        return GradleVersion.version(testGradleVersion) >= GradleVersion.version("6.0")
     }
 
     SimpleGradleExecuter createExecuter(String gradleVersion) {

@@ -110,14 +110,17 @@ abstract class DependencyExtractorService :
         val repositoryLookup = RepositoryUrlLookup(details, result)
         val rootComponent = result.rootComponent
         val projectIdentityPath = (rootComponent.id as? DefaultProjectComponentIdentifier)?.identityPath?.path
-        @Suppress("FoldInitializerAndIfToElvis") // Purely for documentation purposes
-        if (projectIdentityPath == null) {
-            // TODO: We can actually handle this case, but it's more complicated than I have time to deal with
-            // TODO: See the Gradle Enterprise Build Scan Plugin: `ConfigurationResolutionCapturer_5_0`
+
+        if (projectIdentityPath == null && rootComponent.dependencies.isEmpty()) {
+            // Not a project configuration, and no dependencies to extract: can safely ignore
             return
         }
 
-        val resolvedConfiguration = ResolvedConfiguration(componentId(rootComponent), projectIdentityPath, details.configurationName)
+        // TODO: At this point, any resolution not bound to a particular project will be assigned to the root "build :"
+        // This is because `details.buildPath` is always ':', which isn't correct in a composite build.
+        // It is possible to do better. By tracking the current build operation context, we can assign more precisely.
+        // See the Gradle Enterprise Build Scan Plugin: `ConfigurationResolutionCapturer_5_0`
+        val resolvedConfiguration = ResolvedConfiguration(details.buildPath, projectIdentityPath, details.configurationName)
         walkResolvedComponentResult(rootComponent, repositoryLookup, resolvedConfiguration)
 
         gitHubRepositorySnapshotBuilder.addResolvedConfiguration(resolvedConfiguration)

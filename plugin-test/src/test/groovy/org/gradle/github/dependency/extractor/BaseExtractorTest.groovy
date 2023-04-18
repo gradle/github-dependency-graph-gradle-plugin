@@ -50,13 +50,13 @@ abstract class BaseExtractorTest extends Specification {
     SimpleGradleExecuter createExecuter() {
         // Create a new JsonManifestLoader for each invocation of the executer
         File manifestFile =
-                testDirectory.file("build/reports/github-dependency-report/github-dependency-manifest.json")
+            testDirectory.file("build/reports/github-dependency-report/github-dependency-manifest.json")
         loader = new JsonRepositorySnapshotLoader(manifestFile)
         return createExecuter(testGradleVersion)
     }
 
     static String getTestGradleVersion() {
-        System.getProperty("testGradleVersion", GradleVersion.current().version)
+        return System.getProperty("testGradleVersion", GradleVersion.current().version)
     }
 
     static settingsPluginsAreSupported() {
@@ -70,29 +70,30 @@ abstract class BaseExtractorTest extends Specification {
     }
 
     TestFile getTestDirectory() {
-        new TestFile(testDir)
+        return new TestFile(testDir)
     }
 
     TestFile file(Object... path) {
         if (path.length == 1 && path[0] instanceof TestFile) {
             return path[0] as TestFile
         }
-        getTestDirectory().file(path)
+        return getTestDirectory().file(path)
     }
 
     protected BuildResult run() {
-        run("dependencyExtractor_resolveAllDependencies")
+        return run("dependencyExtractor_resolveAllDependencies")
     }
 
     protected BuildResult run(String... names) {
         executer.withTasks(names)
         result = getExecuter().run()
+        return result
     }
 
     @CompileDynamic
     protected void applyExtractorPlugin() {
         File pluginJar = TEST_CONFIG.asFile("extractorPlugin.jar.path")
-        String cleanedAbsolutePath = pluginJar.absolutePath.replace('\\',  '/')
+        String cleanedAbsolutePath = pluginJar.absolutePath.replace('\\', '/')
         assert (pluginJar.exists())
         file("init.gradle") << """
         import org.gradle.github.dependency.GitHubDependencySubmissionPlugin
@@ -221,7 +222,7 @@ abstract class BaseExtractorTest extends Specification {
                 final String newline = System.lineSeparator()
                 final String violationMessage = createViolationMessage(newline, validationMessages)
                 throw new AssertionError(
-                        ("Dependency constraints contains schema violations:" + newline + violationMessage) as Object
+                    ("Dependency constraints contains schema violations:" + newline + violationMessage) as Object
                 )
             }
         }
@@ -229,25 +230,25 @@ abstract class BaseExtractorTest extends Specification {
         @CompileDynamic
         private static String createViolationMessage(String newline, Set<ValidationMessage> validationMessages) {
             return validationMessages
-                    .stream()
-                    .map(ValidationMessage::getMessage)
-                    .collect(Collectors.joining(newline + "  - ", "  - ", ""))
+                .stream()
+                .map(ValidationMessage::getMessage)
+                .collect(Collectors.joining(newline + "  - ", "  - ", ""))
         }
 
         private static JsonSchema createSchemaValidator() {
             final JsonSchemaFactory factory =
-                    JsonSchemaFactory
-                            .builder(JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4))
-                            .build()
+                JsonSchemaFactory
+                    .builder(JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4))
+                    .build()
             try {
                 return factory
-                        .getSchema(
-                                JsonRepositorySnapshotLoader.class.classLoader.getResourceAsStream(SCHEMA)
-                        )
+                    .getSchema(
+                        JsonRepositorySnapshotLoader.class.classLoader.getResourceAsStream(SCHEMA)
+                    )
             } catch (JsonSchemaException ex) {
                 throw new RuntimeException(
-                        "Unable to load dependency constraints schema (resource: " + SCHEMA + ")",
-                        ex
+                    "Unable to load dependency constraints schema (resource: " + SCHEMA + ")",
+                    ex
                 )
             }
         }
@@ -268,19 +269,18 @@ abstract class BaseExtractorTest extends Specification {
 
         Map<String, String> asEnvironmentMap() {
             return [
-                    "GITHUB_JOB"       : job,
-                    "GITHUB_RUN_NUMBER": runNumber,
-                    "GITHUB_REF"       : ref,
-                    "GITHUB_SHA"       : sha,
-                    "GITHUB_WORKSPACE" : workspace,
-                    "GITHUB_REPOSITORY": gitHubRepository,
-                    "GITHUB_TOKEN"     : gitHubToken
+                "GITHUB_JOB"       : job,
+                "GITHUB_RUN_NUMBER": runNumber,
+                "GITHUB_REF"       : ref,
+                "GITHUB_SHA"       : sha,
+                "GITHUB_WORKSPACE" : workspace,
+                "GITHUB_REPOSITORY": gitHubRepository,
+                "GITHUB_TOKEN"     : gitHubToken
             ]
         }
 
         private static String fakeSha() {
-            Hashing.sha1().hashString(UUID.toString().toString()).toString()
+            return Hashing.sha1().hashString(UUID.toString().toString()).toString()
         }
-
     }
 }

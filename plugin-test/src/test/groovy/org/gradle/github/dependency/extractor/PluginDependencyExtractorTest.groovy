@@ -1,9 +1,7 @@
 package org.gradle.github.dependency.extractor
 
-
 import org.gradle.test.fixtures.PluginPublisher
 import org.gradle.test.fixtures.file.TestFile
-import org.gradle.util.GradleVersion
 
 class PluginDependencyExtractorTest extends BaseExtractorTest {
     private static final SETTINGS_PLUGIN = "my.settings.plugin"
@@ -108,7 +106,8 @@ class PluginDependencyExtractorTest extends BaseExtractorTest {
             plugins {
                 id("$SETTINGS_PLUGIN") version("1.0")
             }
-""" : ""
+        """ : ""
+
         rootDir.file("settings.gradle") << """
             pluginManagement {
                 repositories {
@@ -117,26 +116,28 @@ class PluginDependencyExtractorTest extends BaseExtractorTest {
             }
             $settingsPluginDeclaration
             include 'a', 'b'
-"""
+        """
 
         rootDir.file("build.gradle") << """
             plugins {
                 id("$PROJECT_PLUGIN_1") version("1.0")
             }
-"""
+        """
+
         rootDir.file("a/build.gradle") << """
             plugins {
                 id("$PROJECT_PLUGIN_2") version("1.0")
             }
-"""
+        """
+
         rootDir.file("b/build.gradle") << """
             plugins {
                 id("$PROJECT_PLUGIN_1")
             }
-"""
+        """
     }
 
-    private boolean manifestHasSettingsPlugin(String manifestName) {
+    private void manifestHasSettingsPlugin(String manifestName) {
         if (settingsPluginsAreSupported()) {
             gitHubManifest(manifestName).assertResolved([
                 "my.settings.plugin:my.settings.plugin.gradle.plugin:1.0": [
@@ -178,7 +179,7 @@ class PluginDependencyExtractorTest extends BaseExtractorTest {
         }
     }
 
-    private boolean manifestHasPlugin1(String manifestName) {
+    private void manifestHasPlugin1(String manifestName) {
         gitHubManifest(manifestName).assertResolved([
             "my.project.plugin1:my.project.plugin1.gradle.plugin:1.0": [
                 relationship: "direct",
@@ -191,7 +192,7 @@ class PluginDependencyExtractorTest extends BaseExtractorTest {
         ])
     }
 
-    private boolean manifestHasPlugin2(String manifestName) {
+    private void manifestHasPlugin2(String manifestName) {
         gitHubManifest(manifestName).assertResolved([
             "my.project.plugin2:my.project.plugin2.gradle.plugin:1.0": [
                 relationship: "direct",
@@ -208,7 +209,7 @@ class PluginDependencyExtractorTest extends BaseExtractorTest {
         ])
     }
 
-    private boolean manifestIsEmpty(String manifestName) {
+    private void manifestIsEmpty(String manifestName) {
         gitHubManifest(manifestName).assertResolved([:])
     }
 

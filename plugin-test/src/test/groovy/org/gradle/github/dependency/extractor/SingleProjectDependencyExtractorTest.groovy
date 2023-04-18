@@ -1,7 +1,7 @@
 package org.gradle.github.dependency.extractor
 
-import org.gradle.test.fixtures.maven.MavenModule
 import org.gradle.test.fixtures.PluginPublisher
+import org.gradle.test.fixtures.maven.MavenModule
 import spock.lang.IgnoreIf
 
 class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
@@ -336,7 +336,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
                 package_url : purlFor("my.project.plugin", "my.project.plugin.gradle.plugin", "1.0"),
                 dependencies: ["com.example:plugin:1.0"]
             ],
-            "com.example:plugin:1.0": [
+            "com.example:plugin:1.0"                               : [
                 package_url : purlFor("com.example", "plugin", "1.0"),
                 relationship: "indirect"
             ]
@@ -373,7 +373,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
                 package_url : purlFor("my.settings.plugin", "my.settings.plugin.gradle.plugin", "1.0"),
                 dependencies: ["com.example:plugin:1.0"]
             ],
-            "com.example:plugin:1.0": [
+            "com.example:plugin:1.0"                                 : [
                 package_url : purlFor("com.example", "plugin", "1.0"),
                 relationship: "indirect"
             ]

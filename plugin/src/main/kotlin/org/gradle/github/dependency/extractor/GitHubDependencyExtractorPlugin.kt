@@ -21,11 +21,8 @@ import java.nio.file.Paths
 /**
  * A plugin that collects all resolved dependencies in a Gradle build and exports it using the GitHub API format.
  */
-@Suppress("unused")
 class GitHubDependencyExtractorPlugin : Plugin<Gradle> {
     private companion object : PluginCompanionUtils() {
-        private val LOGGER = Logging.getLogger(GitHubDependencyExtractorPlugin::class.java)
-
         const val ENV_GITHUB_JOB = "GITHUB_JOB"
         const val ENV_GITHUB_RUN_NUMBER = "GITHUB_RUN_NUMBER"
         const val ENV_GITHUB_REF = "GITHUB_REF"

@@ -5,11 +5,17 @@ import org.gradle.api.invocation.Gradle
 import org.gradle.api.logging.Logging
 import org.gradle.github.dependency.extractor.ForceDependencyResolutionPlugin
 import org.gradle.github.dependency.extractor.GitHubDependencyExtractorPlugin
+import org.gradle.github.dependency.util.PluginCompanionUtils
 
+/**
+ * A plugin that collects all resolved dependencies in a Gradle build for submission to the
+ * GitHub Dependency Submission API.
+ */
 @Suppress("unused")
 class GitHubDependencySubmissionPlugin : Plugin<Gradle> {
-
-    private val LOGGER = Logging.getLogger(GitHubDependencySubmissionPlugin::class.java)
+    private companion object : PluginCompanionUtils() {
+        private val LOGGER = Logging.getLogger(GitHubDependencySubmissionPlugin::class.java)
+    }
 
     override fun apply(gradle: Gradle) {
         LOGGER.lifecycle("Applying Plugin: GitHubDependencySubmissionPlugin")

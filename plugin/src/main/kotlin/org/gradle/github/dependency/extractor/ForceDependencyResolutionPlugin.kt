@@ -3,11 +3,13 @@ package org.gradle.github.dependency.extractor
 import org.gradle.api.Plugin
 import org.gradle.api.invocation.Gradle
 
-@Suppress("unused")
+/**
+ * Adds a task to resolve all dependencies in a Gradle build tree.
+ */
 class ForceDependencyResolutionPlugin : Plugin<Gradle> {
     override fun apply(gradle: Gradle) {
         gradle.projectsEvaluated {
-            val resolveAllDeps = gradle.rootProject.tasks.register("dependencyExtractor_resolveBuildDependencies")
+            val resolveAllDeps = gradle.rootProject.tasks.register("dependencyExtractor_resolveAllDependencies")
 
             // Depend on "dependencies" task in all projects
             gradle.allprojects { project ->
@@ -19,12 +21,9 @@ class ForceDependencyResolutionPlugin : Plugin<Gradle> {
             // Depend on all 'resolveBuildDependencies' task in each included build
             gradle.includedBuilds.forEach { includedBuild ->
                 resolveAllDeps.configure {
-                    it.dependsOn(includedBuild.task(":dependencyExtractor_resolveBuildDependencies"))
+                    it.dependsOn(includedBuild.task(":dependencyExtractor_resolveAllDependencies"))
                 }
             }
-
-            // Set the default task
-            gradle.rootProject.defaultTasks = listOf("dependencyExtractor_resolveBuildDependencies")
         }
     }
 }

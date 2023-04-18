@@ -71,8 +71,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         """
 
         when:
-        executer.withTasks("dependencies", "--configuration", "runtimeClasspath")
-        run()
+        run("dependencies", "--configuration", "runtimeClasspath")
 
         then:
         def manifest = gitHubManifest("project :")

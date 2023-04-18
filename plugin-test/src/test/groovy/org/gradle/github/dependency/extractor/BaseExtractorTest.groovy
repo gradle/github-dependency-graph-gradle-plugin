@@ -56,13 +56,11 @@ abstract class BaseExtractorTest extends Specification {
         return createExecuter(gradleVersion)
     }
 
-
     SimpleGradleExecuter createExecuter(String gradleVersion) {
         println("Executing test with Gradle $gradleVersion")
         def testKitDir = file("test-kit")
         return new SimpleGradleExecuter(testDirectory, testKitDir, gradleVersion)
     }
-
 
     TestFile getTestDirectory() {
         new TestFile(testDir)
@@ -75,22 +73,13 @@ abstract class BaseExtractorTest extends Specification {
         getTestDirectory().file(path)
     }
 
-    protected SimpleGradleExecuter args(String... args) {
-        getExecuter().withArguments(args)
+    protected BuildResult run() {
+        run("dependencyExtractor_resolveAllDependencies")
     }
 
-    protected SimpleGradleExecuter withDebugLogging() {
-        getExecuter().withArgument("-d")
-    }
-
-    protected BuildResult succeeds(String... tasks) {
-        result = getExecuter().withTasks(*tasks).run()
-        return result
-    }
-
-    protected BuildResult fails(String... tasks) {
-        result = getExecuter().withTasks(*tasks).runWithFailure()
-        return result
+    protected BuildResult run(String... names) {
+        executer.withTasks(names)
+        result = getExecuter().run()
     }
 
     @CompileDynamic
@@ -99,20 +88,20 @@ abstract class BaseExtractorTest extends Specification {
         String cleanedAbsolutePath = pluginJar.absolutePath.replace('\\',  '/')
         assert (pluginJar.exists())
         file("init.gradle") << """
-        import org.gradle.github.dependency.extractor.GithubDependencyExtractorPlugin
+        import org.gradle.github.dependency.GitHubDependencySubmissionPlugin
         initscript {
             dependencies {
                 classpath files('${cleanedAbsolutePath}')
             }
         }
-        apply plugin: GithubDependencyExtractorPlugin
+        apply plugin: GitHubDependencySubmissionPlugin
         """.stripMargin()
-        args("--init-script", "init.gradle")
+        getExecuter().withArguments("--init-script", "init.gradle")
     }
 
     protected void establishEnvironmentVariables() {
         environmentVars = new TestEnvironmentVars(testDirectory)
-        executer.withEnvironmentVars(environmentVars.asEnvironmentMap())
+        getExecuter().withEnvironmentVars(environmentVars.asEnvironmentMap())
     }
 
     protected String purlFor(org.gradle.test.fixtures.Module module) {

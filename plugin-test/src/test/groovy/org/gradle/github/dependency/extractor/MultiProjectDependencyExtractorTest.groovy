@@ -31,10 +31,6 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
                 repositories {
                     maven { url "${mavenRepo.uri}" }
                 }
-        
-                task validate {
-                    dependsOn "dependencies"
-                }
             }
         """
     }
@@ -53,7 +49,7 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
 """
 
         when:
-        succeeds("validate")
+        run()
 
         then:
         manifestNames == ["project :", "project :a", "project :b"]
@@ -98,7 +94,7 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         """
 
         when:
-        succeeds("validate")
+        run()
 
         then:
         manifestNames == ["project :a", "project :b", "project :c"]
@@ -165,7 +161,7 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         """
 
         when:
-        succeeds("validate")
+        run()
 
         then:
         manifestNames == ["project :", "project :buildSrc"]
@@ -205,13 +201,10 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
             dependencies {
                 implementation 'org.test.included:included-child'
             }
-            tasks.validate {
-                dependsOn gradle.includedBuild("included-child").task(":dependencies")
-            }
         """
 
         when:
-        succeeds("validate")
+        run()
 
         then:
         manifestNames == ["project :", "project :included-child"]

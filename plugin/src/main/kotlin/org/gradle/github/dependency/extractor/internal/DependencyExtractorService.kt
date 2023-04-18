@@ -5,7 +5,7 @@ import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.internal.artifacts.DefaultProjectComponentIdentifier
 import org.gradle.api.internal.artifacts.configurations.ResolveConfigurationDependenciesBuildOperationType
-import org.gradle.github.dependency.extractor.GithubDependencyExtractorPlugin
+import org.gradle.github.dependency.extractor.GitHubDependencyExtractorPlugin
 import org.gradle.github.dependency.extractor.internal.model.ComponentCoordinates
 import org.gradle.github.dependency.extractor.internal.model.ResolvedComponent
 import org.gradle.github.dependency.extractor.internal.model.ResolvedConfiguration
@@ -185,7 +185,7 @@ abstract class DependencyExtractorService :
     override fun close() {
         if (thrownExceptions.isNotEmpty()) {
             throw DefaultMultiCauseException(
-                    "The ${GithubDependencyExtractorPlugin::class.simpleName} plugin encountered errors while extracting dependencies. " +
+                    "The ${GitHubDependencyExtractorPlugin::class.simpleName} plugin encountered errors while extracting dependencies. " +
                             "Please report this issue at: https://github.com/gradle/github-dependency-extractor/issues",
                     thrownExceptions
             )
@@ -194,7 +194,7 @@ abstract class DependencyExtractorService :
             writeAndGetSnapshotFile()
         } catch (e: RuntimeException) {
             throw GradleException(
-                    "The ${GithubDependencyExtractorPlugin::class.simpleName} plugin encountered errors while writing the dependency snapshot json file. " +
+                    "The ${GitHubDependencyExtractorPlugin::class.simpleName} plugin encountered errors while writing the dependency snapshot json file. " +
                             "Please report this issue at: https://github.com/gradle/github-dependency-extractor/issues",
                     e
             )

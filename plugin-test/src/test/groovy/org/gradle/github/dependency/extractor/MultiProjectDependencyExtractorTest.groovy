@@ -46,7 +46,7 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
                     implementation 'org.test:foo:1.0'
                 }
             }
-"""
+        """
 
         when:
         run()

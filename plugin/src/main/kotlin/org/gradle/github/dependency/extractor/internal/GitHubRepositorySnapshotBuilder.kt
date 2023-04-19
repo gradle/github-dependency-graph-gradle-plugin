@@ -49,13 +49,15 @@ class GitHubRepositorySnapshotBuilder(
         val manifestFiles = mutableMapOf<String, GitHubManifestFile?>()
 
         for (configuration in resolvedConfigurations) {
-            val dependencyCollector = manifestDependencies.getOrPut(configuration.rootId) { DependencyCollector() }
+            val manifestName = manifestName(configuration)
+            val dependencyCollector = manifestDependencies.getOrPut(manifestName) { DependencyCollector() }
             val rootComponent = configuration.getRootComponent()
             for (component in configuration.components) {
                 dependencyCollector.addResolved(component, rootComponent)
             }
 
-            manifestFiles.putIfAbsent(configuration.rootId, buildFileForProject(configuration.identityPath))
+            // If not assigned to a project, assume the root project for the assigned build.
+            manifestFiles.putIfAbsent(manifestName, buildFileForProject(configuration.identityPath ?: configuration.buildPath))
         }
 
         val manifests = manifestDependencies.mapValues { (name, collector) ->
@@ -72,6 +74,13 @@ class GitHubRepositorySnapshotBuilder(
             detector = detector,
             manifests = manifests.toSortedMap()
         )
+    }
+
+    private fun manifestName(config: ResolvedConfiguration): String {
+        if (config.identityPath != null) {
+            return "project ${config.identityPath}"
+        }
+        return "build ${config.buildPath}"
     }
 
     private fun buildFileForProject(identityPath: String): GitHubManifestFile? {

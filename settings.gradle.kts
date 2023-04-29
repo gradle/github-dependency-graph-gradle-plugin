@@ -1,5 +1,3 @@
-import org.gradle.api.internal.FeaturePreviews
-
 pluginManagement {
     plugins {
         id("org.jetbrains.kotlin.jvm") version "1.8.10"
@@ -61,9 +59,3 @@ apply(from = "gradle/build-cache-configuration.settings.gradle.kts")
 rootProject.name = "github-dependency-extractor"
 include("plugin")
 include("plugin-test")
-
-FeaturePreviews.Feature.values().forEach { feature ->
-    if (feature.isActive) {
-        enableFeaturePreview(feature.name)
-    }
-}

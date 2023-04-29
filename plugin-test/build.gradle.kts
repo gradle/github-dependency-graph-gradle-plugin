@@ -12,19 +12,19 @@ repositories {
 dependencies {
     extractorPlugin(project(":plugin", "shadowJar"))
     testImplementation(gradleTestKit())
-    testImplementation("org.codehaus.groovy:groovy-json:3.0.9")
+    testImplementation(libs.groovy.json)
     testImplementation(platform(libs.jackson.platform))
-    testImplementation("com.networknt:json-schema-validator:1.0.64")
+    testImplementation(libs.json.schema.validator)
     testImplementation(libs.apache.commons.io)
 
     testFixturesApi(gradleTestKit())
     testFixturesApi(libs.spock.core)
     testFixturesApi(libs.spock.junit4)
-    testFixturesApi("junit:junit:4.13.2")
-    testFixturesApi("org.jetbrains:annotations:22.0.0")
+    testFixturesApi(libs.junit.junit4)
+    testFixturesApi(libs.jetbrains.annotations)
 
     testFixturesImplementation(gradleApi())
-    testFixturesImplementation("com.google.code.gson:gson:2.8.9")
+    testFixturesImplementation(libs.google.gson)
 }
 
 val writeTestConfig by tasks.registering(WriteConfigTask::class) {

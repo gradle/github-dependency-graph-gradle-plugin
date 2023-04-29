@@ -1,9 +1,11 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.util.jar.JarFile
 
 plugins {
-    kotlin("jvm")
+    `kotlin-dsl`
     `java-gradle-plugin`
     `java-test-fixtures`
     groovy
@@ -15,8 +17,6 @@ configurations["compileOnly"].extendsFrom(shadowImplementation)
 configurations["testImplementation"].extendsFrom(shadowImplementation)
 
 dependencies {
-    compileOnly(kotlin("stdlib-jdk8"))
-    compileOnly(kotlin("reflect"))
     shadowImplementation(platform(libs.jackson.platform))
     shadowImplementation(libs.jackson.databind)
     shadowImplementation(libs.jackson.kotlin) {
@@ -39,11 +39,11 @@ java {
     targetCompatibility = JavaVersion.VERSION_1_8
 }
 
-tasks.withType<KotlinCompile>() {
-    kotlinOptions {
-        apiVersion = "1.3"
-        languageVersion = "1.3"
-        jvmTarget = "1.8"
+tasks.withType<KotlinCompile>().configureEach() {
+    compilerOptions {
+        apiVersion.set(KotlinVersion.KOTLIN_1_3)
+        languageVersion.set(KotlinVersion.KOTLIN_1_3)
+        jvmTarget.set(JvmTarget.JVM_1_8)
     }
 }
 

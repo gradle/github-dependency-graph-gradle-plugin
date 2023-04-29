@@ -5,7 +5,6 @@ package org.gradle.github.dependency.extractor
 
 import org.gradle.api.Plugin
 import org.gradle.api.invocation.Gradle
-import org.gradle.api.logging.Logging
 import org.gradle.api.provider.Provider
 import org.gradle.github.dependency.extractor.internal.DependencyExtractorService
 import org.gradle.github.dependency.extractor.internal.DependencyExtractorService_6_1
@@ -47,10 +46,10 @@ class GitHubDependencyExtractorPlugin : Plugin<Gradle> {
         // Create the service
         dependencyExtractorServiceProvider = applicatorStrategy.createExtractorService(gradle)
 
-        gradle.rootProject { project ->
+        gradle.rootProject {
             dependencyExtractorServiceProvider
                 .get()
-                .setRootProjectBuildDirectory(project.buildDir)
+                .setRootProjectBuildDirectory(this.buildDir)
         }
 
         // Register the service to listen for Build Events
@@ -141,7 +140,7 @@ class GitHubDependencyExtractorPlugin : Plugin<Gradle> {
                         .loadEnvironmentVariable(ENV_GITHUB_WORKSPACE)
                         .map { File(it) }
 
-                val gitWorkspaceDirectory =
+                val gitWorkspace =
                     gitWorkspaceEnvVar.flatMap {
                         objectFactory.directoryProperty().apply {
                             set(it)
@@ -151,13 +150,13 @@ class GitHubDependencyExtractorPlugin : Plugin<Gradle> {
                 return gradle.sharedServices.registerIfAbsent(
                     SERVICE_NAME,
                     DependencyExtractorService_6_1::class.java
-                ) { spec ->
-                    spec.parameters {
-                        it.gitHubJobName.convention(gradle.loadEnvironmentVariable(ENV_GITHUB_JOB))
-                        it.gitHubRunNumber.convention(gradle.loadEnvironmentVariable(ENV_GITHUB_RUN_NUMBER))
-                        it.gitSha.convention(gradle.loadEnvironmentVariable(ENV_GITHUB_SHA))
-                        it.gitRef.convention(gradle.loadEnvironmentVariable(ENV_GITHUB_REF))
-                        it.gitWorkspaceDirectory.convention(gitWorkspaceDirectory)
+                ) {
+                    parameters {
+                        gitHubJobName.convention(gradle.loadEnvironmentVariable(ENV_GITHUB_JOB))
+                        gitHubRunNumber.convention(gradle.loadEnvironmentVariable(ENV_GITHUB_RUN_NUMBER))
+                        gitSha.convention(gradle.loadEnvironmentVariable(ENV_GITHUB_SHA))
+                        gitRef.convention(gradle.loadEnvironmentVariable(ENV_GITHUB_REF))
+                        gitWorkspaceDirectory.convention(gitWorkspace)
                     }
                 }
             }

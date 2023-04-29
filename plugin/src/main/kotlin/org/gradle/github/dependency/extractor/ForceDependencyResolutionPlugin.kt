@@ -8,20 +8,19 @@ import org.gradle.api.invocation.Gradle
  */
 class ForceDependencyResolutionPlugin : Plugin<Gradle> {
     override fun apply(gradle: Gradle) {
-        gradle.projectsEvaluated {
-            val resolveAllDeps = gradle.rootProject.tasks.register("dependencyExtractor_resolveAllDependencies")
 
+        gradle.projectsEvaluated {
             // Depend on "dependencies" task in all projects
-            gradle.allprojects { project ->
-                resolveAllDeps.configure {
-                    it.dependsOn(project.tasks.named("dependencies"))
+            val resolveAllDeps = gradle.rootProject.tasks.register("dependencyExtractor_resolveAllDependencies") {
+                gradle.allprojects {
+                    dependsOn(tasks.named("dependencies"))
                 }
             }
 
             // Depend on all 'resolveBuildDependencies' task in each included build
             gradle.includedBuilds.forEach { includedBuild ->
                 resolveAllDeps.configure {
-                    it.dependsOn(includedBuild.task(":dependencyExtractor_resolveAllDependencies"))
+                    dependsOn(includedBuild.task(":dependencyExtractor_resolveAllDependencies"))
                 }
             }
         }

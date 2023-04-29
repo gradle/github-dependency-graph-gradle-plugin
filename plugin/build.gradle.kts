@@ -3,11 +3,11 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.util.jar.JarFile
 
 plugins {
-    kotlin("jvm")
+    `kotlin-dsl`
     `java-gradle-plugin`
     `java-test-fixtures`
     groovy
-    id("com.github.johnrengelman.shadow")
+    id("com.github.johnrengelman.shadow") version "8.1.0"
 }
 
 val shadowImplementation: Configuration by configurations.creating
@@ -15,8 +15,6 @@ configurations["compileOnly"].extendsFrom(shadowImplementation)
 configurations["testImplementation"].extendsFrom(shadowImplementation)
 
 dependencies {
-    compileOnly(kotlin("stdlib-jdk8"))
-    compileOnly(kotlin("reflect"))
     shadowImplementation(platform(libs.jackson.platform))
     shadowImplementation(libs.jackson.databind)
     shadowImplementation(libs.jackson.kotlin) {

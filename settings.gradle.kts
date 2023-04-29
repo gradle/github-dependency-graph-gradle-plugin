@@ -1,9 +1,3 @@
-pluginManagement {
-    plugins {
-        id("org.jetbrains.kotlin.jvm") version "1.8.10"
-        id("com.github.johnrengelman.shadow") version "8.1.0"
-    }
-}
 plugins {
     id("com.gradle.enterprise").version("3.12.3")
     id("com.gradle.common-custom-user-data-gradle-plugin").version("1.8.2")

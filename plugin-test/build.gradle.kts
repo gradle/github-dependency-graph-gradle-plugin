@@ -5,10 +5,6 @@ plugins {
 
 val extractorPlugin: Configuration by configurations.creating
 
-repositories {
-    mavenCentral()
-}
-
 dependencies {
     extractorPlugin(project(":plugin", "shadowJar"))
     testImplementation(gradleTestKit())

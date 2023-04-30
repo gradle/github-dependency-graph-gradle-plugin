@@ -107,9 +107,6 @@ val shadowJarConfig = configurations.create("shadowJar") {
     isCanBeConsumed = true
     isCanBeResolved = false
 }
-repositories {
-    mavenCentral()
-}
 
 artifacts {
     add(shadowJarConfig.name, tasks.shadowJar)

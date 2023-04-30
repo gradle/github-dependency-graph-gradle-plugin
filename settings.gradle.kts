@@ -28,6 +28,12 @@ gradleEnterprise {
     }
 }
 
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+    }
+}
+
 rootProject.name = "github-dependency-extractor"
 include("plugin")
 include("plugin-test")

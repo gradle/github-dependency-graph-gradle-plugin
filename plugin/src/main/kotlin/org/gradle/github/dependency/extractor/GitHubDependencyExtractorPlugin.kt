@@ -39,8 +39,8 @@ class GitHubDependencyExtractorPlugin : Plugin<Gradle> {
         val gradleVersion = GradleVersion.current()
         // Create the adapter based upon the version of Gradle
         val applicatorStrategy = when {
-            gradleVersion >= GradleVersion.version("6.1") -> PluginApplicatorStrategy.DefaultPluginApplicatorStrategy
-            else -> PluginApplicatorStrategy.LegacyPluginApplicatorStrategy
+            gradleVersion < GradleVersion.version("8.0") -> PluginApplicatorStrategy.LegacyPluginApplicatorStrategy
+            else -> PluginApplicatorStrategy.DefaultPluginApplicatorStrategy
         }
 
         // Create the service

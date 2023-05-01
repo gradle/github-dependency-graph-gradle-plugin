@@ -1,50 +1,17 @@
-import org.gradle.api.internal.FeaturePreviews
-
-pluginManagement {
-    plugins {
-        id("org.jetbrains.kotlin.jvm") version "1.8.10"
-        id("com.github.johnrengelman.shadow") version "8.1.0"
-    }
-}
 plugins {
-    id("com.gradle.enterprise").version("3.12.3")
-    id("com.gradle.common-custom-user-data-gradle-plugin").version("1.8.2")
+    id("com.gradle.enterprise").version("3.13")
+    id("com.gradle.common-custom-user-data-gradle-plugin").version("1.10")
 }
 
-dependencyResolutionManagement {
-    repositories {
-        maven {
-            name = "Gradle public repository"
-            url = uri("https://repo.gradle.org/gradle/public")
-            content {
-                includeGroup("net.rubygrapefruit")
-                includeModule("classycle", "classycle")
-                includeModule("flot", "flot")
-                includeModule("org.gradle", "gradle-tooling-api")
-                includeModuleByRegex("org.gradle", "docs-asciidoctor-extensions(-base)?")
-            }
-        }
-        google {
-            content {
-                includeGroup("com.android.databinding")
-                includeGroupByRegex("com\\.android\\.tools(\\.[a-z.\\-]*)?")
-            }
-        }
-        maven {
-            name = "CHAMP libs"
-            url = uri("https://releases.usethesource.io/maven/")
-            mavenContent {
-                includeGroup("io.usethesource")
-            }
-        }
-        mavenCentral()
-    }
-}
+val isCI = !System.getenv("CI").isNullOrEmpty()
 
 gradleEnterprise {
     server = "https://ge.gradle.org"
     buildScan {
         publishAlways()
+        capture { isTaskInputFiles = true }
+        isUploadInBackground = !isCI
+
         obfuscation {
             ipAddresses { addresses -> addresses.map { _ -> "0.0.0.0" } }
         }
@@ -56,14 +23,12 @@ gradleEnterprise {
     }
 }
 
-apply(from = "gradle/build-cache-configuration.settings.gradle.kts")
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+    }
+}
 
 rootProject.name = "github-dependency-extractor"
 include("plugin")
 include("plugin-test")
-
-FeaturePreviews.Feature.values().forEach { feature ->
-    if (feature.isActive) {
-        enableFeaturePreview(feature.name)
-    }
-}

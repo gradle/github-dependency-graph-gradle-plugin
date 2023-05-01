@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.util.jar.JarFile
 
 plugins {
-    kotlin("jvm")
+    kotlin("jvm") version(libs.versions.kotlin)
     `java-gradle-plugin`
     `java-test-fixtures`
     groovy

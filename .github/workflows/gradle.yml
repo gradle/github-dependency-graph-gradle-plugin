@@ -21,12 +21,12 @@ jobs:
             distribution: temurin
 
       - name: Set up Gradle
-        uses: gradle/gradle-build-action@v2
+        uses: gradle/gradle-build-action@v2.4.2
 
       - name: Execute Gradle Build
         run: ./gradlew build
 
-  build:
+  test-gradle-version:
     needs: quick-check
     strategy:
       fail-fast: false

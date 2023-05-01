@@ -46,7 +46,7 @@ jobs:
           distribution: temurin
 
       - name: Execute Gradle Build
-        uses: gradle/gradle-build-action@v2
+        uses: gradle/gradle-build-action@v2.4.2
         with:
           arguments: -S build -DtestGradleVersion=${{ matrix.gradle-version }}
 
@@ -65,7 +65,7 @@ jobs:
                 distribution: temurin
 
           - name: Set up Gradle
-            uses: gradle/gradle-build-action@v2
+            uses: gradle/gradle-build-action@v2.4.2
 
           - name: Self Test :plugin
             run: ./plugin-self-test

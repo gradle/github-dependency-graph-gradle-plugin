@@ -6,10 +6,9 @@ import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
 import java.nio.file.Path
 
-@Suppress("ClassName")
-abstract class DependencyExtractorService_6_1 :
-    DependencyExtractorService(),
-    BuildService<DependencyExtractorService_6_1.Parameters> {
+abstract class DependencyExtractorBuildService :
+    DependencyExtractor(),
+    BuildService<DependencyExtractorBuildService.Parameters> {
 
     interface Parameters : BuildServiceParameters {
         val gitHubJobName: Property<String>

@@ -5,10 +5,9 @@ package org.gradle.github.dependency.extractor
 
 import org.gradle.api.Plugin
 import org.gradle.api.invocation.Gradle
-import org.gradle.api.logging.Logging
 import org.gradle.api.provider.Provider
-import org.gradle.github.dependency.extractor.internal.DependencyExtractorService
-import org.gradle.github.dependency.extractor.internal.DependencyExtractorService_6_1
+import org.gradle.github.dependency.extractor.internal.DependencyExtractor
+import org.gradle.github.dependency.extractor.internal.DependencyExtractorBuildService
 import org.gradle.github.dependency.util.EnvironmentVariableLoader
 import org.gradle.github.dependency.util.PluginCompanionUtils
 import org.gradle.github.dependency.util.service
@@ -34,56 +33,56 @@ class GitHubDependencyExtractorPlugin : Plugin<Gradle> {
         const val ENV_GITHUB_WORKSPACE = "GITHUB_WORKSPACE"
     }
 
-    internal lateinit var dependencyExtractorServiceProvider: Provider<out DependencyExtractorService>
+    internal lateinit var dependencyExtractorProvider: Provider<out DependencyExtractor>
 
     override fun apply(gradle: Gradle) {
         val gradleVersion = GradleVersion.current()
         // Create the adapter based upon the version of Gradle
         val applicatorStrategy = when {
-            gradleVersion >= GradleVersion.version("6.1") -> PluginApplicatorStrategy.PluginApplicatorStrategy_6_1
-            else -> PluginApplicatorStrategy.DefaultPluginApplicatorStrategy
+            gradleVersion >= GradleVersion.version("6.1") -> PluginApplicatorStrategy.DefaultPluginApplicatorStrategy
+            else -> PluginApplicatorStrategy.LegacyPluginApplicatorStrategy
         }
 
         // Create the service
-        dependencyExtractorServiceProvider = applicatorStrategy.createExtractorService(gradle)
+        dependencyExtractorProvider = applicatorStrategy.createExtractorService(gradle)
 
         gradle.rootProject { project ->
-            dependencyExtractorServiceProvider
+            dependencyExtractorProvider
                 .get()
                 .setRootProjectBuildDirectory(project.buildDir)
         }
 
         // Register the service to listen for Build Events
-        applicatorStrategy.registerExtractorListener(gradle, dependencyExtractorServiceProvider)
+        applicatorStrategy.registerExtractorListener(gradle, dependencyExtractorProvider)
 
         // Register the shutdown hook that should execute at the completion of the Gradle build.
-        applicatorStrategy.registerExtractorServiceShutdown(gradle, dependencyExtractorServiceProvider)
+        applicatorStrategy.registerExtractorServiceShutdown(gradle, dependencyExtractorProvider)
     }
 
     /**
-     * Adapters for creating the [DependencyExtractorService] and installing it into [Gradle] based upon the Gradle version.
+     * Adapters for creating the [DependencyExtractor] and installing it into [Gradle] based upon the Gradle version.
      */
     private interface PluginApplicatorStrategy {
 
         fun createExtractorService(
             gradle: Gradle
-        ): Provider<out DependencyExtractorService>
+        ): Provider<out DependencyExtractor>
 
         fun registerExtractorListener(
             gradle: Gradle,
-            extractorServiceProvider: Provider<out DependencyExtractorService>
+            extractorServiceProvider: Provider<out DependencyExtractor>
         )
 
         fun registerExtractorServiceShutdown(
             gradle: Gradle,
-            extractorServiceProvider: Provider<out DependencyExtractorService>
+            extractorServiceProvider: Provider<out DependencyExtractor>
         )
 
-        object DefaultPluginApplicatorStrategy : PluginApplicatorStrategy, EnvironmentVariableLoader.LoaderDefault {
+        object LegacyPluginApplicatorStrategy : PluginApplicatorStrategy, EnvironmentVariableLoader.Legacy {
 
             override fun createExtractorService(
                 gradle: Gradle
-            ): Provider<out DependencyExtractorService> {
+            ): Provider<out DependencyExtractor> {
                 val providerFactory = gradle.providerFactory
 
                 val gitWorkspaceEnvVar = gradle.loadEnvironmentVariable(ENV_GITHUB_WORKSPACE)
@@ -91,7 +90,7 @@ class GitHubDependencyExtractorPlugin : Plugin<Gradle> {
                 val gitWorkspaceDirectory = Paths.get(gitWorkspaceEnvVar)
                 // Create a constant value that the provider will always return.
                 // IE. Memoize the value
-                val constantDependencyExtractorService = object : DependencyExtractorService() {
+                val constantDependencyExtractor = object : DependencyExtractor() {
                     override val gitHubJobName: String
                         get() = gradle.loadEnvironmentVariable(ENV_GITHUB_JOB)
                     override val gitHubRunNumber: String
@@ -103,12 +102,12 @@ class GitHubDependencyExtractorPlugin : Plugin<Gradle> {
                     override val gitWorkspaceDirectory: Path
                         get() = gitWorkspaceDirectory
                 }
-                return providerFactory.provider { constantDependencyExtractorService }
+                return providerFactory.provider { constantDependencyExtractor }
             }
 
             override fun registerExtractorListener(
                 gradle: Gradle,
-                extractorServiceProvider: Provider<out DependencyExtractorService>
+                extractorServiceProvider: Provider<out DependencyExtractor>
             ) {
                 gradle
                     .buildOperationListenerManager
@@ -117,7 +116,7 @@ class GitHubDependencyExtractorPlugin : Plugin<Gradle> {
 
             override fun registerExtractorServiceShutdown(
                 gradle: Gradle,
-                extractorServiceProvider: Provider<out DependencyExtractorService>
+                extractorServiceProvider: Provider<out DependencyExtractor>
             ) {
                 gradle.buildFinished {
                     extractorServiceProvider.get().close()
@@ -128,13 +127,12 @@ class GitHubDependencyExtractorPlugin : Plugin<Gradle> {
             }
         }
 
-        @Suppress("ClassName")
-        object PluginApplicatorStrategy_6_1 : PluginApplicatorStrategy, EnvironmentVariableLoader.Loader_6_1 {
+        object DefaultPluginApplicatorStrategy : PluginApplicatorStrategy, EnvironmentVariableLoader.Default {
             private const val SERVICE_NAME = "gitHubDependencyExtractorService"
 
             override fun createExtractorService(
                 gradle: Gradle
-            ): Provider<out DependencyExtractorService> {
+            ): Provider<out DependencyExtractor> {
                 val objectFactory = gradle.objectFactory
                 val gitWorkspaceEnvVar =
                     gradle
@@ -150,7 +148,7 @@ class GitHubDependencyExtractorPlugin : Plugin<Gradle> {
 
                 return gradle.sharedServices.registerIfAbsent(
                     SERVICE_NAME,
-                    DependencyExtractorService_6_1::class.java
+                    DependencyExtractorBuildService::class.java
                 ) { spec ->
                     spec.parameters {
                         it.gitHubJobName.convention(gradle.loadEnvironmentVariable(ENV_GITHUB_JOB))
@@ -164,7 +162,7 @@ class GitHubDependencyExtractorPlugin : Plugin<Gradle> {
 
             override fun registerExtractorListener(
                 gradle: Gradle,
-                extractorServiceProvider: Provider<out DependencyExtractorService>
+                extractorServiceProvider: Provider<out DependencyExtractor>
             ) {
                 gradle.service<BuildEventListenerRegistryInternal>()
                     .onOperationCompletion(extractorServiceProvider)
@@ -172,7 +170,7 @@ class GitHubDependencyExtractorPlugin : Plugin<Gradle> {
 
             override fun registerExtractorServiceShutdown(
                 gradle: Gradle,
-                extractorServiceProvider: Provider<out DependencyExtractorService>
+                extractorServiceProvider: Provider<out DependencyExtractor>
             ) {
                 // No-op as DependencyExtractorService is Auto-Closable
             }

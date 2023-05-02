@@ -6,8 +6,7 @@ import org.gradle.api.provider.ProviderFactory
 
 internal interface EnvironmentVariableLoader {
 
-    @Suppress("ClassName")
-    interface Loader_6_1 {
+    interface Default {
         fun Gradle.loadEnvironmentVariable(envName: String, default: String? = null): Provider<String> =
             service<ProviderFactory>().run {
                 environmentVariable(envName)
@@ -18,7 +17,7 @@ internal interface EnvironmentVariableLoader {
             }
     }
 
-    interface LoaderDefault {
+    interface Legacy {
         fun Gradle.loadEnvironmentVariable(envName: String, default: String? = null): String {
             return System.getenv()[envName]
                 ?: startParameter.projectProperties[ENV_VIA_PARAMETER_PREFIX + envName]

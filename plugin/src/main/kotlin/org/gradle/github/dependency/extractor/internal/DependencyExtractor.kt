@@ -18,7 +18,7 @@ import java.util.*
 import org.gradle.api.internal.artifacts.configurations.ResolveConfigurationDependenciesBuildOperationType as ResolveConfigurationDependenciesBOT
 import org.gradle.initialization.LoadProjectsBuildOperationType as LoadProjectsBOT
 
-abstract class DependencyExtractorService :
+abstract class DependencyExtractor :
     BuildOperationListener,
     AutoCloseable {
 

@@ -104,7 +104,9 @@ abstract class BaseExtractorTest extends Specification {
         }
         apply plugin: GitHubDependencySubmissionPlugin
         """.stripMargin()
-        getExecuter().withArguments("--init-script", "init.gradle")
+        getExecuter().withArguments(
+            "--init-script", "init.gradle",
+            "--max-workers", "1")
     }
 
     protected void establishEnvironmentVariables() {

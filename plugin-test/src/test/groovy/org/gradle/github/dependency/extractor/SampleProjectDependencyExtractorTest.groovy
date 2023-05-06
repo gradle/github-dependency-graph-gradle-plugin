@@ -56,9 +56,6 @@ class SampleProjectDependencyExtractorTest extends BaseExtractorTest {
         ]
     }
 
-    // Temporarily disable test that hangs on Gradle < 7.6
-    // TODO: Re-enable this test
-    @IgnoreIf({ System.getProperty("testGradleVersion") != null })
     def "check java-included-builds sample"() {
         def sampleDir = new File("../sample-projects/java-included-builds")
 

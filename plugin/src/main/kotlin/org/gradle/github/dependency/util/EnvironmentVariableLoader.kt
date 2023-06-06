@@ -10,7 +10,7 @@ internal interface EnvironmentVariableLoader {
         fun Gradle.loadEnvironmentVariable(envName: String, default: String? = null): Provider<String> =
             service<ProviderFactory>().run {
                 environmentVariable(envName)
-                    .orElse(gradleProperty(ENV_VIA_PARAMETER_PREFIX + envName))
+                    .orElse(systemProperty(ENV_VIA_SYS_PROP_PREFIX + envName))
                     .orElse(provider {
                         default ?: throwEnvironmentVariableMissingException(envName)
                     })
@@ -20,7 +20,7 @@ internal interface EnvironmentVariableLoader {
     interface Legacy {
         fun Gradle.loadEnvironmentVariable(envName: String, default: String? = null): String {
             return System.getenv()[envName]
-                ?: startParameter.projectProperties[ENV_VIA_PARAMETER_PREFIX + envName]
+                ?: System.getProperty(ENV_VIA_SYS_PROP_PREFIX + envName)
                 ?: default
                 ?: throwEnvironmentVariableMissingException(envName)
         }
@@ -28,11 +28,9 @@ internal interface EnvironmentVariableLoader {
 }
 
 /**
- * Allows reading the environment variables from parameters.
- * This is here purely for debugging purposes.
- * The tooling API doesn't allow environment variables to be read when running in debug mode.
+ * Allows environment variable values to be set via command-line system properties.
  */
-private const val ENV_VIA_PARAMETER_PREFIX = "org.gradle.github.internal.debug.env."
+private const val ENV_VIA_SYS_PROP_PREFIX = "org.gradle.github.env."
 
 internal fun throwEnvironmentVariableMissingException(variable: String): Nothing {
     throw IllegalStateException("The environment variable '$variable' must be set, but it was not.")

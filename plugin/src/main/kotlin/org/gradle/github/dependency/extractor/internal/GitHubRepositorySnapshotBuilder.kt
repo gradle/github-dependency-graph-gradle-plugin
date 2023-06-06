@@ -13,7 +13,8 @@ class GitHubRepositorySnapshotBuilder(
     private val gitHubRunNumber: String,
     private val gitSha: String,
     private val gitRef: String,
-    private val gitWorkspaceDirectory: Path
+    private val gitWorkspaceDirectory: Path,
+    private val gradleBuildPath: String
 ) {
 
     private val detector by lazy { GitHubDetector() }
@@ -21,7 +22,7 @@ class GitHubRepositorySnapshotBuilder(
     private val job by lazy {
         GitHubJob(
             id = gitHubRunNumber,
-            correlator = gitHubJobName
+            correlator = if (gradleBuildPath.isEmpty()) gitHubJobName else "$gitHubJobName:$gradleBuildPath"
         )
     }
 

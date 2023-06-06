@@ -255,7 +255,7 @@ abstract class BaseExtractorTest extends Specification {
     }
 
     static class TestEnvironmentVars {
-        final String job = "Build -" + System.currentTimeMillis()
+        final String job = "Build_" + System.currentTimeMillis()
         final String runNumber = UUID.randomUUID().toString()
         final String ref = "refs/head/feature/test" + UUID.randomUUID().toString()
         final String sha = fakeSha()

@@ -5,7 +5,6 @@ export GITHUB_RUN_NUMBER="42"
 export GITHUB_REF="refs/heads/main"
 export GITHUB_SHA=$( git rev-parse HEAD )
 export GITHUB_WORKSPACE=$( pwd )
-export GITHUB_REPOSITORY="gradle/github-dependency-extractor"
 
 if [[ -z "${GITHUB_TOKEN}" ]]; then
   echo "GITHUB_TOKEN must be set in order to submit dependency graph"

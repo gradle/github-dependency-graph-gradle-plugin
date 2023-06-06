@@ -260,7 +260,6 @@ abstract class BaseExtractorTest extends Specification {
         final String ref = "refs/head/feature/test" + UUID.randomUUID().toString()
         final String sha = fakeSha()
         final String workspace
-        final String gitHubRepository = "gradle/github-dependency-extractor"
         final String gitHubToken = UUID.randomUUID().toString()
 
         TestEnvironmentVars(TestFile testDirectory) {
@@ -274,7 +273,6 @@ abstract class BaseExtractorTest extends Specification {
                 "GITHUB_REF"       : ref,
                 "GITHUB_SHA"       : sha,
                 "GITHUB_WORKSPACE" : workspace,
-                "GITHUB_REPOSITORY": gitHubRepository,
                 "GITHUB_TOKEN"     : gitHubToken
             ]
         }

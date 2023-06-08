@@ -7,7 +7,6 @@ import java.util.jar.JarFile
 plugins {
     kotlin("jvm") version(libs.versions.kotlin)
     `java-gradle-plugin`
-    `java-test-fixtures`
     groovy
     alias(libs.plugins.shadow.jar)
 }

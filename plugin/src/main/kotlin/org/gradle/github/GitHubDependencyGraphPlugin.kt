@@ -3,9 +3,9 @@ package org.gradle.github
 import org.gradle.api.Plugin
 import org.gradle.api.invocation.Gradle
 import org.gradle.api.logging.Logging
-import org.gradle.github.dependency.extractor.ForceDependencyResolutionPlugin
-import org.gradle.github.dependency.extractor.GitHubDependencyExtractorPlugin
-import org.gradle.github.dependency.util.PluginCompanionUtils
+import org.gradle.github.dependencygraph.ForceDependencyResolutionPlugin
+import org.gradle.github.dependencygraph.GitHubDependencyExtractorPlugin
+import org.gradle.github.dependencygraph.internal.util.PluginCompanionUtils
 
 /**
  * A plugin that collects all resolved dependencies in a Gradle build for submission to the

@@ -1,21 +1,12 @@
 import org.gradle.github.dependency.GitHubDependencySubmissionPlugin
 initscript {
-    def pluginFiles = fileTree("plugin/build/libs") {
-        include "**/*.jar"
-        exclude "*-test-fixtures.jar"
-    }
-    File pluginFile
-    try {
-        pluginFile = pluginFiles.singleFile
-    } catch (IllegalStateException e) {
-        if (pluginFiles.iterator().hasNext()) {
-            throw new GradleException("Multiple plugins found in build/libs. Run `clean build` task", e)
-        } else {
-            throw new GradleException("No plugins found in build/libs. Run `build` task", e)
+    repositories {
+        maven {
+            url "build/local-plugin-repository"
         }
     }
     dependencies {
-        classpath files(pluginFile)
+        classpath "org.gradle:github-dependency-graph-gradle-plugin:0.0.1"
     }
 }
 apply plugin: GitHubDependencySubmissionPlugin

@@ -1,7 +1,7 @@
 #!/bin/sh
 
-# Build the dependency extractor plugin
-./gradlew :plugin:build
+# Build and publish the dependency graph plugin
+./gradlew :plugin:publishPluginMavenPublicationToLocalPluginsRepository
 
 # Invoke a build extracting the GitHub Dependency Graph
 ./gradlew --no-configuration-cache --no-build-cache -I plugin-self-test.init.gradle --console=plain $*

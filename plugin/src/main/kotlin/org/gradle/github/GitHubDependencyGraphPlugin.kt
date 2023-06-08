@@ -1,4 +1,4 @@
-package org.gradle.github.dependency
+package org.gradle.github
 
 import org.gradle.api.Plugin
 import org.gradle.api.invocation.Gradle
@@ -12,13 +12,13 @@ import org.gradle.github.dependency.util.PluginCompanionUtils
  * GitHub Dependency Submission API.
  */
 @Suppress("unused")
-class GitHubDependencySubmissionPlugin : Plugin<Gradle> {
+class GitHubDependencyGraphPlugin : Plugin<Gradle> {
     private companion object : PluginCompanionUtils() {
-        private val LOGGER = Logging.getLogger(GitHubDependencySubmissionPlugin::class.java)
+        private val LOGGER = Logging.getLogger(GitHubDependencyGraphPlugin::class.java)
     }
 
     override fun apply(gradle: Gradle) {
-        LOGGER.lifecycle("Applying Plugin: GitHubDependencySubmissionPlugin")
+        LOGGER.lifecycle("Applying Plugin: GitHubDependencyGraphPlugin")
         // Only apply the dependency extractor to the root build
         if (gradle.parent == null) {
             gradle.pluginManager.apply(GitHubDependencyExtractorPlugin::class.java)

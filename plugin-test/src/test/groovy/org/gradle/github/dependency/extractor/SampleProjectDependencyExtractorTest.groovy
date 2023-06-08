@@ -7,7 +7,7 @@ import spock.lang.IgnoreIf
 // Samples aren't designed to run on Gradle 5.x
 class SampleProjectDependencyExtractorTest extends BaseExtractorTest {
     def setup() {
-        applyExtractorPlugin()
+        applyDependencyGraphPlugin()
         establishEnvironmentVariables()
     }
 

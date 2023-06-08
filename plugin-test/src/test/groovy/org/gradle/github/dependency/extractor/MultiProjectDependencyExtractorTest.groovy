@@ -12,7 +12,7 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
     private File buildFile
 
     def setup() {
-        applyExtractorPlugin()
+        applyDependencyGraphPlugin()
         establishEnvironmentVariables()
 
         foo = mavenRepo.module("org.test", "foo", "1.0").publish()

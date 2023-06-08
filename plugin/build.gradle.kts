@@ -123,7 +123,7 @@ gradlePlugin {
     plugins {
         create("dependency-graph-plugin") {
             id = "org.gradle.github-dependency-graph-gradle-plugin"
-            implementationClass = "org.gradle.github.dependency.GitHubDependencySubmissionPlugin"
+            implementationClass = "org.gradle.github.GitHubDependencyGraphPlugin"
         }
     }
 }

@@ -80,10 +80,6 @@ abstract class BaseExtractorTest extends Specification {
         return getTestDirectory().file(path)
     }
 
-    protected BuildResult run() {
-        return run("dependencyExtractor_resolveAllDependencies")
-    }
-
     protected BuildResult run(String... names) {
         executer.withTasks(names)
         result = getExecuter().run()
@@ -91,18 +87,18 @@ abstract class BaseExtractorTest extends Specification {
     }
 
     @CompileDynamic
-    protected void applyExtractorPlugin() {
+    protected void applyDependencyGraphPlugin() {
         File pluginJar = TEST_CONFIG.asFile("extractorPlugin.jar.path")
         String cleanedAbsolutePath = pluginJar.absolutePath.replace('\\', '/')
         assert (pluginJar.exists())
         file("init.gradle") << """
-        import org.gradle.github.dependency.GitHubDependencySubmissionPlugin
+        import org.gradle.github.GitHubDependencyGraphPlugin
         initscript {
             dependencies {
                 classpath files('${cleanedAbsolutePath}')
             }
         }
-        apply plugin: GitHubDependencySubmissionPlugin
+        apply plugin: GitHubDependencyGraphPlugin
         """.stripMargin()
         getExecuter().withArguments("--init-script", "init.gradle")
     }

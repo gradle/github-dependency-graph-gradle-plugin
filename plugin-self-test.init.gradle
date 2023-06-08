@@ -1,4 +1,4 @@
-import org.gradle.github.dependency.GitHubDependencySubmissionPlugin
+import org.gradle.github.GitHubDependencyGraphPlugin
 initscript {
     repositories {
         maven {
@@ -9,4 +9,4 @@ initscript {
         classpath "org.gradle:github-dependency-graph-gradle-plugin:0.0.1"
     }
 }
-apply plugin: GitHubDependencySubmissionPlugin
+apply plugin: GitHubDependencyGraphPlugin

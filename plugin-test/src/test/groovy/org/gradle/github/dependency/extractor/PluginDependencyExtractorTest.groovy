@@ -12,7 +12,7 @@ class PluginDependencyExtractorTest extends BaseExtractorTest {
     private File buildFile
 
     def setup() {
-        applyExtractorPlugin()
+        applyDependencyGraphPlugin()
         establishEnvironmentVariables()
 
         mavenRepo.module("org.test", "foo", "1.0").publish()

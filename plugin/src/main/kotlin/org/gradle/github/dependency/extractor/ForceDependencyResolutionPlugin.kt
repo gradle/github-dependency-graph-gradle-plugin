@@ -3,13 +3,16 @@ package org.gradle.github.dependency.extractor
 import org.gradle.api.Plugin
 import org.gradle.api.invocation.Gradle
 
+private const val GENERATE_TASK = "GitHubDependencyGraphPlugin_generateDependencyGraph"
+
 /**
  * Adds a task to resolve all dependencies in a Gradle build tree.
  */
 class ForceDependencyResolutionPlugin : Plugin<Gradle> {
     override fun apply(gradle: Gradle) {
         gradle.projectsEvaluated {
-            val resolveAllDeps = gradle.rootProject.tasks.register("dependencyExtractor_resolveAllDependencies")
+            val resolveAllDeps = gradle.rootProject.tasks.register(GENERATE_TASK)
+            gradle.rootProject.defaultTasks = listOf(GENERATE_TASK)
 
             // Depend on "dependencies" task in all projects
             gradle.allprojects { project ->
@@ -21,7 +24,7 @@ class ForceDependencyResolutionPlugin : Plugin<Gradle> {
             // Depend on all 'resolveBuildDependencies' task in each included build
             gradle.includedBuilds.forEach { includedBuild ->
                 resolveAllDeps.configure {
-                    it.dependsOn(includedBuild.task(":dependencyExtractor_resolveAllDependencies"))
+                    it.dependsOn(includedBuild.task(":${GENERATE_TASK}"))
                 }
             }
         }

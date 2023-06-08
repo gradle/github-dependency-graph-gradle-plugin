@@ -16,6 +16,7 @@ abstract class DependencyExtractorBuildService :
         val gitSha: Property<String>
         val gitRef: Property<String>
         val gitWorkspaceDirectory: DirectoryProperty
+        val gradleBuildPath: Property<String>
     }
 
     override val gitHubJobName: String
@@ -28,4 +29,6 @@ abstract class DependencyExtractorBuildService :
         get() = parameters.gitRef.get()
     override val gitWorkspaceDirectory: Path
         get() = parameters.gitWorkspaceDirectory.get().asFile.toPath()
+    override val gradleBuildPath: String
+        get() = parameters.gradleBuildPath.get()
 }

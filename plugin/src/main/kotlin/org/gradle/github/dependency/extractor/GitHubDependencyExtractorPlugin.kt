@@ -26,6 +26,7 @@ class GitHubDependencyExtractorPlugin : Plugin<Gradle> {
         const val ENV_GITHUB_RUN_NUMBER = "GITHUB_RUN_NUMBER"
         const val ENV_GITHUB_REF = "GITHUB_REF"
         const val ENV_GITHUB_SHA = "GITHUB_SHA"
+        const val ENV_GRADLE_BUILD_PATH = "GRADLE_BUILD_PATH"
 
         /**
          * Environment variable should be set to the workspace directory that the Git repository is checked out in.
@@ -101,6 +102,8 @@ class GitHubDependencyExtractorPlugin : Plugin<Gradle> {
                         get() = gradle.loadEnvironmentVariable(ENV_GITHUB_REF)
                     override val gitWorkspaceDirectory: Path
                         get() = gitWorkspaceDirectory
+                    override val gradleBuildPath: String
+                        get() = gradle.loadEnvironmentVariable(ENV_GRADLE_BUILD_PATH, "")
                 }
                 return providerFactory.provider { constantDependencyExtractor }
             }
@@ -156,6 +159,7 @@ class GitHubDependencyExtractorPlugin : Plugin<Gradle> {
                         it.gitSha.convention(gradle.loadEnvironmentVariable(ENV_GITHUB_SHA))
                         it.gitRef.convention(gradle.loadEnvironmentVariable(ENV_GITHUB_REF))
                         it.gitWorkspaceDirectory.convention(gitWorkspaceDirectory)
+                        it.gradleBuildPath.convention(gradle.loadEnvironmentVariable(ENV_GRADLE_BUILD_PATH, ""))
                     }
                 }
             }

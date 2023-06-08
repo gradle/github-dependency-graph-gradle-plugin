@@ -27,6 +27,7 @@ abstract class DependencyExtractor :
     protected abstract val gitSha: String
     protected abstract val gitRef: String
     protected abstract val gitWorkspaceDirectory: Path
+    protected abstract val gradleBuildPath: String
 
     /**
      * Can't use this as a proper input:
@@ -40,7 +41,8 @@ abstract class DependencyExtractor :
             gitHubRunNumber = gitHubRunNumber,
             gitSha = gitSha,
             gitRef = gitRef,
-            gitWorkspaceDirectory = gitWorkspaceDirectory
+            gitWorkspaceDirectory = gitWorkspaceDirectory,
+            gradleBuildPath = gradleBuildPath
         )
     }
 

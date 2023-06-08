@@ -152,7 +152,7 @@ class SimpleGradleExecuter {
                                         "\tDid you forget to remove an `enableDebug` from your code?"
                         )
                     }
-                    args.add("-Porg.gradle.github.internal.debug.env.$key=$value".toString())
+                    args.add("-Dorg.gradle.github.env.$key=$value".toString())
                 }
             } else {
                 runner.withEnvironment(environmentVars)

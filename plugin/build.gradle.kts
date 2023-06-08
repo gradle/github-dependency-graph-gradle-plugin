@@ -9,6 +9,7 @@ plugins {
     `java-gradle-plugin`
     groovy
     alias(libs.plugins.shadow.jar)
+    `maven-publish`
 }
 
 val shadowImplementation: Configuration by configurations.creating
@@ -116,4 +117,27 @@ artifacts {
 // Disabling default jar task as it is overridden by shadowJar
 tasks.named("jar").configure {
     enabled = false
+}
+
+gradlePlugin {
+    plugins {
+        create("dependency-graph-plugin") {
+            id = "org.gradle.github-dependency-graph-gradle-plugin"
+            implementationClass = "org.gradle.github.dependency.GitHubDependencySubmissionPlugin"
+        }
+    }
+}
+
+publishing {
+    repositories {
+        maven {
+            name = "localPlugins"
+            url = uri("../build/local-plugin-repository")
+        }
+    }
+    publications {
+        create<MavenPublication>("pluginMaven") {
+            artifactId = "github-dependency-graph-gradle-plugin"
+        }
+    }
 }

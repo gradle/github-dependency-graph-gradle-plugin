@@ -6,10 +6,9 @@ import java.util.jar.JarFile
 
 plugins {
     kotlin("jvm") version(libs.versions.kotlin)
-    `java-gradle-plugin`
+    id("com.gradle.plugin-publish") version "1.2.0"
     groovy
     alias(libs.plugins.shadow.jar)
-    `maven-publish`
 }
 
 val shadowImplementation: Configuration by configurations.creating
@@ -120,10 +119,15 @@ tasks.named("jar").configure {
 }
 
 gradlePlugin {
+    website.set("https://github.com/gradle/github-dependency-extractor")
+    vcsUrl.set("https://github.com/gradle/github-dependency-extractor")
     plugins {
         create("dependency-graph-plugin") {
             id = "org.gradle.github-dependency-graph-gradle-plugin"
             implementationClass = "org.gradle.github.GitHubDependencyGraphPlugin"
+            displayName = "Generates a GitHub Dependency Graph"
+            description = "Generates a GitHub Dependency Graph for submission via the GitHub Dependency Submission API"
+            tags.addAll("github", "dependencies", "dependency-graph")
         }
     }
 }

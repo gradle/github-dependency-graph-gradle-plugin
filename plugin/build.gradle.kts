@@ -7,9 +7,18 @@ import java.util.jar.JarFile
 plugins {
     kotlin("jvm") version(libs.versions.kotlin)
     id("com.gradle.plugin-publish") version "1.2.0"
+    signing
     groovy
     alias(libs.plugins.shadow.jar)
 }
+
+val releaseVersion = loadReleaseVersion()
+val releaseNotes = loadReleaseNotes()
+val pluginGroup = "org.gradle"
+val pluginArtifactId = "github-dependency-graph-gradle-plugin"
+
+group = pluginGroup
+version = releaseVersion
 
 val shadowImplementation: Configuration by configurations.creating
 configurations["compileOnly"].extendsFrom(shadowImplementation)
@@ -118,15 +127,19 @@ tasks.named("jar").configure {
     enabled = false
 }
 
+/**
+ * Configuration for publishing the plugin, locally and to the Gradle Plugin Portal.
+ */
 gradlePlugin {
     website.set("https://github.com/gradle/github-dependency-extractor")
     vcsUrl.set("https://github.com/gradle/github-dependency-extractor")
+
     plugins {
-        create("dependency-graph-plugin") {
-            id = "org.gradle.github-dependency-graph-gradle-plugin"
+        create("dependencyGraphPlugin") {
+            id = "${pluginGroup}.${pluginArtifactId}"
             implementationClass = "org.gradle.github.GitHubDependencyGraphPlugin"
             displayName = "Generates a GitHub Dependency Graph"
-            description = "Generates a GitHub Dependency Graph for submission via the GitHub Dependency Submission API"
+            description = releaseNotes
             tags.addAll("github", "dependencies", "dependency-graph")
         }
     }
@@ -141,7 +154,34 @@ publishing {
     }
     publications {
         create<MavenPublication>("pluginMaven") {
-            artifactId = "github-dependency-graph-gradle-plugin"
+            artifactId = pluginArtifactId
         }
     }
+}
+
+tasks.withType(ValidatePlugins::class).configureEach {
+    failOnWarning.set(true)
+    enableStricterValidation.set(true)
+}
+
+signing {
+    setRequired({ gradle.taskGraph.hasTask(":plugin:publishPlugins") })
+
+    useInMemoryPgpKeys(
+        providers.environmentVariable("PGP_SIGNING_KEY").orNull,
+        providers.environmentVariable("PGP_SIGNING_KEY_PASSPHRASE").orNull
+    )
+}
+tasks.withType(Sign::class).configureEach {
+    notCompatibleWithConfigurationCache("$name task does not support configuration caching")
+}
+
+fun loadReleaseVersion():String {
+    val releaseVersionFile = rootProject.layout.projectDirectory.file("release/version.txt")
+    return providers.fileContents(releaseVersionFile).asText.map { it.trim() }.get()
+}
+
+fun loadReleaseNotes():String {
+    val releaseNotesFile = rootProject.layout.projectDirectory.file("release/changes.md")
+    return providers.fileContents(releaseNotesFile).asText.map { it.trim() }.get()
 }

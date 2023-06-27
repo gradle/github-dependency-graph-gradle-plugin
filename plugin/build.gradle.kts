@@ -7,6 +7,7 @@ import java.util.jar.JarFile
 plugins {
     kotlin("jvm") version(libs.versions.kotlin)
     id("com.gradle.plugin-publish") version "1.2.0"
+    id("com.github.breadmoirai.github-release") version "2.4.1"
     signing
     groovy
     alias(libs.plugins.shadow.jar)
@@ -14,6 +15,7 @@ plugins {
 
 val releaseVersion = loadReleaseVersion()
 val releaseNotes = loadReleaseNotes()
+val releaseTag = "v${releaseVersion}"
 val pluginGroup = "org.gradle"
 val pluginArtifactId = "github-dependency-graph-gradle-plugin"
 
@@ -185,3 +187,40 @@ fun loadReleaseNotes():String {
     val releaseNotesFile = rootProject.layout.projectDirectory.file("release/changes.md")
     return providers.fileContents(releaseNotesFile).asText.map { it.trim() }.get()
 }
+
+val createReleaseTag = tasks.register<CreateGitTag>("createReleaseTag") {
+    tagName.set(releaseTag)
+}
+
+githubRelease {
+    setToken(System.getenv("GITHUB_DEPENDENCY_GRAPH_GIT_TOKEN") ?: "")
+    owner.set("gradle")
+    repo.set("github-dependency-extractor")
+    releaseName.set(releaseVersion)
+    tagName.set(releaseTag)
+    prerelease.set(true)
+    body.set(releaseNotes)
+}
+
+tasks.named("githubRelease").configure {
+    dependsOn(createReleaseTag)
+}
+
+abstract class CreateGitTag : DefaultTask() {
+
+    @get:Input abstract val tagName: Property<String>
+
+    @get:Inject abstract val execOperations: ExecOperations
+
+    @TaskAction
+    fun action() {
+        logger.info("Tagging HEAD as ${tagName.get()}")
+        execOperations.exec {
+            commandLine("git", "tag", "-f", tagName.get())
+        }
+        execOperations.exec {
+            commandLine("git", "push", "origin", "-f", "--tags")
+        }
+    }
+}
+

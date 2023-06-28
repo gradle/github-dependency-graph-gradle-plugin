@@ -67,8 +67,8 @@ tasks.test {
 tasks.withType<Jar>().configureEach {
     manifest {
         attributes["Implementation-Version"] = archiveVersion.get()
-        attributes["Implementation-Title"] = "Gradle GitHub Dependency Extractor"
-        attributes["Implementation-Vendor"] = "Gradle GitHub Dependency Extractor"
+        attributes["Implementation-Title"] = "GitHub Dependency Graph Gradle Plugin"
+        attributes["Implementation-Vendor"] = "Gradle Inc"
     }
 }
 
@@ -133,8 +133,8 @@ tasks.named("jar").configure {
  * Configuration for publishing the plugin, locally and to the Gradle Plugin Portal.
  */
 gradlePlugin {
-    website.set("https://github.com/gradle/github-dependency-extractor")
-    vcsUrl.set("https://github.com/gradle/github-dependency-extractor")
+    website.set("https://github.com/gradle/github-dependency-graph-gradle-plugin")
+    vcsUrl.set("https://github.com/gradle/github-dependency-graph-gradle-plugin")
 
     plugins {
         create("dependencyGraphPlugin") {
@@ -195,7 +195,7 @@ val createReleaseTag = tasks.register<CreateGitTag>("createReleaseTag") {
 githubRelease {
     setToken(System.getenv("GITHUB_DEPENDENCY_GRAPH_GIT_TOKEN") ?: "")
     owner.set("gradle")
-    repo.set("github-dependency-extractor")
+    repo.set("github-dependency-graph-gradle-plugin")
     releaseName.set(releaseVersion)
     tagName.set(releaseTag)
     prerelease.set(true)

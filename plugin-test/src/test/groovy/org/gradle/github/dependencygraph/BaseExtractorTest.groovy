@@ -136,7 +136,7 @@ abstract class BaseExtractorTest extends Specification {
         assert detector.name.contains("Gradle")
         assert detector.version != null
         assert detector.version != ""
-        assert detector.url == "https://github.com/gradle/github-dependency-extractor"
+        assert detector.url == "https://github.com/gradle/github-dependency-graph-gradle-plugin"
         return json["manifests"] as Map
     }
 

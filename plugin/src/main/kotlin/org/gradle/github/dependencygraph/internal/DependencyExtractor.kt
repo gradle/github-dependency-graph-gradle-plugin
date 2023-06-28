@@ -192,7 +192,7 @@ abstract class DependencyExtractor :
         if (thrownExceptions.isNotEmpty()) {
             throw DefaultMultiCauseException(
                     "The ${GitHubDependencyGraphPlugin::class.simpleName} plugin encountered errors while extracting dependencies. " +
-                            "Please report this issue at: https://github.com/gradle/github-dependency-extractor/issues",
+                            "Please report this issue at: https://github.com/gradle/github-dependency-graph-gradle-plugin/issues",
                     thrownExceptions
             )
         }
@@ -201,7 +201,7 @@ abstract class DependencyExtractor :
         } catch (e: RuntimeException) {
             throw GradleException(
                     "The ${GitHubDependencyGraphPlugin::class.simpleName} plugin encountered errors while writing the dependency snapshot json file. " +
-                            "Please report this issue at: https://github.com/gradle/github-dependency-extractor/issues",
+                            "Please report this issue at: https://github.com/gradle/github-dependency-graph-gradle-plugin/issues",
                     e
             )
         }

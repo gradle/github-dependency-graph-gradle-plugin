@@ -29,6 +29,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "github-dependency-extractor"
+rootProject.name = "github-dependency-graph-gradle-plugin"
 include("plugin")
 include("plugin-test")

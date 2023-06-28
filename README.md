@@ -1,31 +1,44 @@
-# GitHub Dependency Extractor
+# GitHub Dependency Graph Gradle Plugin
 
-A Gradle plugin for extracting dependencies from a Gradle build to feed the GitHub Dependency API.
+A Gradle plugin for generating a GitHub dependency graph for a Gradle build, which can be uploaded to the [GitHub Dependency Submission API](https://docs.github.com/en/rest/dependency-graph/dependency-submission).
 
-This project is currently just a proof of concept, but ideally, this plugin would be automatically applied to any Gradle
-project using the GitHub Action [gradle-build-action](https://github.com/marketplace/actions/gradle-build-action).
+## Usage
+This plugin is designed to be used in a GitHub Actions workflow, with support coming in a future release of the [Gradle Build Action](https://github.com/gradle/gradle-build-action).
 
-This plugin leverages the same internal API's used by the Gradle Build Scan Plugin.
+For other uses, the [core plugin](https://plugins.gradle.org/plugin/org.gradle.github-dependency-graph-gradle-plugin) (`org.gradle.github.GitHubDependencyGraphPlugin`) 
+should be applied to the `Gradle` instance via a Gradle init script as follows:
 
-This plugin is intended to implement the proposed API for the GitHub Build-Time Dependency Graph API found 
-[here](https://docs.google.com/document/d/1TjxJJwgPavw-TFzK3110iH-CWstgdcVdb2JYiRy2GVs/edit?usp=sharing)
-and this
-[JSON Schema](https://gist.github.com/reiddraper/7b47d553382fd3867cc1d0b5474bd6c7).
+```
+import org.gradle.github.GitHubDependencyGraphPlugin
+initscript {
+  repositories {
+    maven {
+      url = uri("https://plugins.gradle.org/m2/")
+    }
+  }
+  dependencies {
+    classpath("org.gradle:github-dependency-graph-gradle-plugin:+")
+  }
+}
+apply plugin: GitHubDependencyGraphPlugin
+```
+
+This causes 2 separate plugins to be applied, that can be used independently:
+- `GitHubDependencyExtractorPlugin` collects all dependencies that are resolved during a build execution and writes these to a file. The output file can be found at `<root>/build/reports/github-depenency-graph-gradle-plugin/github-dependency-snapshot.json`.
+- `ForceDependencyResolutionPlugin` creates a `GitHubDependencyGraphPlugin_generateDependencyGraph` task that will attempt to resolve all dependencies for a Gradle build, by simply invoking `dependencies` on all projects.
 
 ## Building/Testing
 
-To test this plugin, run the following task:
+To build and test this plugin, run the following task:
 ```shell
-./gradlew test
+./gradlew check
 ```
 
-Self testing this plugin is also possible.
-In order to do this, you'll need a
-[GitHub API token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
-set to the environment variable `GITHUB_TOKEN`.
-
-To run the self-test, run the following:
+To self-test this plugin and generate a dependency graph for this repository, run:
 ```shell
-./gradlew build
 ./plugin-self-test-local
 ```
+
+The generated dependency graph will be submitted to GitHub only if you supply a
+[GitHub API token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
+via the environment variable `GITHUB_TOKEN`.

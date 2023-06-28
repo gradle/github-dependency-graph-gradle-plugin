@@ -77,5 +77,6 @@ jobs:
             uses: actions/upload-artifact@v3
             with:
                 name: plugin-json
-                path: build/reports/github-dependency-report/github-dependency-manifest.json
+                path: build/reports/github-dependency-graph-plugin/github-dependency-snapshot.json
+                if-no-files-found: error
 

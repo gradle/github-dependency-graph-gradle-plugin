@@ -50,7 +50,7 @@ abstract class BaseExtractorTest extends Specification {
     SimpleGradleExecuter createExecuter() {
         // Create a new JsonManifestLoader for each invocation of the executer
         File manifestFile =
-            testDirectory.file("build/reports/github-dependency-report/github-dependency-manifest.json")
+            testDirectory.file("build/reports/github-dependency-graph-plugin/github-dependency-snapshot.json")
         loader = new JsonRepositorySnapshotLoader(manifestFile)
         return createExecuter(testGradleVersion)
     }

@@ -43,7 +43,7 @@ private constructor(
             return DependencyFileWriter(
                 File(
                     buildDirectory,
-                    "reports/github-dependency-report/github-dependency-manifest.json"
+                    "reports/github-dependency-graph-plugin/github-dependency-snapshot.json"
                 ),
                 loggerWarning
             )

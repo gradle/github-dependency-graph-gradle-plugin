@@ -78,4 +78,5 @@ jobs:
             with:
                 name: plugin-json
                 path: build/reports/github-dependency-graph-plugin/github-dependency-snapshot.json
+                if-no-files-found: error
 

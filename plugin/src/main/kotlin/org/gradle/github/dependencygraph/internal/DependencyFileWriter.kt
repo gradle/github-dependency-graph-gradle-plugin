@@ -20,6 +20,7 @@ private constructor(
         manifestFile.parentFile.mkdirs()
         manifestFile.writeText(JacksonJsonSerializer.serializeToJson(graph))
         writtenFile = true
+        LOGGER.lifecycle("\nGitHubDependencyGraphPlugin: Wrote dependency snapshot to \n${manifestFile.canonicalPath}")
         return manifestFile
     }
 

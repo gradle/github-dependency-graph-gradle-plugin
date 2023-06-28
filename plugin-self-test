@@ -4,7 +4,7 @@
 ./gradlew :plugin:publishPluginMavenPublicationToLocalPluginsRepository
 
 # Invoke a build extracting the GitHub Dependency Graph
-./gradlew --no-configuration-cache --no-build-cache -I plugin-self-test.init.gradle --console=plain $*
+./gradlew --no-configuration-cache --no-build-cache -I plugin-self-test.init.gradle $*
 
 if [[ -z "${GITHUB_TOKEN}" ]]; then
   echo "GITHUB_TOKEN must be set in order to submit dependency graph"

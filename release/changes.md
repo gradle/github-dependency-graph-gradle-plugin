@@ -1,3 +1,1 @@
-Preliminary release of dependency graph plugin.
-
-- Moved generated report file to `build/reports/github-dependency-graph-plugin/github-dependency-snapshot.json`
+Generates a dependency graph snapshot for upload to the GitHub Dependency Submission API

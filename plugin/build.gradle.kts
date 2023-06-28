@@ -142,7 +142,7 @@ gradlePlugin {
             implementationClass = "org.gradle.github.GitHubDependencyGraphPlugin"
             displayName = "Generates a GitHub Dependency Graph"
             description = releaseNotes
-            tags.addAll("github", "dependencies", "dependency-graph")
+            tags.addAll("github", "dependencies", "dependency-graph", "dependency-submission")
         }
     }
 }

@@ -12,7 +12,6 @@ class ForceDependencyResolutionPlugin : Plugin<Gradle> {
     override fun apply(gradle: Gradle) {
         gradle.projectsEvaluated {
             val resolveAllDeps = gradle.rootProject.tasks.register(GENERATE_TASK)
-            gradle.rootProject.defaultTasks = listOf(GENERATE_TASK)
 
             // Depend on "dependencies" task in all projects
             gradle.allprojects { project ->

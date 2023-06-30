@@ -80,6 +80,10 @@ abstract class BaseExtractorTest extends Specification {
         return getTestDirectory().file(path)
     }
 
+    protected BuildResult run() {
+        return run("GitHubDependencyGraphPlugin_generateDependencyGraph")
+    }
+
     protected BuildResult run(String... names) {
         executer.withTasks(names)
         result = getExecuter().run()

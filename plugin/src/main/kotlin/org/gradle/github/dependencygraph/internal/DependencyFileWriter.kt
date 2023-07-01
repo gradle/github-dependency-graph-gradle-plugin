@@ -27,24 +27,24 @@ private constructor(
     companion object {
         private val LOGGER = Logging.getLogger(DependencyFileWriter::class.java)
 
-        fun create(buildDirectory: File): DependencyFileWriter =
-            create(buildDirectory) {
+        fun create(buildDirectory: File, jobCorrelator:String): DependencyFileWriter =
+            create(buildDirectory, jobCorrelator) {
                 // No-op
             }
 
         fun create(): DependencyFileWriter =
-            create(File(".")) {
+            create(File("."), "UNKNOWN") {
                 LOGGER.warn(
                     "[WARNING] Something went wrong configuring the GithubDependencyExtractorPlugin. " +
                         "Using JVM working directory as root of build"
                 )
             }
 
-        private fun create(buildDirectory: File, loggerWarning: () -> Unit): DependencyFileWriter {
+        private fun create(buildDirectory: File, jobCorrelator: String, loggerWarning: () -> Unit): DependencyFileWriter {
             return DependencyFileWriter(
                 File(
                     buildDirectory,
-                    "reports/github-dependency-graph-plugin/github-dependency-snapshot.json"
+                    "reports/github-dependency-graph-plugin/github-dependency-snapshot-${jobCorrelator}.json"
                 ),
                 loggerWarning
             )

@@ -9,20 +9,19 @@ import java.nio.file.Paths
 import java.util.concurrent.ConcurrentHashMap
 
 class GitHubRepositorySnapshotBuilder(
-    private val gitHubJobName: String,
-    private val gitHubRunNumber: String,
+    private val dependencyGraphJobCorrelator: String,
+    private val dependencyGraphJobId: String,
     private val gitSha: String,
     private val gitRef: String,
-    private val gitWorkspaceDirectory: Path,
-    private val gradleBuildPath: String
+    private val gitWorkspaceDirectory: Path
 ) {
 
     private val detector by lazy { GitHubDetector() }
 
     private val job by lazy {
         GitHubJob(
-            id = gitHubRunNumber,
-            correlator = if (gradleBuildPath.isEmpty()) gitHubJobName else "$gitHubJobName:$gradleBuildPath"
+            id = dependencyGraphJobId,
+            correlator = dependencyGraphJobCorrelator
         )
     }
 

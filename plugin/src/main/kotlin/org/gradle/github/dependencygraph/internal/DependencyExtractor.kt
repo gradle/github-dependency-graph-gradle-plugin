@@ -6,7 +6,6 @@ import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.internal.artifacts.DefaultProjectComponentIdentifier
 import org.gradle.api.internal.artifacts.configurations.ResolveConfigurationDependenciesBuildOperationType
 import org.gradle.github.GitHubDependencyGraphPlugin
-import org.gradle.github.dependencygraph.GitHubDependencyExtractorPlugin
 import org.gradle.github.dependencygraph.internal.model.ComponentCoordinates
 import org.gradle.github.dependencygraph.internal.model.ResolvedComponent
 import org.gradle.github.dependencygraph.internal.model.ResolvedConfiguration
@@ -23,12 +22,11 @@ abstract class DependencyExtractor :
     BuildOperationListener,
     AutoCloseable {
 
-    protected abstract val gitHubJobName: String
-    protected abstract val gitHubRunNumber: String
+    protected abstract val dependencyGraphJobCorrelator: String
+    protected abstract val dependencyGraphJobId: String
     protected abstract val gitSha: String
     protected abstract val gitRef: String
     protected abstract val gitWorkspaceDirectory: Path
-    protected abstract val gradleBuildPath: String
 
     /**
      * Can't use this as a proper input:
@@ -38,12 +36,11 @@ abstract class DependencyExtractor :
 
     private val gitHubRepositorySnapshotBuilder by lazy {
         GitHubRepositorySnapshotBuilder(
-            gitHubJobName = gitHubJobName,
-            gitHubRunNumber = gitHubRunNumber,
+            dependencyGraphJobCorrelator = dependencyGraphJobCorrelator,
+            dependencyGraphJobId = dependencyGraphJobId,
             gitSha = gitSha,
             gitRef = gitRef,
-            gitWorkspaceDirectory = gitWorkspaceDirectory,
-            gradleBuildPath = gradleBuildPath
+            gitWorkspaceDirectory = gitWorkspaceDirectory
         )
     }
 
@@ -54,7 +51,7 @@ abstract class DependencyExtractor :
     }
 
     internal fun setRootProjectBuildDirectory(rootProjectBuildDirectory: File) {
-        fileWriter = DependencyFileWriter.create(rootProjectBuildDirectory)
+        fileWriter = DependencyFileWriter.create(rootProjectBuildDirectory, dependencyGraphJobCorrelator)
     }
 
     override fun started(buildOperation: BuildOperationDescriptor, startEvent: OperationStartEvent) {

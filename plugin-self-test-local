@@ -1,7 +1,7 @@
 #!/bin/sh
 
-export GITHUB_JOB="Build"
-export GITHUB_RUN_NUMBER="42"
+export GITHUB_DEPENDENCY_GRAPH_JOB_ID="42"
+export GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR="plugin-self-test"
 export GITHUB_REF="refs/heads/main"
 export GITHUB_SHA=$( git rev-parse HEAD )
 export GITHUB_WORKSPACE=$( pwd )

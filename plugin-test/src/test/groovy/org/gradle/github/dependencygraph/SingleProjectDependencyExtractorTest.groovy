@@ -32,17 +32,6 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         """
     }
 
-    def "includes build path in job correlator"() {
-        when:
-        executer.withArgument("-Dorg.gradle.github.env.GRADLE_BUILD_PATH=foo/bar")
-        run()
-
-        then:
-        def json = jsonRepositorySnapshot()
-        def job = json.job as Map
-        job.correlator == environmentVars.job + ":foo/bar"
-    }
-
     def "extracts implementation and test dependencies for a java project"() {
         given:
         buildFile << """

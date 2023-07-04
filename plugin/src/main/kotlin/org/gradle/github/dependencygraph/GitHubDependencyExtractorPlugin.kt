@@ -24,6 +24,7 @@ class GitHubDependencyExtractorPlugin : Plugin<Gradle> {
     private companion object : PluginCompanionUtils() {
         const val ENV_DEPENDENCY_GRAPH_JOB_ID = "GITHUB_DEPENDENCY_GRAPH_JOB_ID"
         const val ENV_DEPENDENCY_GRAPH_JOB_CORRELATOR = "GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR"
+        const val ENV_DEPENDENCY_GRAPH_REPORT_DIR = "GITHUB_DEPENDENCY_GRAPH_REPORT_DIR"
         const val ENV_GITHUB_REF = "GITHUB_REF"
         const val ENV_GITHUB_SHA = "GITHUB_SHA"
 
@@ -96,6 +97,8 @@ class GitHubDependencyExtractorPlugin : Plugin<Gradle> {
                         get() = gradle.loadEnvironmentVariable(ENV_DEPENDENCY_GRAPH_JOB_CORRELATOR)
                     override val dependencyGraphJobId: String
                         get() = gradle.loadEnvironmentVariable(ENV_DEPENDENCY_GRAPH_JOB_ID)
+                    override val dependencyGraphReportDir: String
+                        get() = gradle.loadEnvironmentVariable(ENV_DEPENDENCY_GRAPH_REPORT_DIR, "")
                     override val gitSha: String
                         get() = gradle.loadEnvironmentVariable(ENV_GITHUB_SHA)
                     override val gitRef: String
@@ -154,6 +157,7 @@ class GitHubDependencyExtractorPlugin : Plugin<Gradle> {
                     spec.parameters {
                         it.dependencyGraphJobCorrelator.convention(gradle.loadEnvironmentVariable(ENV_DEPENDENCY_GRAPH_JOB_CORRELATOR))
                         it.dependencyGraphJobId.convention(gradle.loadEnvironmentVariable(ENV_DEPENDENCY_GRAPH_JOB_ID))
+                        it.dependencyGraphReportDir.convention(gradle.loadEnvironmentVariable(ENV_DEPENDENCY_GRAPH_REPORT_DIR, ""))
                         it.gitSha.convention(gradle.loadEnvironmentVariable(ENV_GITHUB_SHA))
                         it.gitRef.convention(gradle.loadEnvironmentVariable(ENV_GITHUB_REF))
                         it.gitWorkspaceDirectory.convention(gitWorkspaceDirectory)

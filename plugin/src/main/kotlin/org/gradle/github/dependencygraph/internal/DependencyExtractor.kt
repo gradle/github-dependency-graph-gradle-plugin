@@ -25,6 +25,7 @@ abstract class DependencyExtractor :
 
     protected abstract val dependencyGraphJobCorrelator: String
     protected abstract val dependencyGraphJobId: String
+    protected abstract val dependencyGraphReportDir: String
     protected abstract val gitSha: String
     protected abstract val gitRef: String
     protected abstract val gitWorkspaceDirectory: Path
@@ -176,17 +177,23 @@ abstract class DependencyExtractor :
     }
 
     private fun writeAndGetSnapshotFile() {
-        if (rootProjectBuildDirectory == null) {
-            LOGGER.warn("Unable to write dependency graph snapshot: target directory not known")
-            return
-        }
-        val outputFile = File(
-            rootProjectBuildDirectory,
-            "reports/github-dependency-graph-plugin/github-dependency-snapshot-${dependencyGraphJobCorrelator}.json"
-        )
-
+        val outputFile = File(getOutputDir(), "${dependencyGraphJobCorrelator}.json")
         val fileWriter = DependencyFileWriter(outputFile)
         fileWriter.writeDependencyManifest(gitHubRepositorySnapshotBuilder.build())
+    }
+
+    private fun getOutputDir(): File {
+        if (dependencyGraphReportDir.isNotEmpty()) {
+            return File(dependencyGraphReportDir)
+        }
+
+        if (rootProjectBuildDirectory == null) {
+            throw RuntimeException("Cannot determine report file location")
+        }
+        return File(
+            rootProjectBuildDirectory,
+            "reports/github-dependency-graph-snapshots"
+        )
     }
 
     override fun close() {

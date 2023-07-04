@@ -49,8 +49,7 @@ abstract class BaseExtractorTest extends Specification {
 
     SimpleGradleExecuter createExecuter() {
         // Create a new JsonManifestLoader for each invocation of the executer
-        File manifestFile =
-            testDirectory.file("build/reports/github-dependency-graph-plugin/github-dependency-snapshot-Build.json")
+        File manifestFile = reportDir.file("dummy-job-correlator.json")
         loader = new JsonRepositorySnapshotLoader(manifestFile)
         return createExecuter(testGradleVersion)
     }
@@ -71,6 +70,10 @@ abstract class BaseExtractorTest extends Specification {
 
     TestFile getTestDirectory() {
         return new TestFile(testDir)
+    }
+
+    TestFile getReportDir() {
+        return getTestDirectory().file("reports")
     }
 
     TestFile file(Object... path) {
@@ -108,7 +111,7 @@ abstract class BaseExtractorTest extends Specification {
     }
 
     protected void establishEnvironmentVariables() {
-        environmentVars = new TestEnvironmentVars(testDirectory)
+        environmentVars = new TestEnvironmentVars(testDirectory, reportDir)
         getExecuter().withEnvironmentVars(environmentVars.asEnvironmentMap())
     }
 
@@ -256,20 +259,23 @@ abstract class BaseExtractorTest extends Specification {
 
     static class TestEnvironmentVars {
         final String jobId = UUID.randomUUID().toString()
-        final String jobCorrelator = "Build"
+        final String jobCorrelator = "dummy-job-correlator"
         final String ref = "refs/head/feature/test" + UUID.randomUUID().toString()
         final String sha = fakeSha()
         final String workspace
+        final String reportDir
         final String gitHubToken = UUID.randomUUID().toString()
 
-        TestEnvironmentVars(TestFile testDirectory) {
+        TestEnvironmentVars(TestFile testDirectory, TestFile reportDir) {
             workspace = testDirectory.absolutePath
+            this.reportDir = reportDir.absolutePath
         }
 
         Map<String, String> asEnvironmentMap() {
             return [
                 "GITHUB_DEPENDENCY_GRAPH_JOB_ID"        : jobId,
                 "GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR": jobCorrelator,
+                "GITHUB_DEPENDENCY_GRAPH_REPORT_DIR"    : reportDir,
                 "GITHUB_REF"                            : ref,
                 "GITHUB_SHA"                            : sha,
                 "GITHUB_WORKSPACE"                      : workspace,

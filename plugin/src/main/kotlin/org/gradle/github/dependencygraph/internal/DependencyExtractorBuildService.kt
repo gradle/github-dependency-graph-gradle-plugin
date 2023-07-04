@@ -13,6 +13,7 @@ abstract class DependencyExtractorBuildService :
     interface Parameters : BuildServiceParameters {
         val dependencyGraphJobId: Property<String>
         val dependencyGraphJobCorrelator: Property<String>
+        val dependencyGraphReportDir: Property<String>
         val gitSha: Property<String>
         val gitRef: Property<String>
         val gitWorkspaceDirectory: DirectoryProperty
@@ -22,6 +23,8 @@ abstract class DependencyExtractorBuildService :
         get() = parameters.dependencyGraphJobId.get()
     override val dependencyGraphJobCorrelator: String
         get() = parameters.dependencyGraphJobCorrelator.get()
+    override val dependencyGraphReportDir: String
+        get() = parameters.dependencyGraphReportDir.get()
     override val gitSha: String
         get() = parameters.gitSha.get()
     override val gitRef: String

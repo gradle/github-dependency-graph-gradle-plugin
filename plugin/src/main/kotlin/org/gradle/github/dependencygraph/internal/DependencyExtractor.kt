@@ -5,6 +5,7 @@ import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.internal.artifacts.DefaultProjectComponentIdentifier
 import org.gradle.api.internal.artifacts.configurations.ResolveConfigurationDependenciesBuildOperationType
+import org.gradle.api.logging.Logging
 import org.gradle.github.GitHubDependencyGraphPlugin
 import org.gradle.github.dependencygraph.internal.model.ComponentCoordinates
 import org.gradle.github.dependencygraph.internal.model.ResolvedComponent
@@ -28,11 +29,7 @@ abstract class DependencyExtractor :
     protected abstract val gitRef: String
     protected abstract val gitWorkspaceDirectory: Path
 
-    /**
-     * Can't use this as a proper input:
-     * https://github.com/gradle/gradle/issues/19562
-     */
-    private var fileWriter: DependencyFileWriter = DependencyFileWriter.create()
+    var rootProjectBuildDirectory: File? = null
 
     private val gitHubRepositorySnapshotBuilder by lazy {
         GitHubRepositorySnapshotBuilder(
@@ -48,10 +45,6 @@ abstract class DependencyExtractor :
 
     init {
         println("Creating: DependencyExtractorService")
-    }
-
-    internal fun setRootProjectBuildDirectory(rootProjectBuildDirectory: File) {
-        fileWriter = DependencyFileWriter.create(rootProjectBuildDirectory, dependencyGraphJobCorrelator)
     }
 
     override fun started(buildOperation: BuildOperationDescriptor, startEvent: OperationStartEvent) {
@@ -182,8 +175,19 @@ abstract class DependencyExtractor :
         }
     }
 
-    private fun writeAndGetSnapshotFile(): File =
+    private fun writeAndGetSnapshotFile() {
+        if (rootProjectBuildDirectory == null) {
+            LOGGER.warn("Unable to write dependency graph snapshot: target directory not known")
+            return
+        }
+        val outputFile = File(
+            rootProjectBuildDirectory,
+            "reports/github-dependency-graph-plugin/github-dependency-snapshot-${dependencyGraphJobCorrelator}.json"
+        )
+
+        val fileWriter = DependencyFileWriter(outputFile)
         fileWriter.writeDependencyManifest(gitHubRepositorySnapshotBuilder.build())
+    }
 
     override fun close() {
         if (thrownExceptions.isNotEmpty()) {
@@ -202,6 +206,9 @@ abstract class DependencyExtractor :
                     e
             )
         }
+    }
+    companion object {
+        private val LOGGER = Logging.getLogger(DependencyExtractor::class.java)
     }
 }
 

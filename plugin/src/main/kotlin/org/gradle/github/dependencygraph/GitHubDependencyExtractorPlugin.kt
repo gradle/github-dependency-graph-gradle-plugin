@@ -50,7 +50,7 @@ class GitHubDependencyExtractorPlugin : Plugin<Gradle> {
         gradle.rootProject { project ->
             dependencyExtractorProvider
                 .get()
-                .setRootProjectBuildDirectory(project.buildDir)
+                .rootProjectBuildDirectory = project.buildDir
         }
 
         // Register the service to listen for Build Events

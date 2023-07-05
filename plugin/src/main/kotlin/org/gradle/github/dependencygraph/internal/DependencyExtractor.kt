@@ -5,8 +5,8 @@ import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.internal.artifacts.DefaultProjectComponentIdentifier
 import org.gradle.api.internal.artifacts.configurations.ResolveConfigurationDependenciesBuildOperationType
+import org.gradle.api.logging.Logging
 import org.gradle.github.GitHubDependencyGraphPlugin
-import org.gradle.github.dependencygraph.GitHubDependencyExtractorPlugin
 import org.gradle.github.dependencygraph.internal.model.ComponentCoordinates
 import org.gradle.github.dependencygraph.internal.model.ResolvedComponent
 import org.gradle.github.dependencygraph.internal.model.ResolvedConfiguration
@@ -23,27 +23,22 @@ abstract class DependencyExtractor :
     BuildOperationListener,
     AutoCloseable {
 
-    protected abstract val gitHubJobName: String
-    protected abstract val gitHubRunNumber: String
+    protected abstract val dependencyGraphJobCorrelator: String
+    protected abstract val dependencyGraphJobId: String
+    protected abstract val dependencyGraphReportDir: String
     protected abstract val gitSha: String
     protected abstract val gitRef: String
     protected abstract val gitWorkspaceDirectory: Path
-    protected abstract val gradleBuildPath: String
 
-    /**
-     * Can't use this as a proper input:
-     * https://github.com/gradle/gradle/issues/19562
-     */
-    private var fileWriter: DependencyFileWriter = DependencyFileWriter.create()
+    var rootProjectBuildDirectory: File? = null
 
     private val gitHubRepositorySnapshotBuilder by lazy {
         GitHubRepositorySnapshotBuilder(
-            gitHubJobName = gitHubJobName,
-            gitHubRunNumber = gitHubRunNumber,
+            dependencyGraphJobCorrelator = dependencyGraphJobCorrelator,
+            dependencyGraphJobId = dependencyGraphJobId,
             gitSha = gitSha,
             gitRef = gitRef,
-            gitWorkspaceDirectory = gitWorkspaceDirectory,
-            gradleBuildPath = gradleBuildPath
+            gitWorkspaceDirectory = gitWorkspaceDirectory
         )
     }
 
@@ -51,10 +46,6 @@ abstract class DependencyExtractor :
 
     init {
         println("Creating: DependencyExtractorService")
-    }
-
-    internal fun setRootProjectBuildDirectory(rootProjectBuildDirectory: File) {
-        fileWriter = DependencyFileWriter.create(rootProjectBuildDirectory)
     }
 
     override fun started(buildOperation: BuildOperationDescriptor, startEvent: OperationStartEvent) {
@@ -185,8 +176,25 @@ abstract class DependencyExtractor :
         }
     }
 
-    private fun writeAndGetSnapshotFile(): File =
+    private fun writeAndGetSnapshotFile() {
+        val outputFile = File(getOutputDir(), "${dependencyGraphJobCorrelator}.json")
+        val fileWriter = DependencyFileWriter(outputFile)
         fileWriter.writeDependencyManifest(gitHubRepositorySnapshotBuilder.build())
+    }
+
+    private fun getOutputDir(): File {
+        if (dependencyGraphReportDir.isNotEmpty()) {
+            return File(dependencyGraphReportDir)
+        }
+
+        if (rootProjectBuildDirectory == null) {
+            throw RuntimeException("Cannot determine report file location")
+        }
+        return File(
+            rootProjectBuildDirectory,
+            "reports/github-dependency-graph-snapshots"
+        )
+    }
 
     override fun close() {
         if (thrownExceptions.isNotEmpty()) {
@@ -205,6 +213,9 @@ abstract class DependencyExtractor :
                     e
             )
         }
+    }
+    companion object {
+        private val LOGGER = Logging.getLogger(DependencyExtractor::class.java)
     }
 }
 

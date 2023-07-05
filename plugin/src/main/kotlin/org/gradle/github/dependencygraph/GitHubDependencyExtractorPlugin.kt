@@ -22,14 +22,15 @@ import java.nio.file.Paths
  */
 class GitHubDependencyExtractorPlugin : Plugin<Gradle> {
     private companion object : PluginCompanionUtils() {
-        const val ENV_GITHUB_JOB = "GITHUB_JOB"
-        const val ENV_GITHUB_RUN_NUMBER = "GITHUB_RUN_NUMBER"
+        const val ENV_DEPENDENCY_GRAPH_JOB_ID = "GITHUB_DEPENDENCY_GRAPH_JOB_ID"
+        const val ENV_DEPENDENCY_GRAPH_JOB_CORRELATOR = "GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR"
+        const val ENV_DEPENDENCY_GRAPH_REPORT_DIR = "GITHUB_DEPENDENCY_GRAPH_REPORT_DIR"
         const val ENV_GITHUB_REF = "GITHUB_REF"
         const val ENV_GITHUB_SHA = "GITHUB_SHA"
-        const val ENV_GRADLE_BUILD_PATH = "GRADLE_BUILD_PATH"
 
         /**
          * Environment variable should be set to the workspace directory that the Git repository is checked out in.
+         * This is used to determine relative path to build files referenced in the dependency graph.
          */
         const val ENV_GITHUB_WORKSPACE = "GITHUB_WORKSPACE"
     }
@@ -50,7 +51,7 @@ class GitHubDependencyExtractorPlugin : Plugin<Gradle> {
         gradle.rootProject { project ->
             dependencyExtractorProvider
                 .get()
-                .setRootProjectBuildDirectory(project.buildDir)
+                .rootProjectBuildDirectory = project.buildDir
         }
 
         // Register the service to listen for Build Events
@@ -92,18 +93,18 @@ class GitHubDependencyExtractorPlugin : Plugin<Gradle> {
                 // Create a constant value that the provider will always return.
                 // IE. Memoize the value
                 val constantDependencyExtractor = object : DependencyExtractor() {
-                    override val gitHubJobName: String
-                        get() = gradle.loadEnvironmentVariable(ENV_GITHUB_JOB)
-                    override val gitHubRunNumber: String
-                        get() = gradle.loadEnvironmentVariable(ENV_GITHUB_RUN_NUMBER)
+                    override val dependencyGraphJobCorrelator: String
+                        get() = gradle.loadEnvironmentVariable(ENV_DEPENDENCY_GRAPH_JOB_CORRELATOR)
+                    override val dependencyGraphJobId: String
+                        get() = gradle.loadEnvironmentVariable(ENV_DEPENDENCY_GRAPH_JOB_ID)
+                    override val dependencyGraphReportDir: String
+                        get() = gradle.loadEnvironmentVariable(ENV_DEPENDENCY_GRAPH_REPORT_DIR, "")
                     override val gitSha: String
                         get() = gradle.loadEnvironmentVariable(ENV_GITHUB_SHA)
                     override val gitRef: String
                         get() = gradle.loadEnvironmentVariable(ENV_GITHUB_REF)
                     override val gitWorkspaceDirectory: Path
                         get() = gitWorkspaceDirectory
-                    override val gradleBuildPath: String
-                        get() = gradle.loadEnvironmentVariable(ENV_GRADLE_BUILD_PATH, "")
                 }
                 return providerFactory.provider { constantDependencyExtractor }
             }
@@ -154,12 +155,12 @@ class GitHubDependencyExtractorPlugin : Plugin<Gradle> {
                     DependencyExtractorBuildService::class.java
                 ) { spec ->
                     spec.parameters {
-                        it.gitHubJobName.convention(gradle.loadEnvironmentVariable(ENV_GITHUB_JOB))
-                        it.gitHubRunNumber.convention(gradle.loadEnvironmentVariable(ENV_GITHUB_RUN_NUMBER))
+                        it.dependencyGraphJobCorrelator.convention(gradle.loadEnvironmentVariable(ENV_DEPENDENCY_GRAPH_JOB_CORRELATOR))
+                        it.dependencyGraphJobId.convention(gradle.loadEnvironmentVariable(ENV_DEPENDENCY_GRAPH_JOB_ID))
+                        it.dependencyGraphReportDir.convention(gradle.loadEnvironmentVariable(ENV_DEPENDENCY_GRAPH_REPORT_DIR, ""))
                         it.gitSha.convention(gradle.loadEnvironmentVariable(ENV_GITHUB_SHA))
                         it.gitRef.convention(gradle.loadEnvironmentVariable(ENV_GITHUB_REF))
                         it.gitWorkspaceDirectory.convention(gitWorkspaceDirectory)
-                        it.gradleBuildPath.convention(gradle.loadEnvironmentVariable(ENV_GRADLE_BUILD_PATH, ""))
                     }
                 }
             }

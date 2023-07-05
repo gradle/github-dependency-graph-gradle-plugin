@@ -69,14 +69,16 @@ jobs:
             uses: gradle/gradle-build-action@v2
 
           - name: Self Test :plugin
-            run: ./plugin-self-test
+            run: ./plugin-self-test GitHubDependencyGraphPlugin_generateDependencyGraph
             env:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                GITHUB_DEPENDENCY_GRAPH_JOB_ID: ${{ github.run_id }}
+                GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR: "plugin-self-test"
 
           - name: Save plugin JSON report
             uses: actions/upload-artifact@v3
             with:
                 name: plugin-json
-                path: build/reports/github-dependency-graph-plugin/github-dependency-snapshot.json
+                path: build/reports/github-dependency-graph-snapshots/plugin-self-test.json
                 if-no-files-found: error
 

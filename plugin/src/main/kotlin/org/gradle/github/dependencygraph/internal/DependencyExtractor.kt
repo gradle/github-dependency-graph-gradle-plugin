@@ -162,7 +162,6 @@ abstract class DependencyExtractor :
                 ?.find { it.id == id }
                 ?.properties
                 ?.let { it["URL"] as? URI }
-                ?.toURL()
                 ?.toString()
         }
 

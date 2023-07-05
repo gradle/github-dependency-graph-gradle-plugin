@@ -83,7 +83,7 @@ abstract class DependencyExtractor :
     }
 
     private fun extractProjects(
-        details: LoadProjectsBOT.Details,
+        @Suppress("UNUSED_PARAMETER") details: LoadProjectsBOT.Details,
         result: LoadProjectsBOT.Result
     ) {
         tailrec fun recursivelyExtractProjects(projects: Set<LoadProjectsBOT.Result.Project>) {

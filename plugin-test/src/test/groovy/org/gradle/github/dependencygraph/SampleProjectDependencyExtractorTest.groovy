@@ -28,15 +28,25 @@ class SampleProjectDependencyExtractorTest extends BaseExtractorTest {
         ])
 
         def projectManifest = jsonManifest("project :")
-        def projectDependencies = (projectManifest.resolved as Map).keySet()
-        projectDependencies.containsAll([
-            "com.diffplug.spotless:spotless-plugin-gradle:4.5.1", // 'plugins' dependency
-            "com.diffplug.durian:durian-core:1.2.0", // transitive 'plugins' dependency
+        def projectDependencies = projectManifest.resolved as Map<String, Map>
+
+        [   // plugin dependencies
+            "com.diffplug.spotless:spotless-plugin-gradle:4.5.1",
+            "com.diffplug.durian:durian-core:1.2.0",
+        ].forEach {
+            assert projectDependencies.containsKey(it)
+            assert (projectDependencies[it].package_url as String).endsWith("?repository_url=https%3A%2F%2Fplugins.gradle.org%2Fm2")
+        }
+
+        [   // regular dependencies
             "org.apache.commons:commons-math3:3.6.1", // 'api' dependency
             "com.google.guava:guava:31.1-jre", // 'implementation' dependency
             "com.google.guava:failureaccess:1.0.1", // transitive 'implementation' dependency
             "org.junit.jupiter:junit-jupiter:5.9.1" // testImplementation dependency
-        ])
+        ].forEach {
+            assert projectDependencies.containsKey(it)
+            assert !(projectDependencies[it].package_url as String).contains("?repository_url") // Maven repo default is not included
+        }
     }
 
     def "check java-multi-project sample"() {

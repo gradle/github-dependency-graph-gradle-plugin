@@ -163,6 +163,7 @@ abstract class DependencyExtractor :
                 ?.properties
                 ?.let { it["URL"] as? URI }
                 ?.toString()
+                ?.removeSuffix("/")
         }
 
         /**

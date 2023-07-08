@@ -121,8 +121,13 @@ abstract class BaseExtractorTest extends Specification {
     }
 
     protected String purlFor(String group, String module, String version) {
-        // NOTE: Don't use this in production, this is purely for test code. The escaping here may be insufficient.
-        String repositoryUrlEscaped = URLEncoder.encode(mavenRepo.rootDir.toURI().toASCIIString(), "UTF-8")
+        // NOTE: Don't use this in production, this is purely for test code. The escaping here may be insufficient
+        def repositoryUrl = mavenRepo.rootDir.toURI().toASCIIString()
+        // Remove trailing '/' to be consistent with production code
+        if (repositoryUrl.endsWith("/")) {
+            repositoryUrl = repositoryUrl.substring(0, repositoryUrl.length() - 1)
+        }
+        String repositoryUrlEscaped = URLEncoder.encode(repositoryUrl, "UTF-8")
         return "pkg:maven/${group}/${module}@${version}?repository_url=$repositoryUrlEscaped"
     }
 

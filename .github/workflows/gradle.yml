@@ -33,7 +33,7 @@ jobs:
       matrix:
         # Test newest 5.x, 6.x and 7.x, plus oldest patched 7.x and 8.x
         # Latest 8.x is tested in 'quick-check' job
-        gradle-version: [ "5.6.4", "6.9.4", "7.0.2", "7.6.1", "8.0.2"]
+        gradle-version: [ "5.6.4", "6.9.4", "7.0.2", "7.6.2", "8.0.2"]
     runs-on: ubuntu-latest
     env:
       GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}

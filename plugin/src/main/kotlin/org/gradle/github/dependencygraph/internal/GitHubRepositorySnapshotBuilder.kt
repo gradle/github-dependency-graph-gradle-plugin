@@ -4,9 +4,6 @@ import com.github.packageurl.PackageURLBuilder
 import org.gradle.github.dependencygraph.internal.model.ResolvedComponent
 import org.gradle.github.dependencygraph.internal.model.ResolvedConfiguration
 import org.gradle.github.dependencygraph.internal.json.*
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.util.concurrent.ConcurrentHashMap
 
 private const val DEFAULT_MAVEN_REPOSITORY_URL = "https://repo.maven.apache.org/maven2"
 
@@ -14,8 +11,7 @@ class GitHubRepositorySnapshotBuilder(
     private val dependencyGraphJobCorrelator: String,
     private val dependencyGraphJobId: String,
     private val gitSha: String,
-    private val gitRef: String,
-    private val gitWorkspaceDirectory: Path
+    private val gitRef: String
 ) {
 
     private val detector by lazy { GitHubDetector() }
@@ -27,46 +23,23 @@ class GitHubRepositorySnapshotBuilder(
         )
     }
 
-    /**
-     * Map of the project identifier to the relative path of the git workspace directory [gitWorkspaceDirectory].
-     */
-    private val projectToRelativeBuildFile = ConcurrentHashMap<String, String>()
-
-    /**
-     * Map of all resolved configurations by name
-     */
-    private val resolvedConfigurations = mutableListOf<ResolvedConfiguration>()
-
-    fun addProject(identityPath: String, buildFileAbsolutePath: String) {
-        val buildFilePath = Paths.get(buildFileAbsolutePath)
-        projectToRelativeBuildFile[identityPath] = gitWorkspaceDirectory.relativize(buildFilePath).toString()
-    }
-
-    fun addResolvedConfiguration(configuration: ResolvedConfiguration) {
-        resolvedConfigurations.add(configuration)
-    }
-
-    fun build(): GitHubRepositorySnapshot {
+    fun build(resolvedConfigurations: MutableList<ResolvedConfiguration>, buildLayout: BuildLayout): GitHubRepositorySnapshot {
         val manifestDependencies = mutableMapOf<String, DependencyCollector>()
-        val manifestFiles = mutableMapOf<String, GitHubManifestFile?>()
 
-        for (configuration in resolvedConfigurations) {
-            val manifestName = manifestName(configuration)
-            val dependencyCollector = manifestDependencies.getOrPut(manifestName) { DependencyCollector() }
-            val rootComponent = configuration.getRootComponent()
-            for (component in configuration.components) {
-                dependencyCollector.addResolved(component, rootComponent)
+        for (resolvedConfiguration in resolvedConfigurations) {
+            val manifestName = resolvedConfiguration.id
+            val dependencyCollector = manifestDependencies.getOrPut(manifestName) { DependencyCollector(resolvedConfiguration) }
+            for (component in resolvedConfiguration.allDependencies) {
+                dependencyCollector.addResolved(component)
             }
-
-            // If not assigned to a project, assume the root project for the assigned build.
-            manifestFiles.putIfAbsent(manifestName, buildFileForProject(configuration.identityPath ?: configuration.buildPath))
         }
 
         val manifests = manifestDependencies.mapValues { (name, collector) ->
+            val manifestFile = buildLayout.getBuildFile(collector.resolvedConfiguration)
             GitHubManifest(
                 name,
                 collector.getDependencies(),
-                manifestFiles[name]
+                manifestFile
             )
         }
         return GitHubRepositorySnapshot(
@@ -78,35 +51,21 @@ class GitHubRepositorySnapshotBuilder(
         )
     }
 
-    private fun manifestName(config: ResolvedConfiguration): String {
-        if (config.identityPath != null) {
-            return "project ${config.identityPath}"
-        }
-        return "build ${config.buildPath}"
+    private fun manifestName(root: ResolvedConfiguration): String {
+        return root.id
     }
 
-    private fun buildFileForProject(identityPath: String): GitHubManifestFile? {
-        return projectToRelativeBuildFile[identityPath]?.let {
-            // Cleanup the path for Windows systems
-            val sourceLocation = it.replace('\\', '/')
-            GitHubManifestFile(sourceLocation = sourceLocation)
-        }
-    }
-
-    private class DependencyCollector {
+    private class DependencyCollector(val resolvedConfiguration: ResolvedConfiguration) {
         private val dependencyBuilders: MutableMap<String, GitHubDependencyBuilder> = mutableMapOf()
 
         /**
          * Merge each resolved component with the same ID into a single GitHubDependency.
          */
-        fun addResolved(component: ResolvedComponent, rootComponent: ResolvedComponent) {
-            if (component.id == rootComponent.id) {
-                return
-            }
+        fun addResolved(component: ResolvedComponent) {
             val dep = dependencyBuilders.getOrPut(component.id) {
                 GitHubDependencyBuilder(packageUrl(component))
             }
-            dep.addRelationship(relationship(rootComponent, component))
+            dep.addRelationship(relationship(component))
             dep.addDependencies(component.dependencies)
         }
 
@@ -119,8 +78,8 @@ class GitHubRepositorySnapshotBuilder(
             }
         }
 
-        private fun relationship(rootComponent: ResolvedComponent, component: ResolvedComponent) =
-            if (rootComponent.dependencies.contains(component.id)) GitHubDependency.Relationship.direct else GitHubDependency.Relationship.indirect
+        private fun relationship(component: ResolvedComponent) =
+            if (resolvedConfiguration.directDependencies.contains(component)) GitHubDependency.Relationship.direct else GitHubDependency.Relationship.indirect
 
         private fun packageUrl(component: ResolvedComponent) =
             PackageURLBuilder
@@ -160,4 +119,5 @@ class GitHubRepositorySnapshotBuilder(
             }
         }
     }
+
 }

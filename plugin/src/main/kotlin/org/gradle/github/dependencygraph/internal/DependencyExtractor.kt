@@ -5,7 +5,6 @@ import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.internal.artifacts.DefaultProjectComponentIdentifier
 import org.gradle.api.internal.artifacts.configurations.ResolveConfigurationDependenciesBuildOperationType
-import org.gradle.api.logging.Logging
 import org.gradle.github.GitHubDependencyGraphPlugin
 import org.gradle.github.dependencygraph.internal.model.ComponentCoordinates
 import org.gradle.github.dependencygraph.internal.model.ResolvedComponent
@@ -32,14 +31,16 @@ abstract class DependencyExtractor :
 
     var rootProjectBuildDirectory: File? = null
 
-    private val gitHubRepositorySnapshotBuilder by lazy {
-        GitHubRepositorySnapshotBuilder(
-            dependencyGraphJobCorrelator = dependencyGraphJobCorrelator,
-            dependencyGraphJobId = dependencyGraphJobId,
-            gitSha = gitSha,
-            gitRef = gitRef,
-            gitWorkspaceDirectory = gitWorkspaceDirectory
-        )
+    /**
+     * Map of all resolved configurations by name
+     */
+    private val resolvedConfigurations = mutableListOf<ResolvedConfiguration>()
+
+    /**
+     * Map of the project identifier to the relative path of the git workspace directory [gitWorkspaceDirectory].
+     */
+    private val buildLayout by lazy {
+        BuildLayout(gitWorkspaceDirectory)
     }
 
     private val thrownExceptions = Collections.synchronizedList(mutableListOf<Throwable>())
@@ -89,7 +90,7 @@ abstract class DependencyExtractor :
         tailrec fun recursivelyExtractProjects(projects: Set<LoadProjectsBOT.Result.Project>) {
             if (projects.isEmpty()) return
             projects.forEach { project ->
-                gitHubRepositorySnapshotBuilder.addProject(project.identityPath, project.buildFile)
+                buildLayout.addProject(project.identityPath, project.buildFile)
             }
             val newProjects = projects.flatMap { it.children }.toSet()
             recursivelyExtractProjects(newProjects)
@@ -114,31 +115,45 @@ abstract class DependencyExtractor :
         // This is because `details.buildPath` is always ':', which isn't correct in a composite build.
         // It is possible to do better. By tracking the current build operation context, we can assign more precisely.
         // See the Gradle Enterprise Build Scan Plugin: `ConfigurationResolutionCapturer_5_0`
-        val resolvedConfiguration = ResolvedConfiguration(details.buildPath, projectIdentityPath, details.configurationName)
-        walkResolvedComponentResult(rootComponent, repositoryLookup, resolvedConfiguration)
+        val rootPath = projectIdentityPath ?: details.buildPath
+        val rootId = if (projectIdentityPath == null) "build $rootPath" else "project $rootPath"
+        val resolvedConfiguration = ResolvedConfiguration(rootId, rootPath)
 
-        gitHubRepositorySnapshotBuilder.addResolvedConfiguration(resolvedConfiguration)
+        for (directDependency in getResolvedDependencies(rootComponent)) {
+            val directDep = createComponentNode(componentId(directDependency), directDependency, repositoryLookup)
+            resolvedConfiguration.addDirectDependency(directDep)
+
+            walkComponentDependencies(directDependency, repositoryLookup, resolvedConfiguration)
+        }
+
+        resolvedConfigurations.add(resolvedConfiguration)
     }
 
-    private fun walkResolvedComponentResult(
+    private fun walkComponentDependencies(
         component: ResolvedComponentResult,
         repositoryLookup: RepositoryUrlLookup,
         resolvedConfiguration: ResolvedConfiguration
     ) {
-        val componentId = componentId(component)
-        if (resolvedConfiguration.hasComponent(componentId)) {
-            return
-        }
+        val dependencyComponents = getResolvedDependencies(component)
+        for (dependencyComponent in dependencyComponents) {
+            val dependencyId = componentId(dependencyComponent)
+            if (!resolvedConfiguration.hasDependency(dependencyId)) {
+                val dependencyNode = createComponentNode(dependencyId, dependencyComponent, repositoryLookup)
+                resolvedConfiguration.addDependency(dependencyNode)
 
-        val repositoryUrl = repositoryLookup.doLookup(component)
-        val resolvedDependencies = component.dependencies.filterIsInstance<ResolvedDependencyResult>().map { it.selected }
-
-        resolvedConfiguration.components.add(ResolvedComponent(componentId, coordinates(component), repositoryUrl, resolvedDependencies.map { componentId(it) }))
-
-        resolvedDependencies
-            .forEach {
-                walkResolvedComponentResult(it, repositoryLookup, resolvedConfiguration)
+                walkComponentDependencies(dependencyComponent, repositoryLookup, resolvedConfiguration)
             }
+        }
+    }
+
+    private fun getResolvedDependencies(component: ResolvedComponentResult): List<ResolvedComponentResult> {
+        return component.dependencies.filterIsInstance<ResolvedDependencyResult>().map { it.selected }.filter { it != component }
+    }
+
+    private fun createComponentNode(componentId: String, component: ResolvedComponentResult, repositoryLookup: RepositoryUrlLookup): ResolvedComponent {
+        val componentDependencies = component.dependencies.filterIsInstance<ResolvedDependencyResult>().map { componentId(it.selected) }
+        val repositoryUrl = repositoryLookup.doLookup(component)
+        return ResolvedComponent(componentId, coordinates(component), repositoryUrl, componentDependencies)
     }
 
     private fun componentId(component: ResolvedComponentResult): String {
@@ -179,7 +194,17 @@ abstract class DependencyExtractor :
     private fun writeAndGetSnapshotFile() {
         val outputFile = File(getOutputDir(), "${dependencyGraphJobCorrelator}.json")
         val fileWriter = DependencyFileWriter(outputFile)
-        fileWriter.writeDependencyManifest(gitHubRepositorySnapshotBuilder.build())
+
+        val gitHubRepositorySnapshotBuilder =
+            GitHubRepositorySnapshotBuilder(
+                dependencyGraphJobCorrelator = dependencyGraphJobCorrelator,
+                dependencyGraphJobId = dependencyGraphJobId,
+                gitSha = gitSha,
+                gitRef = gitRef
+            )
+
+        val snapshot = gitHubRepositorySnapshotBuilder.build(resolvedConfigurations, buildLayout)
+        fileWriter.writeDependencySnapshot(snapshot)
     }
 
     private fun getOutputDir(): File {
@@ -213,9 +238,6 @@ abstract class DependencyExtractor :
                     e
             )
         }
-    }
-    companion object {
-        private val LOGGER = Logging.getLogger(DependencyExtractor::class.java)
     }
 }
 

@@ -125,7 +125,7 @@ abstract class BaseExtractorTest extends Specification {
         def repositoryUrl = mavenRepo.rootDir.toURI().toASCIIString()
         // Remove trailing '/' to be consistent with production code
         if (repositoryUrl.endsWith("/")) {
-            repositoryUrl = repositoryUrl.substring(0, repositoryUrl.length() - 1)
+            repositoryUrl = repositoryUrl.dropRight(1)
         }
         String repositoryUrlEscaped = URLEncoder.encode(repositoryUrl, "UTF-8")
         return "pkg:maven/${group}/${module}@${version}?repository_url=$repositoryUrlEscaped"

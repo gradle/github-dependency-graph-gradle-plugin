@@ -8,6 +8,8 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.ConcurrentHashMap
 
+private const val DEFAULT_MAVEN_REPOSITORY_URL = "https://repo.maven.apache.org/maven2"
+
 class GitHubRepositorySnapshotBuilder(
     private val dependencyGraphJobCorrelator: String,
     private val dependencyGraphJobId: String,
@@ -128,7 +130,7 @@ class GitHubRepositorySnapshotBuilder(
                 .withName(component.coordinates.module)
                 .withVersion(component.coordinates.version)
                 .also {
-                    if (component.repositoryUrl != null) {
+                    if (component.repositoryUrl != null && component.repositoryUrl != DEFAULT_MAVEN_REPOSITORY_URL) {
                         it.withQualifier("repository_url", component.repositoryUrl)
                     }
                 }

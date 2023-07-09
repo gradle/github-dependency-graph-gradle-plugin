@@ -13,6 +13,8 @@ dependencies {
     testImplementation(libs.json.schema.validator)
     testImplementation(libs.apache.commons.io)
 
+    testRuntimeOnly(project(":plugin", "shadowJar"))
+
     testFixturesApi(gradleTestKit())
     testFixturesApi(libs.spock.core)
     testFixturesApi(libs.spock.junit4)

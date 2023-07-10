@@ -31,7 +31,7 @@ class GitHubRepositorySnapshotBuilder(
             val manifestName = manifestName(resolutionRoot)
             val dependencyCollector = manifestDependencies.getOrPut(manifestName) { DependencyCollector() }
             for (component in resolutionRoot.allDependencies) {
-                dependencyCollector.addResolved(component, resolutionRoot)
+                dependencyCollector.addResolved(component)
             }
 
             // If not assigned to a project, assume the root project for the assigned build.
@@ -65,11 +65,11 @@ class GitHubRepositorySnapshotBuilder(
         /**
          * Merge each resolved component with the same ID into a single GitHubDependency.
          */
-        fun addResolved(component: ResolvedComponent, resolvedConfiguration: ResolvedConfiguration) {
+        fun addResolved(component: ResolvedComponent) {
             val dep = dependencyBuilders.getOrPut(component.id) {
                 GitHubDependencyBuilder(packageUrl(component))
             }
-            dep.addRelationship(relationship(resolvedConfiguration, component))
+            dep.addRelationship(relationship(component))
             dep.addDependencies(component.dependencies)
         }
 
@@ -82,8 +82,8 @@ class GitHubRepositorySnapshotBuilder(
             }
         }
 
-        private fun relationship(resolvedConfiguration: ResolvedConfiguration, component: ResolvedComponent) =
-            if (resolvedConfiguration.directDependencies.contains(component)) GitHubDependency.Relationship.direct else GitHubDependency.Relationship.indirect
+        private fun relationship(component: ResolvedComponent) =
+            if (component.direct) GitHubDependency.Relationship.direct else GitHubDependency.Relationship.indirect
 
         private fun packageUrl(component: ResolvedComponent) =
             PackageURLBuilder

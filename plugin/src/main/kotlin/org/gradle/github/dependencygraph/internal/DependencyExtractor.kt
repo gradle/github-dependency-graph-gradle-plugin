@@ -120,8 +120,8 @@ abstract class DependencyExtractor :
         val resolvedConfiguration = ResolvedConfiguration(rootId, rootPath)
 
         for (directDependency in getResolvedDependencies(rootComponent)) {
-            val directDep = createComponentNode(componentId(directDependency), directDependency, repositoryLookup)
-            resolvedConfiguration.addDirectDependency(directDep)
+            val directDep = createComponentNode(componentId(directDependency), true, directDependency, repositoryLookup)
+            resolvedConfiguration.addDependency(directDep)
 
             walkComponentDependencies(directDependency, repositoryLookup, resolvedConfiguration)
         }
@@ -138,7 +138,7 @@ abstract class DependencyExtractor :
         for (dependencyComponent in dependencyComponents) {
             val dependencyId = componentId(dependencyComponent)
             if (!resolvedConfiguration.hasDependency(dependencyId)) {
-                val dependencyNode = createComponentNode(dependencyId, dependencyComponent, repositoryLookup)
+                val dependencyNode = createComponentNode(dependencyId, false, dependencyComponent, repositoryLookup)
                 resolvedConfiguration.addDependency(dependencyNode)
 
                 walkComponentDependencies(dependencyComponent, repositoryLookup, resolvedConfiguration)
@@ -150,10 +150,10 @@ abstract class DependencyExtractor :
         return component.dependencies.filterIsInstance<ResolvedDependencyResult>().map { it.selected }.filter { it != component }
     }
 
-    private fun createComponentNode(componentId: String, component: ResolvedComponentResult, repositoryLookup: RepositoryUrlLookup): ResolvedComponent {
+    private fun createComponentNode(componentId: String, direct: Boolean, component: ResolvedComponentResult, repositoryLookup: RepositoryUrlLookup): ResolvedComponent {
         val componentDependencies = component.dependencies.filterIsInstance<ResolvedDependencyResult>().map { componentId(it.selected) }
         val repositoryUrl = repositoryLookup.doLookup(component)
-        return ResolvedComponent(componentId, coordinates(component), repositoryUrl, componentDependencies)
+        return ResolvedComponent(componentId, direct, coordinates(component), repositoryUrl, componentDependencies)
     }
 
     private fun componentId(component: ResolvedComponentResult): String {

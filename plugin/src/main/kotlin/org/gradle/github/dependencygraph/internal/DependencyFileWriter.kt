@@ -7,7 +7,7 @@ import java.io.File
 class DependencyFileWriter(val manifestFile: File) {
     private var writtenFile: Boolean = false
 
-    fun writeDependencyManifest(graph: GitHubRepositorySnapshot): File {
+    fun writeDependencySnapshot(graph: GitHubRepositorySnapshot): File {
         if (writtenFile) {
             return manifestFile
         }

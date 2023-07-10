@@ -231,6 +231,53 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         ])
     }
 
+    def "merges transitive dependencies with different resolution scopes"() {
+
+        def transitiveDep = mavenRepo.module("org.test", "transitive", "1.0")
+            .dependsOn(foo)
+            .dependsOn([scope: "runtime"], bar).publish()
+        def directDep = mavenRepo.module("org.test", "direct", "1.0").dependsOn(transitiveDep).publish()
+
+        given:
+        buildFile << """
+            apply plugin: 'java-library'
+            dependencies {
+                api 'org.test:direct:1.0'
+            }
+            tasks.register("resolveCompileClasspath") {
+              doLast {
+                println(configurations.compileClasspath.files())
+              }
+            }
+            tasks.register("resolveRuntimeClasspath") {
+              doLast {
+                println(configurations.runtimeClasspath.files())
+              }
+            }
+        """
+
+        when:
+        run("resolveCompileClasspath", "resolveRuntimeClasspath")
+
+        then:
+        manifestNames == ["project :"]
+
+        def manifestA = gitHubManifest("project :")
+        manifestA.sourceFile == "build.gradle"
+        manifestA.assertResolved([
+            "org.test:direct:1.0"    : [package_url: (purlFor(directDep)),
+                                        dependencies: ["org.test:transitive:1.0"]],
+            "org.test:transitive:1.0": [package_url: (purlFor(transitiveDep)),
+                                        dependencies: ["org.test:foo:1.0", "org.test:bar:1.0"],
+                                        relationship: "indirect"],
+            "org.test:foo:1.0"       : [package_url: purlFor(foo),
+                                        relationship: "indirect"],
+            "org.test:bar:1.0"       : [package_url: purlFor(bar),
+                                        relationship: "indirect"]
+        ])
+    }
+
+
     def "extracts direct and transitive dependencies from buildscript"() {
         given:
         buildFile << """

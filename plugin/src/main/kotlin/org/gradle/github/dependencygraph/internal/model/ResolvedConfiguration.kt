@@ -1,8 +1,9 @@
 package org.gradle.github.dependencygraph.internal.model
 
-data class ResolvedConfiguration(val id: String,
-                                 val identityPath: String,
-                                 val allDependencies: MutableList<ResolvedComponent> = mutableListOf()) {
+data class ResolvedConfiguration(
+    val rootComponent: ResolutionRoot,
+    val allDependencies: MutableList<ResolvedComponent> = mutableListOf()
+) {
     fun addDependency(component: ResolvedComponent) {
         allDependencies.add(component)
     }

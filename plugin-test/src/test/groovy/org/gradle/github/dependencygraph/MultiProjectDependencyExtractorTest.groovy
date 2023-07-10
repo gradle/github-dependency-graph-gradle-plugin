@@ -69,7 +69,7 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         }
     }
 
-    def "extracts transitive project dependencies in multi-project build"() {
+    def "extracts transitive project dependencies in multi-project build with #description"() {
         given:
         settingsFile << "include 'a', 'b', 'c'"
         buildFile << """
@@ -89,15 +89,16 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
                 apply plugin: 'java'
                 dependencies {
                     implementation project(':b')
+                    implementation 'org.test:bar:1.0'
                 }
             }
         """
 
         when:
-        run()
+        run(task)
 
         then:
-        manifestNames == ["project :a", "project :b", "project :c"]
+        manifestNames == ["project :a", "project :c"]
 
         def manifestA = gitHubManifest("project :a")
         manifestA.sourceFile == "a/build.gradle"
@@ -105,37 +106,16 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
             "org.test:foo:1.0": [package_url: purlFor(foo)]
         ])
 
-        def manifestB = gitHubManifest("project :b")
-        manifestB.sourceFile == "b/build.gradle"
-        manifestB.assertResolved([
-            "project :a"      : [
-                package_url : "pkg:maven/org.test/a@1.0",
-                dependencies: ["org.test:foo:1.0"]
-            ],
-            "org.test:foo:1.0": [
-                package_url : purlFor(foo),
-                relationship: "indirect"
-            ]
-        ])
-
         def manifestC = gitHubManifest("project :c")
         manifestC.sourceFile == "c/build.gradle"
         manifestC.assertResolved([
-            "project :b"      : [
-                package_url : "pkg:maven/org.test/b@1.0",
-                dependencies: ["project :a"]
-            ],
-            "project :a"      : [
-                package_url : "pkg:maven/org.test/a@1.0",
-                relationship: "indirect",
-                dependencies: ["org.test:foo:1.0"]
-            ],
-            "org.test:foo:1.0": [
-                package_url : purlFor(foo),
-                relationship: "indirect"
-            ]
-
+            "org.test:bar:1.0": [package_url: purlFor(bar)]
         ])
+
+        where:
+        task                                                  | description
+        "GitHubDependencyGraphPlugin_generateDependencyGraph" | "All dependencies resolved"
+        ":c:dependencies"                                     | "One project resolved"
     }
 
     def "extracts dependencies from buildSrc project"() {
@@ -200,6 +180,7 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
             apply plugin: 'java'
             dependencies {
                 implementation 'org.test.included:included-child'
+                implementation 'org.test:bar:1.0'
             }
         """
 
@@ -212,14 +193,7 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         def projectManifest = gitHubManifest("project :")
         projectManifest.sourceFile == "build.gradle"
         projectManifest.assertResolved([
-            "project :included-child": [
-                package_url : "pkg:maven/org.test.included/included-child@1.0",
-                dependencies: ["org.test:foo:1.0"]
-            ],
-            "org.test:foo:1.0"       : [
-                package_url : purlFor(foo),
-                relationship: "indirect"
-            ]
+            "org.test:bar:1.0": [package_url: purlFor(bar)]
         ])
 
         def includedManifest = gitHubManifest("project :included-child")

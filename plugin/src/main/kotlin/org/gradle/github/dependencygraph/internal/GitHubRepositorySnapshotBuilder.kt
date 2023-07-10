@@ -4,6 +4,7 @@ import com.github.packageurl.PackageURLBuilder
 import org.gradle.github.dependencygraph.internal.model.ResolvedComponent
 import org.gradle.github.dependencygraph.internal.model.ResolvedConfiguration
 import org.gradle.github.dependencygraph.internal.json.*
+import org.gradle.github.dependencygraph.internal.model.ResolutionRoot
 
 private const val DEFAULT_MAVEN_REPOSITORY_URL = "https://repo.maven.apache.org/maven2"
 
@@ -25,25 +26,25 @@ class GitHubRepositorySnapshotBuilder(
 
     fun build(resolvedConfigurations: MutableList<ResolvedConfiguration>, buildLayout: BuildLayout): GitHubRepositorySnapshot {
         val manifestDependencies = mutableMapOf<String, DependencyCollector>()
-        val manifestFiles = mutableMapOf<String, GitHubManifestFile?>()
 
         for (resolutionRoot in resolvedConfigurations) {
-            val manifestName = manifestName(resolutionRoot)
-            val dependencyCollector = manifestDependencies.getOrPut(manifestName) { DependencyCollector() }
-            for (component in resolutionRoot.allDependencies) {
-                dependencyCollector.addResolved(component)
-            }
+            for (dependency in resolutionRoot.allDependencies) {
+                // Ignore project dependencies (transitive deps of projects will be reported with project)
+                if (isProject(dependency)) continue
 
-            // If not assigned to a project, assume the root project for the assigned build.
-            manifestFiles.putIfAbsent(manifestName, buildLayout.getBuildFile(resolutionRoot))
+                val rootComponent = dependency.rootComponent
+                val dependencyCollector = manifestDependencies.getOrPut(rootComponent.id) { DependencyCollector(rootComponent) }
+                dependencyCollector.addResolved(dependency)
+            }
         }
 
         val manifests = manifestDependencies.mapValues { (name, collector) ->
+            val manifestFile = buildLayout.getBuildFile(collector.rootComponent)
 
             GitHubManifest(
                 name,
                 collector.getDependencies(),
-                manifestFiles[name]
+                manifestFile
             )
         }
         return GitHubRepositorySnapshot(
@@ -55,11 +56,12 @@ class GitHubRepositorySnapshotBuilder(
         )
     }
 
-    private fun manifestName(root: ResolvedConfiguration): String {
-        return root.id
+    // TODO:DAZ Model this better
+    private fun isProject(dependency: ResolvedComponent): Boolean {
+        return dependency.id.startsWith("project ")
     }
 
-    private class DependencyCollector() {
+    private class DependencyCollector(val rootComponent: ResolutionRoot) {
         private val dependencyBuilders: MutableMap<String, GitHubDependencyBuilder> = mutableMapOf()
 
         /**

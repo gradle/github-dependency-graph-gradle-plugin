@@ -7,6 +7,7 @@ import org.gradle.api.internal.artifacts.DefaultProjectComponentIdentifier
 import org.gradle.api.internal.artifacts.configurations.ResolveConfigurationDependenciesBuildOperationType
 import org.gradle.github.GitHubDependencyGraphPlugin
 import org.gradle.github.dependencygraph.internal.model.ComponentCoordinates
+import org.gradle.github.dependencygraph.internal.model.ResolutionRoot
 import org.gradle.github.dependencygraph.internal.model.ResolvedComponent
 import org.gradle.github.dependencygraph.internal.model.ResolvedConfiguration
 import org.gradle.internal.exceptions.DefaultMultiCauseException
@@ -116,14 +117,21 @@ abstract class DependencyExtractor :
         // It is possible to do better. By tracking the current build operation context, we can assign more precisely.
         // See the Gradle Enterprise Build Scan Plugin: `ConfigurationResolutionCapturer_5_0`
         val rootPath = projectIdentityPath ?: details.buildPath
-        val rootId = if (projectIdentityPath == null) "build $rootPath" else "project $rootPath"
-        val resolvedConfiguration = ResolvedConfiguration(rootId, rootPath)
+        val rootId = if (projectIdentityPath == null) "build $rootPath" else componentId(rootComponent)
+        val resolutionRoot = ResolutionRoot(rootId, rootPath)
+        val resolvedConfiguration = ResolvedConfiguration(resolutionRoot)
 
         for (directDependency in getResolvedDependencies(rootComponent)) {
-            val directDep = createComponentNode(componentId(directDependency), true, directDependency, repositoryLookup)
+            val directDep = createComponentNode(
+                componentId(directDependency),
+                resolutionRoot,
+                true,
+                directDependency,
+                repositoryLookup
+            )
             resolvedConfiguration.addDependency(directDep)
 
-            walkComponentDependencies(directDependency, repositoryLookup, resolvedConfiguration)
+            walkComponentDependencies(directDependency, resolutionRoot, repositoryLookup, resolvedConfiguration)
         }
 
         resolvedConfigurations.add(resolvedConfiguration)
@@ -131,29 +139,41 @@ abstract class DependencyExtractor :
 
     private fun walkComponentDependencies(
         component: ResolvedComponentResult,
+        resolveContext: ResolutionRoot,
         repositoryLookup: RepositoryUrlLookup,
         resolvedConfiguration: ResolvedConfiguration
     ) {
+        val rootComponent = getResolutionRoot(component, resolveContext)
+        val direct = rootComponent != resolveContext
+
         val dependencyComponents = getResolvedDependencies(component)
         for (dependencyComponent in dependencyComponents) {
             val dependencyId = componentId(dependencyComponent)
             if (!resolvedConfiguration.hasDependency(dependencyId)) {
-                val dependencyNode = createComponentNode(dependencyId, false, dependencyComponent, repositoryLookup)
+                val dependencyNode = createComponentNode(dependencyId, rootComponent, direct, dependencyComponent, repositoryLookup)
                 resolvedConfiguration.addDependency(dependencyNode)
 
-                walkComponentDependencies(dependencyComponent, repositoryLookup, resolvedConfiguration)
+                walkComponentDependencies(dependencyComponent, rootComponent, repositoryLookup, resolvedConfiguration)
             }
         }
+    }
+
+    private fun getResolutionRoot(component: ResolvedComponentResult, resolveContext: ResolutionRoot): ResolutionRoot {
+        val componentId = component.id
+        if (componentId is DefaultProjectComponentIdentifier) {
+            return ResolutionRoot(componentId(component), componentId.identityPath.path)
+        }
+        return resolveContext
     }
 
     private fun getResolvedDependencies(component: ResolvedComponentResult): List<ResolvedComponentResult> {
         return component.dependencies.filterIsInstance<ResolvedDependencyResult>().map { it.selected }.filter { it != component }
     }
 
-    private fun createComponentNode(componentId: String, direct: Boolean, component: ResolvedComponentResult, repositoryLookup: RepositoryUrlLookup): ResolvedComponent {
+    private fun createComponentNode(componentId: String, rootComponent: ResolutionRoot, direct: Boolean, component: ResolvedComponentResult, repositoryLookup: RepositoryUrlLookup): ResolvedComponent {
         val componentDependencies = component.dependencies.filterIsInstance<ResolvedDependencyResult>().map { componentId(it.selected) }
         val repositoryUrl = repositoryLookup.doLookup(component)
-        return ResolvedComponent(componentId, direct, coordinates(component), repositoryUrl, componentDependencies)
+        return ResolvedComponent(componentId, rootComponent, direct, coordinates(component), repositoryUrl, componentDependencies)
     }
 
     private fun componentId(component: ResolvedComponentResult): String {

@@ -329,7 +329,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         run()
 
         then:
-        manifestNames == ["build :", "project :"]
+        manifestNames == ["build :"]
         def settingsManifest = gitHubManifest("build :")
         settingsManifest.sourceFile == "build.gradle"
 
@@ -412,7 +412,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         run()
 
         then:
-        manifestNames == ["build :", "project :"]
+        manifestNames == ["build :"]
         def buildManifest = gitHubManifest("build :")
         buildManifest.sourceFile == "build.gradle"
         buildManifest.assertResolved([
@@ -425,9 +425,5 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
                 relationship: "indirect"
             ]
         ])
-
-        def manifest = gitHubManifest("project :")
-        manifest.sourceFile == "build.gradle"
-        manifest.assertResolved([:])
     }
 }

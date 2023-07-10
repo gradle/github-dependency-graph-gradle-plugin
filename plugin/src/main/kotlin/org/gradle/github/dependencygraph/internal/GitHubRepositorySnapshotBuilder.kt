@@ -25,21 +25,25 @@ class GitHubRepositorySnapshotBuilder(
 
     fun build(resolvedConfigurations: MutableList<ResolvedConfiguration>, buildLayout: BuildLayout): GitHubRepositorySnapshot {
         val manifestDependencies = mutableMapOf<String, DependencyCollector>()
+        val manifestFiles = mutableMapOf<String, GitHubManifestFile?>()
 
-        for (resolvedConfiguration in resolvedConfigurations) {
-            val manifestName = resolvedConfiguration.id
-            val dependencyCollector = manifestDependencies.getOrPut(manifestName) { DependencyCollector(resolvedConfiguration) }
-            for (component in resolvedConfiguration.allDependencies) {
-                dependencyCollector.addResolved(component)
+        for (resolutionRoot in resolvedConfigurations) {
+            val manifestName = manifestName(resolutionRoot)
+            val dependencyCollector = manifestDependencies.getOrPut(manifestName) { DependencyCollector() }
+            for (component in resolutionRoot.allDependencies) {
+                dependencyCollector.addResolved(component, resolutionRoot)
             }
+
+            // If not assigned to a project, assume the root project for the assigned build.
+            manifestFiles.putIfAbsent(manifestName, buildLayout.getBuildFile(resolutionRoot))
         }
 
         val manifests = manifestDependencies.mapValues { (name, collector) ->
-            val manifestFile = buildLayout.getBuildFile(collector.resolvedConfiguration)
+
             GitHubManifest(
                 name,
                 collector.getDependencies(),
-                manifestFile
+                manifestFiles[name]
             )
         }
         return GitHubRepositorySnapshot(
@@ -55,17 +59,17 @@ class GitHubRepositorySnapshotBuilder(
         return root.id
     }
 
-    private class DependencyCollector(val resolvedConfiguration: ResolvedConfiguration) {
+    private class DependencyCollector() {
         private val dependencyBuilders: MutableMap<String, GitHubDependencyBuilder> = mutableMapOf()
 
         /**
          * Merge each resolved component with the same ID into a single GitHubDependency.
          */
-        fun addResolved(component: ResolvedComponent) {
+        fun addResolved(component: ResolvedComponent, resolvedConfiguration: ResolvedConfiguration) {
             val dep = dependencyBuilders.getOrPut(component.id) {
                 GitHubDependencyBuilder(packageUrl(component))
             }
-            dep.addRelationship(relationship(component))
+            dep.addRelationship(relationship(resolvedConfiguration, component))
             dep.addDependencies(component.dependencies)
         }
 
@@ -78,7 +82,7 @@ class GitHubRepositorySnapshotBuilder(
             }
         }
 
-        private fun relationship(component: ResolvedComponent) =
+        private fun relationship(resolvedConfiguration: ResolvedConfiguration, component: ResolvedComponent) =
             if (resolvedConfiguration.directDependencies.contains(component)) GitHubDependency.Relationship.direct else GitHubDependency.Relationship.indirect
 
         private fun packageUrl(component: ResolvedComponent) =

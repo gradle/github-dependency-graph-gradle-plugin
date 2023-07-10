@@ -118,6 +118,87 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         ":c:dependencies"                                     | "One project resolved"
     }
 
+    def "extracts direct dependency for transitive dependency updated by constraint"() {
+        given:
+        def bar11 = mavenRepo.module("org.test", "bar", "1.1").publish()
+        settingsFile << "include 'a', 'b'"
+        buildFile << """
+            project(':a') {
+                apply plugin: 'java-library'
+                dependencies {
+                    api 'org.test:bar:1.0'
+                }
+            }
+            project(':b') {
+                apply plugin: 'java-library'
+                dependencies {
+                    api project(':a')
+                    constraints {
+                        api "org.test:bar:1.1"
+                    }
+                }
+            }
+        """
+
+        when:
+        run()
+
+        then:
+        manifestNames == ["project :a", "project :b"]
+
+        def manifestA = gitHubManifest("project :a")
+        manifestA.sourceFile == "a/build.gradle"
+        manifestA.assertResolved([
+            "org.test:bar:1.0": [package_url: purlFor(bar)],
+            "org.test:bar:1.1": [package_url: purlFor(bar11)]
+        ])
+
+        def manifestB = gitHubManifest("project :b")
+        manifestB.sourceFile == "b/build.gradle"
+        manifestB.assertResolved([
+            "org.test:bar:1.1": [package_url: purlFor(bar11)]
+        ])
+    }
+
+    def "extracts all versions for transitive dependency updated by rule"() {
+        given:
+        def bar11 = mavenRepo.module("org.test", "bar", "1.1").publish()
+        settingsFile << "include 'a', 'b'"
+        buildFile << """
+            project(':a') {
+                apply plugin: 'java-library'
+                dependencies {
+                    api 'org.test:bar:1.0'
+                }
+            }
+            project(':b') {
+                apply plugin: 'java-library'
+                dependencies {
+                    api project(':a')
+                }
+                configurations.all {
+                    resolutionStrategy.dependencySubstitution {
+                        substitute module('org.test:bar:1.0') using module('org.test:bar:1.1')
+                    }
+                }
+            }
+        """
+
+        when:
+        run()
+
+        then:
+        manifestNames == ["project :a"]
+
+        def manifestA = gitHubManifest("project :a")
+        manifestA.sourceFile == "a/build.gradle"
+        manifestA.assertResolved([
+            "org.test:bar:1.0": [package_url: purlFor(bar)],
+            "org.test:bar:1.1": [package_url: purlFor(bar11)]
+        ])
+    }
+
+
     def "extracts dependencies from buildSrc project"() {
         given:
         file("buildSrc/settings.gradle") << "rootProject.name = 'buildSrc'"

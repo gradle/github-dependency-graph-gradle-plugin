@@ -2,7 +2,8 @@ name: Java CI with Gradle
 
 on:
   push:
-    branches: [ main ]
+    paths-ignore:
+    - 'release/**'
   pull_request:
     branches: [ main ]
 

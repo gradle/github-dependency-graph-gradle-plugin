@@ -54,9 +54,8 @@ class PluginDependencyExtractorTest extends BaseExtractorTest {
         run()
 
         then:
-        manifestNames == ["build :", "project :", "project :buildSrc", "project :buildSrc:a"]
+        manifestNames == ["build :", "project :buildSrc", "project :buildSrc:a"]
         manifestHasSettingsPlugin("build :")
-        manifestIsEmpty("project :")
         manifestHasPlugin1("project :buildSrc")
         manifestHasPlugin2("project :buildSrc:a")
     }
@@ -72,9 +71,8 @@ class PluginDependencyExtractorTest extends BaseExtractorTest {
         run()
 
         then:
-        manifestNames == ["build :", "project :", "project :included-child", "project :included-child:a"]
+        manifestNames == ["build :", "project :included-child", "project :included-child:a"]
         manifestHasSettingsPlugin("build :")
-        manifestIsEmpty("project :")
         manifestHasPlugin1("project :included-child")
         manifestHasPlugin2("project :included-child:a")
     }
@@ -94,9 +92,8 @@ class PluginDependencyExtractorTest extends BaseExtractorTest {
         run()
 
         then:
-        manifestNames == ["build :", "project :", "project :included-plugin", "project :included-plugin:a"]
+        manifestNames == ["build :", "project :included-plugin", "project :included-plugin:a"]
         manifestHasSettingsPlugin("build :")
-        manifestIsEmpty("project :")
         manifestHasPlugin1("project :included-plugin")
         manifestHasPlugin2("project :included-plugin:a")
     }

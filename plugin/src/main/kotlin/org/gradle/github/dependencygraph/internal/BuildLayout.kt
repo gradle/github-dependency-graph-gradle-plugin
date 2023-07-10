@@ -1,7 +1,7 @@
 package org.gradle.github.dependencygraph.internal
 
 import org.gradle.github.dependencygraph.internal.json.GitHubManifestFile
-import org.gradle.github.dependencygraph.internal.model.ResolvedConfiguration
+import org.gradle.github.dependencygraph.internal.model.ResolutionRoot
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.ConcurrentHashMap
@@ -22,7 +22,7 @@ class BuildLayout(val gitWorkspaceDirectory: Path) {
         }
     }
 
-    fun getBuildFile(resolvedConfiguration: ResolvedConfiguration): GitHubManifestFile? {
-        return buildFileForProject(resolvedConfiguration.identityPath)
+    fun getBuildFile(rootComponent: ResolutionRoot): GitHubManifestFile? {
+        return buildFileForProject(rootComponent.path)
     }
 }

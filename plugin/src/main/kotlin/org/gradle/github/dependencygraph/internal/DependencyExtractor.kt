@@ -35,7 +35,7 @@ abstract class DependencyExtractor :
     /**
      * Map of all resolved configurations by name
      */
-    private val resolvedConfigurations = mutableListOf<ResolvedConfiguration>()
+    private val resolvedConfigurations = Collections.synchronizedList(mutableListOf<ResolvedConfiguration>())
 
     /**
      * Map of the project identifier to the relative path of the git workspace directory [gitWorkspaceDirectory].

@@ -61,7 +61,7 @@ class GitHubRepositorySnapshotBuilder(
         return dependency.id.startsWith("project ")
     }
 
-    private class DependencyCollector(var rootComponent: ResolutionRoot) {
+    private class DependencyCollector(val rootComponent: ResolutionRoot) {
         private val dependencyBuilders: MutableMap<String, GitHubDependencyBuilder> = mutableMapOf()
 
         /**

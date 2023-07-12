@@ -105,10 +105,9 @@ abstract class DependencyExtractor :
     ) {
         val repositoryLookup = RepositoryUrlLookup(details, result)
         val rootComponent = result.rootComponent
-        val projectIdentityPath = (rootComponent.id as? DefaultProjectComponentIdentifier)?.identityPath?.path
 
-        if (projectIdentityPath == null && rootComponent.dependencies.isEmpty()) {
-            // Not a project configuration, and no dependencies to extract: can safely ignore
+        if (rootComponent.dependencies.isEmpty()) {
+            // No dependencies to extract: can safely ignore
             return
         }
 
@@ -116,6 +115,7 @@ abstract class DependencyExtractor :
         // This is because `details.buildPath` is always ':', which isn't correct in a composite build.
         // It is possible to do better. By tracking the current build operation context, we can assign more precisely.
         // See the Gradle Enterprise Build Scan Plugin: `ConfigurationResolutionCapturer_5_0`
+        val projectIdentityPath = (rootComponent.id as? DefaultProjectComponentIdentifier)?.identityPath?.path
         val rootPath = projectIdentityPath ?: details.buildPath
         val rootId = if (projectIdentityPath == null) "build $rootPath" else componentId(rootComponent)
         val resolutionRoot = ResolutionRoot(rootId, rootPath)

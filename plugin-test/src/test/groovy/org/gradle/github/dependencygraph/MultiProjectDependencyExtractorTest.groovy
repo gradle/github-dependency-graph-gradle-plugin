@@ -200,7 +200,6 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         ])
     }
 
-
     def "extracts dependencies from buildSrc project"() {
         given:
         file("buildSrc/settings.gradle") << "rootProject.name = 'buildSrc'"

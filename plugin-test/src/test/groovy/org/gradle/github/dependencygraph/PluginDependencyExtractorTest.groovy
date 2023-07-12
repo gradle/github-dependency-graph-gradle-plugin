@@ -38,9 +38,9 @@ class PluginDependencyExtractorTest extends BaseExtractorTest {
         manifestNames == ["build :", "project :", "project :a"]
         // Project ':b' is not reported, since the plugin is loaded in parent project
 
-        manifestHasSettingsPlugin("build :")
-        manifestHasPlugin1("project :")
-        manifestHasPlugin2("project :a")
+        manifestHasSettingsPlugin()
+        manifestHasPlugin1("project :", "build.gradle")
+        manifestHasPlugin2("project :a", "a/build.gradle")
     }
 
     def "extracts all plugin dependencies from multi project buildSrc build"() {
@@ -55,9 +55,9 @@ class PluginDependencyExtractorTest extends BaseExtractorTest {
 
         then:
         manifestNames == ["build :", "project :buildSrc", "project :buildSrc:a"]
-        manifestHasSettingsPlugin("build :")
-        manifestHasPlugin1("project :buildSrc")
-        manifestHasPlugin2("project :buildSrc:a")
+        manifestHasSettingsPlugin()
+        manifestHasPlugin1("project :buildSrc", "buildSrc/build.gradle")
+        manifestHasPlugin2("project :buildSrc:a", "buildSrc/a/build.gradle")
     }
 
     def "extracts all plugin dependencies from multi project included build"() {
@@ -72,9 +72,9 @@ class PluginDependencyExtractorTest extends BaseExtractorTest {
 
         then:
         manifestNames == ["build :", "project :included-child", "project :included-child:a"]
-        manifestHasSettingsPlugin("build :")
-        manifestHasPlugin1("project :included-child")
-        manifestHasPlugin2("project :included-child:a")
+        manifestHasSettingsPlugin()
+        manifestHasPlugin1("project :included-child", "included-child/build.gradle")
+        manifestHasPlugin2("project :included-child:a", "included-child/a/build.gradle")
     }
 
     def "extracts all plugin dependencies from multi project included plugin build"() {
@@ -93,9 +93,9 @@ class PluginDependencyExtractorTest extends BaseExtractorTest {
 
         then:
         manifestNames == ["build :", "project :included-plugin", "project :included-plugin:a"]
-        manifestHasSettingsPlugin("build :")
-        manifestHasPlugin1("project :included-plugin")
-        manifestHasPlugin2("project :included-plugin:a")
+        manifestHasSettingsPlugin()
+        manifestHasPlugin1("project :included-plugin", "included-plugin/build.gradle")
+        manifestHasPlugin2("project :included-plugin:a", "included-plugin/a/build.gradle")
     }
 
     private void createMultiProjectBuildWithPlugins(TestFile rootDir) {
@@ -134,9 +134,11 @@ class PluginDependencyExtractorTest extends BaseExtractorTest {
         """
     }
 
-    private void manifestHasSettingsPlugin(String manifestName) {
+    private void manifestHasSettingsPlugin() {
+        def settingsManifest = gitHubManifest("build :")
+        assert settingsManifest.sourceFile == 'settings.gradle'
         if (settingsPluginsAreSupported()) {
-            gitHubManifest(manifestName).assertResolved([
+            settingsManifest.assertResolved([
                 "my.settings.plugin:my.settings.plugin.gradle.plugin:1.0": [
                     relationship: "direct",
                     dependencies: ["com.example:settingPlugin:1.0"]
@@ -161,7 +163,7 @@ class PluginDependencyExtractorTest extends BaseExtractorTest {
                 ]
             ])
         } else {
-            gitHubManifest(manifestName).assertResolved([
+            settingsManifest.assertResolved([
                 // The project plugins are resolved at build level without any transitive deps
                 "my.project.plugin1:my.project.plugin1.gradle.plugin:1.0": [
                     relationship: "direct",
@@ -176,8 +178,10 @@ class PluginDependencyExtractorTest extends BaseExtractorTest {
         }
     }
 
-    private void manifestHasPlugin1(String manifestName) {
-        gitHubManifest(manifestName).assertResolved([
+    private void manifestHasPlugin1(String manifestName, String sourceFile) {
+        def manifest = gitHubManifest(manifestName)
+        assert manifest.sourceFile == sourceFile
+        manifest.assertResolved([
             "my.project.plugin1:my.project.plugin1.gradle.plugin:1.0": [
                 relationship: "direct",
                 dependencies: ["com.example:plugin1:1.0"]
@@ -189,8 +193,10 @@ class PluginDependencyExtractorTest extends BaseExtractorTest {
         ])
     }
 
-    private void manifestHasPlugin2(String manifestName) {
-        gitHubManifest(manifestName).assertResolved([
+    private void manifestHasPlugin2(String manifestName, String sourceFile) {
+        def manifest = gitHubManifest(manifestName)
+        assert manifest.sourceFile == sourceFile
+        manifest.assertResolved([
             "my.project.plugin2:my.project.plugin2.gradle.plugin:1.0": [
                 relationship: "direct",
                 dependencies: ["com.example:plugin2:1.0"]
@@ -205,9 +211,4 @@ class PluginDependencyExtractorTest extends BaseExtractorTest {
             ]
         ])
     }
-
-    private void manifestIsEmpty(String manifestName) {
-        gitHubManifest(manifestName).assertResolved([:])
-    }
-
 }

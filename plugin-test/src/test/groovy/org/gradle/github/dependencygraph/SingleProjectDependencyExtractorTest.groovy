@@ -331,7 +331,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         then:
         manifestNames == ["build :"]
         def settingsManifest = gitHubManifest("build :")
-        settingsManifest.sourceFile == "build.gradle"
+        settingsManifest.sourceFile == "settings.gradle"
 
         settingsManifest.assertResolved([
             "org.test:baz:1.0": [
@@ -368,7 +368,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         then:
         manifestNames == ["build :", "project :"]
         def buildManifest = gitHubManifest("build :")
-        buildManifest.sourceFile == "build.gradle"
+        buildManifest.sourceFile == "settings.gradle"
         buildManifest.assertResolved([
             "my.project.plugin:my.project.plugin.gradle.plugin:1.0": [
                 package_url : purlFor("my.project.plugin", "my.project.plugin.gradle.plugin", "1.0"),
@@ -414,7 +414,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         then:
         manifestNames == ["build :"]
         def buildManifest = gitHubManifest("build :")
-        buildManifest.sourceFile == "build.gradle"
+        buildManifest.sourceFile == "settings.gradle"
         buildManifest.assertResolved([
             "my.settings.plugin:my.settings.plugin.gradle.plugin:1.0": [
                 package_url : purlFor("my.settings.plugin", "my.settings.plugin.gradle.plugin", "1.0"),

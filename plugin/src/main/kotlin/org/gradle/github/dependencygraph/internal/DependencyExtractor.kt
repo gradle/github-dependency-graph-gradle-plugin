@@ -10,6 +10,7 @@ import org.gradle.github.dependencygraph.internal.model.DependencyCoordinates
 import org.gradle.github.dependencygraph.internal.model.DependencySource
 import org.gradle.github.dependencygraph.internal.model.ResolvedDependency
 import org.gradle.github.dependencygraph.internal.model.ResolvedConfiguration
+import org.gradle.initialization.EvaluateSettingsBuildOperationType
 import org.gradle.internal.exceptions.DefaultMultiCauseException
 import org.gradle.internal.operations.*
 import java.io.File
@@ -68,7 +69,11 @@ abstract class DependencyExtractor :
 
         handleBuildOperationType<
                 LoadProjectsBOT.Details,
-                LoadProjectsBOT.Result>(buildOperation, finishEvent) { details, result -> extractProjects(details, result) }
+                LoadProjectsBOT.Result>(buildOperation, finishEvent) { _, result -> extractProjects(result) }
+
+        handleBuildOperationType<
+                EvaluateSettingsBuildOperationType.Details,
+                EvaluateSettingsBuildOperationType.Result>(buildOperation, finishEvent) { details, _ -> extractSettings(details) }
     }
 
     private inline fun <reified D, reified R> handleBuildOperationType(
@@ -84,8 +89,16 @@ abstract class DependencyExtractor :
         }
     }
 
+    private fun extractSettings(
+        details: EvaluateSettingsBuildOperationType.Details
+    ) {
+        val settingsFile = details.settingsFile
+        if (settingsFile != null) {
+            buildLayout.addSettings(details.buildPath, settingsFile)
+        }
+    }
+
     private fun extractProjects(
-        @Suppress("UNUSED_PARAMETER") details: LoadProjectsBOT.Details,
         result: LoadProjectsBOT.Result
     ) {
         tailrec fun recursivelyExtractProjects(projects: Set<LoadProjectsBOT.Result.Project>) {

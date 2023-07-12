@@ -1,10 +1,10 @@
 package org.gradle.github.dependencygraph.internal.model
 
-data class ResolvedComponent(
+data class ResolvedDependency(
     val id: String,
-    val rootComponent: ResolutionRoot,
+    val source: DependencySource,
     val direct: Boolean,
-    val coordinates: ComponentCoordinates,
+    val coordinates: DependencyCoordinates,
     val repositoryUrl: String?,
     val dependencies: List<String>
 )

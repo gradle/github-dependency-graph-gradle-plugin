@@ -1,10 +1,10 @@
 package org.gradle.github.dependencygraph.internal
 
 import com.github.packageurl.PackageURLBuilder
-import org.gradle.github.dependencygraph.internal.model.ResolvedComponent
+import org.gradle.github.dependencygraph.internal.model.ResolvedDependency
 import org.gradle.github.dependencygraph.internal.model.ResolvedConfiguration
 import org.gradle.github.dependencygraph.internal.json.*
-import org.gradle.github.dependencygraph.internal.model.ResolutionRoot
+import org.gradle.github.dependencygraph.internal.model.DependencySource
 
 private const val DEFAULT_MAVEN_REPOSITORY_URL = "https://repo.maven.apache.org/maven2"
 
@@ -32,14 +32,14 @@ class GitHubRepositorySnapshotBuilder(
                 // Ignore project dependencies (transitive deps of projects will be reported with project)
                 if (isProject(dependency)) continue
 
-                val rootComponent = dependency.rootComponent
-                val dependencyCollector = manifestDependencies.getOrPut(rootComponent.id) { DependencyCollector(rootComponent) }
+                val source = dependency.source
+                val dependencyCollector = manifestDependencies.getOrPut(source.id) { DependencyCollector(source) }
                 dependencyCollector.addResolved(dependency)
             }
         }
 
         val manifests = manifestDependencies.mapValues { (name, collector) ->
-            val manifestFile = buildLayout.getBuildFile(collector.rootComponent)
+            val manifestFile = buildLayout.getBuildFile(collector.dependencySource)
 
             GitHubManifest(
                 name,
@@ -57,17 +57,17 @@ class GitHubRepositorySnapshotBuilder(
     }
 
     // TODO:DAZ Model this better
-    private fun isProject(dependency: ResolvedComponent): Boolean {
+    private fun isProject(dependency: ResolvedDependency): Boolean {
         return dependency.id.startsWith("project ")
     }
 
-    private class DependencyCollector(val rootComponent: ResolutionRoot) {
+    private class DependencyCollector(val dependencySource: DependencySource) {
         private val dependencyBuilders: MutableMap<String, GitHubDependencyBuilder> = mutableMapOf()
 
         /**
          * Merge each resolved component with the same ID into a single GitHubDependency.
          */
-        fun addResolved(component: ResolvedComponent) {
+        fun addResolved(component: ResolvedDependency) {
             val dep = dependencyBuilders.getOrPut(component.id) {
                 GitHubDependencyBuilder(packageUrl(component))
             }
@@ -84,10 +84,10 @@ class GitHubRepositorySnapshotBuilder(
             }
         }
 
-        private fun relationship(component: ResolvedComponent) =
+        private fun relationship(component: ResolvedDependency) =
             if (component.direct) GitHubDependency.Relationship.direct else GitHubDependency.Relationship.indirect
 
-        private fun packageUrl(component: ResolvedComponent) =
+        private fun packageUrl(component: ResolvedDependency) =
             PackageURLBuilder
                 .aPackageURL()
                 .withType("maven")

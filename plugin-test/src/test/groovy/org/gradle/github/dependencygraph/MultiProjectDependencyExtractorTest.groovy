@@ -177,8 +177,10 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
                     api project(':a')
                 }
                 configurations.all {
-                    resolutionStrategy.dependencySubstitution {
-                        substitute module('org.test:bar:1.0') using module('org.test:bar:1.1')
+                    resolutionStrategy.eachDependency { details ->
+                        if (details.requested.group == 'org.test' && details.requested.name == 'bar') {
+                            details.useVersion("1.1")
+                        }
                     }
                 }
             }

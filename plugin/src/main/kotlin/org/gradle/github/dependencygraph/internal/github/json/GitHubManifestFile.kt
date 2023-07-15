@@ -1,4 +1,4 @@
-package org.gradle.github.dependencygraph.internal.json
+package org.gradle.github.dependencygraph.internal.github.json
 
 import com.fasterxml.jackson.annotation.JsonProperty
 

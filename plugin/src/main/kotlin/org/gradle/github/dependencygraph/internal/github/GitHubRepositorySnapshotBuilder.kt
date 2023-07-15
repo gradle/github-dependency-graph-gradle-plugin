@@ -1,26 +1,21 @@
-package org.gradle.github.dependencygraph.internal
+package org.gradle.github.dependencygraph.internal.github
 
-import com.github.packageurl.PackageURLBuilder
+import org.gradle.github.dependencygraph.internal.github.json.*
 import org.gradle.github.dependencygraph.internal.model.ResolvedDependency
 import org.gradle.github.dependencygraph.internal.model.ResolvedConfiguration
-import org.gradle.github.dependencygraph.internal.json.*
+import org.gradle.github.dependencygraph.internal.model.BuildLayout
 import org.gradle.github.dependencygraph.internal.model.DependencySource
 
-private const val DEFAULT_MAVEN_REPOSITORY_URL = "https://repo.maven.apache.org/maven2"
-
 class GitHubRepositorySnapshotBuilder(
-    private val dependencyGraphJobCorrelator: String,
-    private val dependencyGraphJobId: String,
-    private val gitSha: String,
-    private val gitRef: String
+    private val snapshotParams: GitHubSnapshotParams
 ) {
 
     private val detector by lazy { GitHubDetector() }
 
     private val job by lazy {
         GitHubJob(
-            id = dependencyGraphJobId,
-            correlator = dependencyGraphJobCorrelator
+            id = snapshotParams.dependencyGraphJobId,
+            correlator = snapshotParams.dependencyGraphJobCorrelator
         )
     }
 
@@ -33,13 +28,13 @@ class GitHubRepositorySnapshotBuilder(
                 if (isProject(dependency)) continue
 
                 val source = dependency.source
-                val dependencyCollector = manifestDependencies.getOrPut(source.id) { DependencyCollector(source) }
+                val dependencyCollector = manifestDependencies.getOrPut(source.id) { DependencyCollector(source.path) }
                 dependencyCollector.addResolved(dependency)
             }
         }
 
         val manifests = manifestDependencies.mapValues { (name, collector) ->
-            val manifestFile = buildLayout.getBuildFile(collector.dependencySource)
+            val manifestFile = buildLayout.getBuildFile(collector.path)
 
             GitHubManifest(
                 name,
@@ -49,8 +44,8 @@ class GitHubRepositorySnapshotBuilder(
         }
         return GitHubRepositorySnapshot(
             job = job,
-            sha = gitSha,
-            ref = gitRef,
+            sha = snapshotParams.gitSha,
+            ref = snapshotParams.gitRef,
             detector = detector,
             manifests = manifests.toSortedMap()
         )
@@ -61,7 +56,7 @@ class GitHubRepositorySnapshotBuilder(
         return dependency.id.startsWith("project ")
     }
 
-    private class DependencyCollector(val dependencySource: DependencySource) {
+    private class DependencyCollector(val path: String) {
         private val dependencyBuilders: MutableMap<String, GitHubDependencyBuilder> = mutableMapOf()
 
         /**
@@ -69,7 +64,7 @@ class GitHubRepositorySnapshotBuilder(
          */
         fun addResolved(component: ResolvedDependency) {
             val dep = dependencyBuilders.getOrPut(component.id) {
-                GitHubDependencyBuilder(packageUrl(component))
+                GitHubDependencyBuilder(component.packageUrl())
             }
             dep.addRelationship(relationship(component))
             dep.addDependencies(component.dependencies)
@@ -86,21 +81,6 @@ class GitHubRepositorySnapshotBuilder(
 
         private fun relationship(component: ResolvedDependency) =
             if (component.direct) GitHubDependency.Relationship.direct else GitHubDependency.Relationship.indirect
-
-        private fun packageUrl(component: ResolvedDependency) =
-            PackageURLBuilder
-                .aPackageURL()
-                .withType("maven")
-                .withNamespace(component.coordinates.group.ifEmpty { component.coordinates.module }) // TODO: This is a sign of broken mapping from component -> PURL
-                .withName(component.coordinates.module)
-                .withVersion(component.coordinates.version)
-                .also {
-                    if (component.repositoryUrl != null && component.repositoryUrl != DEFAULT_MAVEN_REPOSITORY_URL) {
-                        it.withQualifier("repository_url", component.repositoryUrl)
-                    }
-                }
-                .build()
-                .toString()
 
         private class GitHubDependencyBuilder(val package_url: String) {
             var relationship: GitHubDependency.Relationship = GitHubDependency.Relationship.indirect

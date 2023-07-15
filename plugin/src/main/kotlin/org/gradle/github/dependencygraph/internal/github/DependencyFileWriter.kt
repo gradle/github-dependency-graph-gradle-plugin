@@ -1,7 +1,7 @@
-package org.gradle.github.dependencygraph.internal
+package org.gradle.github.dependencygraph.internal.github
 
 import org.gradle.api.logging.Logging
-import org.gradle.github.dependencygraph.internal.json.GitHubRepositorySnapshot
+import org.gradle.github.dependencygraph.internal.github.json.GitHubRepositorySnapshot
 import java.io.File
 
 class DependencyFileWriter(val manifestFile: File) {

@@ -1,4 +1,4 @@
-package org.gradle.github.dependencygraph.internal.json
+package org.gradle.github.dependencygraph.internal.github.json
 
 data class GitHubDependency(
     val package_url: String,

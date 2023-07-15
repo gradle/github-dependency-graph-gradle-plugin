@@ -4,7 +4,6 @@ import org.gradle.github.dependencygraph.internal.github.json.*
 import org.gradle.github.dependencygraph.internal.model.ResolvedDependency
 import org.gradle.github.dependencygraph.internal.model.ResolvedConfiguration
 import org.gradle.github.dependencygraph.internal.model.BuildLayout
-import org.gradle.github.dependencygraph.internal.model.DependencySource
 
 class GitHubRepositorySnapshotBuilder(
     private val snapshotParams: GitHubSnapshotParams
@@ -20,34 +19,33 @@ class GitHubRepositorySnapshotBuilder(
     }
 
     fun build(resolvedConfigurations: MutableList<ResolvedConfiguration>, buildLayout: BuildLayout): GitHubRepositorySnapshot {
-        val manifestDependencies = mutableMapOf<String, DependencyCollector>()
+        val dependencyCollector = DependencyCollector()
 
         for (resolutionRoot in resolvedConfigurations) {
             for (dependency in resolutionRoot.allDependencies) {
                 // Ignore project dependencies (transitive deps of projects will be reported with project)
                 if (isProject(dependency)) continue
 
-                val source = dependency.source
-                val dependencyCollector = manifestDependencies.getOrPut(source.id) { DependencyCollector(source.path) }
                 dependencyCollector.addResolved(dependency)
             }
         }
 
-        val manifests = manifestDependencies.mapValues { (name, collector) ->
-            val manifestFile = buildLayout.getBuildFile(collector.path)
 
-            GitHubManifest(
-                name,
-                collector.getDependencies(),
-                manifestFile
-            )
-        }
+        val buildPath = ":"
+        val manifestName = "build :"
+
+        val manifestFile = buildLayout.getBuildFile(buildPath)
+        val manifest = GitHubManifest(
+            manifestName,
+            dependencyCollector.getDependencies(),
+            manifestFile
+        )
         return GitHubRepositorySnapshot(
             job = job,
             sha = snapshotParams.gitSha,
             ref = snapshotParams.gitRef,
             detector = detector,
-            manifests = manifests.toSortedMap()
+            manifests = mapOf(manifestName to manifest)
         )
     }
 
@@ -56,7 +54,7 @@ class GitHubRepositorySnapshotBuilder(
         return dependency.id.startsWith("project ")
     }
 
-    private class DependencyCollector(val path: String) {
+    private class DependencyCollector {
         private val dependencyBuilders: MutableMap<String, GitHubDependencyBuilder> = mutableMapOf()
 
         /**

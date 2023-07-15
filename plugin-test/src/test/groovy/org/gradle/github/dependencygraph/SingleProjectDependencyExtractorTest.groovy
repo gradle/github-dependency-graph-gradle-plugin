@@ -46,7 +46,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         run()
 
         then:
-        def manifest = gitHubManifest("project :")
+        def manifest = gitHubManifest()
         manifest.sourceFile == "build.gradle"
 
         manifest.assertResolved([
@@ -76,7 +76,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         run("dependencies", "--configuration", "runtimeClasspath")
 
         then:
-        def manifest = gitHubManifest("project :")
+        def manifest = gitHubManifest()
         manifest.sourceFile == "build.gradle"
 
         manifest.assertResolved([
@@ -99,7 +99,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         run()
 
         then:
-        def manifest = gitHubManifest("project :")
+        def manifest = gitHubManifest()
         manifest.sourceFile == "build.gradle"
 
         manifest.assertResolved([
@@ -124,7 +124,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         run()
 
         then:
-        def manifest = gitHubManifest("project :")
+        def manifest = gitHubManifest()
         manifest.sourceFile == "build.gradle"
 
         manifest.assertResolved([
@@ -155,7 +155,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         run()
 
         then:
-        def manifest = gitHubManifest("project :")
+        def manifest = gitHubManifest()
         manifest.sourceFile == "build.gradle"
         manifest.assertResolved([
             "org.test:baz:1.0": [
@@ -182,7 +182,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         run()
 
         then:
-        def manifest = gitHubManifest("project :")
+        def manifest = gitHubManifest()
         manifest.sourceFile == "build.gradle"
 
         manifest.assertResolved([
@@ -212,7 +212,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         run()
 
         then:
-        def manifest = gitHubManifest("project :")
+        def manifest = gitHubManifest()
         manifest.sourceFile == "build.gradle"
 
         manifest.assertResolved([
@@ -260,9 +260,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         run("resolveCompileClasspath", "resolveRuntimeClasspath")
 
         then:
-        manifestNames == ["project :"]
-
-        def manifestA = gitHubManifest("project :")
+        def manifestA = gitHubManifest()
         manifestA.sourceFile == "build.gradle"
         manifestA.assertResolved([
             "org.test:direct:1.0"    : [package_url: (purlFor(directDep)),
@@ -296,8 +294,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         run()
 
         then:
-        manifestNames == ["project :"]
-        def manifest = gitHubManifest("project :")
+        def manifest = gitHubManifest()
         manifest.sourceFile == "build.gradle"
 
         manifest.assertResolved([
@@ -329,11 +326,10 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         run()
 
         then:
-        manifestNames == ["build :"]
-        def settingsManifest = gitHubManifest("build :")
-        settingsManifest.sourceFile == "build.gradle"
+        def manifest = gitHubManifest()
+        manifest.sourceFile == "build.gradle"
 
-        settingsManifest.assertResolved([
+        manifest.assertResolved([
             "org.test:baz:1.0": [
                 package_url : purlFor(baz),
                 dependencies: ["org.test:bar:1.0"]
@@ -366,17 +362,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         run()
 
         then:
-        manifestNames == ["build :", "project :"]
-        def buildManifest = gitHubManifest("build :")
-        buildManifest.sourceFile == "build.gradle"
-        buildManifest.assertResolved([
-            "my.project.plugin:my.project.plugin.gradle.plugin:1.0": [
-                package_url : purlFor("my.project.plugin", "my.project.plugin.gradle.plugin", "1.0"),
-                dependencies: []
-            ]
-        ])
-
-        def manifest = gitHubManifest("project :")
+        def manifest = gitHubManifest()
         manifest.sourceFile == "build.gradle"
         manifest.assertResolved([
             "my.project.plugin:my.project.plugin.gradle.plugin:1.0": [
@@ -412,10 +398,9 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         run()
 
         then:
-        manifestNames == ["build :"]
-        def buildManifest = gitHubManifest("build :")
-        buildManifest.sourceFile == "build.gradle"
-        buildManifest.assertResolved([
+        def manifest = gitHubManifest()
+        manifest.sourceFile == "build.gradle"
+        manifest.assertResolved([
             "my.settings.plugin:my.settings.plugin.gradle.plugin:1.0": [
                 package_url : purlFor("my.settings.plugin", "my.settings.plugin.gradle.plugin", "1.0"),
                 dependencies: ["com.example:plugin:1.0"]

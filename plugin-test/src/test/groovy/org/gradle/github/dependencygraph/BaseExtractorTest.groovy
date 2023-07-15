@@ -164,8 +164,8 @@ abstract class BaseExtractorTest extends Specification {
         return jsonManifests().keySet() as List
     }
 
-    protected GitHubManifest gitHubManifest(String manifestName) {
-        def jsonManifest = jsonManifest(manifestName)
+    protected GitHubManifest gitHubManifest() {
+        def jsonManifest = jsonManifest("build :")
         return new GitHubManifest(jsonManifest)
     }
 
@@ -201,6 +201,10 @@ abstract class BaseExtractorTest extends Specification {
             }
 
             return true
+        }
+
+        def getResolved() {
+            return manifestData.resolved as Map<String, Map>
         }
     }
 

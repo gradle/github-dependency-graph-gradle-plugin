@@ -20,22 +20,17 @@ class SampleProjectDependencyExtractorTest extends BaseExtractorTest {
         run()
 
         then:
-        manifestNames == ["build :", "project :"]
-        def buildManifest = jsonManifest("build :")
-        def buildDependencies = (buildManifest.resolved as Map).keySet()
-        buildDependencies.containsAll([
-            "com.gradle.enterprise:com.gradle.enterprise.gradle.plugin:3.12.6"
-        ])
-
-        def projectManifest = jsonManifest("project :")
-        def projectDependencies = projectManifest.resolved as Map<String, Map>
+        def manifest = gitHubManifest()
+        def manifestDependencies = manifest.resolved
 
         [   // plugin dependencies
+            "com.gradle.enterprise:com.gradle.enterprise.gradle.plugin:3.12.6",
+            "com.gradle:gradle-enterprise-gradle-plugin:3.12.6",
             "com.diffplug.spotless:spotless-plugin-gradle:4.5.1",
             "com.diffplug.durian:durian-core:1.2.0",
         ].forEach {
-            assert projectDependencies.containsKey(it)
-            assert (projectDependencies[it].package_url as String).endsWith("?repository_url=https%3A%2F%2Fplugins.gradle.org%2Fm2")
+            assert manifestDependencies.containsKey(it)
+            assert (manifestDependencies[it].package_url as String).endsWith("?repository_url=https%3A%2F%2Fplugins.gradle.org%2Fm2")
         }
 
         [   // regular dependencies
@@ -44,8 +39,8 @@ class SampleProjectDependencyExtractorTest extends BaseExtractorTest {
             "com.google.guava:failureaccess:1.0.1", // transitive 'implementation' dependency
             "org.junit.jupiter:junit-jupiter:5.9.1" // testImplementation dependency
         ].forEach {
-            assert projectDependencies.containsKey(it)
-            assert !(projectDependencies[it].package_url as String).contains("?repository_url") // Maven repo default is not included
+            assert manifestDependencies.containsKey(it)
+            assert !(manifestDependencies[it].package_url as String).contains("?repository_url") // Maven repo default is not included
         }
     }
 
@@ -58,12 +53,14 @@ class SampleProjectDependencyExtractorTest extends BaseExtractorTest {
         run()
 
         then:
-        manifestNames == [
-            "project :app",
-            "project :buildSrc",
-            "project :list",
-            "project :utilities"
-        ]
+        def manifest = gitHubManifest()
+        manifest.resolved.keySet().containsAll([
+            "org.apache.commons:commons-math3:3.5",
+            "org.apache.commons:commons-math3:3.6.1", // buildSrc dependency with different version
+            "org.apache.commons:commons-text:1.9",
+            "org.apache.commons:commons-lang3:3.11",
+            "org.junit.jupiter:junit-jupiter:5.9.1"
+        ])
     }
 
     // Temporarily disable test that hangs on Gradle < 7.6
@@ -78,11 +75,12 @@ class SampleProjectDependencyExtractorTest extends BaseExtractorTest {
         run()
 
         then:
-        manifestNames == [
-            "project :app",
-            "project :build-logic",
-            "project :list",
-            "project :utilities"
-        ]
+        def manifest = gitHubManifest()
+        manifest.resolved.keySet().containsAll([
+            "org.slf4j:slf4j-api:2.0.6",
+            "org.apache.commons:commons-text:1.9",
+            "org.apache.commons:commons-lang3:3.11",
+            "org.junit.jupiter:junit-jupiter:5.9.1"
+        ])
     }
 }

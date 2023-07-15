@@ -35,12 +35,7 @@ class PluginDependencyExtractorTest extends BaseExtractorTest {
         run()
 
         then:
-        manifestNames == ["build :", "project :", "project :a"]
-        // Project ':b' is not reported, since the plugin is loaded in parent project
-
-        manifestHasSettingsPlugin("build :")
-        manifestHasPlugin1("project :")
-        manifestHasPlugin2("project :a")
+        manifestHasPlugins()
     }
 
     def "extracts all plugin dependencies from multi project buildSrc build"() {
@@ -54,10 +49,7 @@ class PluginDependencyExtractorTest extends BaseExtractorTest {
         run()
 
         then:
-        manifestNames == ["build :", "project :buildSrc", "project :buildSrc:a"]
-        manifestHasSettingsPlugin("build :")
-        manifestHasPlugin1("project :buildSrc")
-        manifestHasPlugin2("project :buildSrc:a")
+        manifestHasPlugins()
     }
 
     def "extracts all plugin dependencies from multi project included build"() {
@@ -71,10 +63,7 @@ class PluginDependencyExtractorTest extends BaseExtractorTest {
         run()
 
         then:
-        manifestNames == ["build :", "project :included-child", "project :included-child:a"]
-        manifestHasSettingsPlugin("build :")
-        manifestHasPlugin1("project :included-child")
-        manifestHasPlugin2("project :included-child:a")
+        manifestHasPlugins()
     }
 
     def "extracts all plugin dependencies from multi project included plugin build"() {
@@ -92,10 +81,7 @@ class PluginDependencyExtractorTest extends BaseExtractorTest {
         run()
 
         then:
-        manifestNames == ["build :", "project :included-plugin", "project :included-plugin:a"]
-        manifestHasSettingsPlugin("build :")
-        manifestHasPlugin1("project :included-plugin")
-        manifestHasPlugin2("project :included-plugin:a")
+        manifestHasPlugins()
     }
 
     private void createMultiProjectBuildWithPlugins(TestFile rootDir) {
@@ -134,9 +120,10 @@ class PluginDependencyExtractorTest extends BaseExtractorTest {
         """
     }
 
-    private void manifestHasSettingsPlugin(String manifestName) {
-        if (settingsPluginsAreSupported()) {
-            gitHubManifest(manifestName).assertResolved([
+    private void manifestHasPlugins() {
+        // Settings plugin
+        Map<String, Map> pluginDependencies = settingsPluginsAreSupported()
+            ? [
                 "my.settings.plugin:my.settings.plugin.gradle.plugin:1.0": [
                     relationship: "direct",
                     dependencies: ["com.example:settingPlugin:1.0"]
@@ -159,9 +146,8 @@ class PluginDependencyExtractorTest extends BaseExtractorTest {
                     relationship: "direct",
                     dependencies: []
                 ]
-            ])
-        } else {
-            gitHubManifest(manifestName).assertResolved([
+            ]
+            : [
                 // The project plugins are resolved at build level without any transitive deps
                 "my.project.plugin1:my.project.plugin1.gradle.plugin:1.0": [
                     relationship: "direct",
@@ -171,13 +157,10 @@ class PluginDependencyExtractorTest extends BaseExtractorTest {
                     relationship: "direct",
                     dependencies: []
                 ]
-            ])
+            ]
 
-        }
-    }
-
-    private void manifestHasPlugin1(String manifestName) {
-        gitHubManifest(manifestName).assertResolved([
+        // Plugin 1
+        pluginDependencies.putAll([
             "my.project.plugin1:my.project.plugin1.gradle.plugin:1.0": [
                 relationship: "direct",
                 dependencies: ["com.example:plugin1:1.0"]
@@ -187,10 +170,9 @@ class PluginDependencyExtractorTest extends BaseExtractorTest {
                 dependencies: []
             ]
         ])
-    }
 
-    private void manifestHasPlugin2(String manifestName) {
-        gitHubManifest(manifestName).assertResolved([
+        // Plugin 2
+        pluginDependencies.putAll([
             "my.project.plugin2:my.project.plugin2.gradle.plugin:1.0": [
                 relationship: "direct",
                 dependencies: ["com.example:plugin2:1.0"]
@@ -205,9 +187,4 @@ class PluginDependencyExtractorTest extends BaseExtractorTest {
             ]
         ])
     }
-
-    private void manifestIsEmpty(String manifestName) {
-        gitHubManifest(manifestName).assertResolved([:])
-    }
-
 }

@@ -18,7 +18,7 @@ class GitHubRepositorySnapshotBuilder(
         )
     }
 
-    fun build(resolvedConfigurations: MutableList<ResolvedConfiguration>, buildLayout: BuildLayout): GitHubRepositorySnapshot {
+    fun buildManifest(manifestName: String, resolvedConfigurations: MutableList<ResolvedConfiguration>, buildLayout: BuildLayout): GitHubManifest {
         val dependencyCollector = DependencyCollector()
 
         for (resolutionRoot in resolvedConfigurations) {
@@ -30,28 +30,29 @@ class GitHubRepositorySnapshotBuilder(
             }
         }
 
-
         val buildPath = ":"
-        val manifestName = "build :"
 
         val manifestFile = buildLayout.getBuildFile(buildPath)
-        val manifest = GitHubManifest(
+        return GitHubManifest(
             manifestName,
             dependencyCollector.getDependencies(),
             manifestFile
-        )
-        return GitHubRepositorySnapshot(
-            job = job,
-            sha = snapshotParams.gitSha,
-            ref = snapshotParams.gitRef,
-            detector = detector,
-            manifests = mapOf(manifestName to manifest)
         )
     }
 
     // TODO:DAZ Model this better
     private fun isProject(dependency: ResolvedDependency): Boolean {
         return dependency.id.startsWith("project ")
+    }
+
+    fun buildSnapshot(manifest: GitHubManifest): GitHubRepositorySnapshot {
+        return GitHubRepositorySnapshot(
+            job = job,
+            sha = snapshotParams.gitSha,
+            ref = snapshotParams.gitRef,
+            detector = detector,
+            manifests = mapOf(manifest.name to manifest)
+        )
     }
 
     private class DependencyCollector {

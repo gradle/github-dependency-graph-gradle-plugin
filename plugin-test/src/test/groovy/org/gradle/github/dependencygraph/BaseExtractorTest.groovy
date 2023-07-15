@@ -165,7 +165,11 @@ abstract class BaseExtractorTest extends Specification {
     }
 
     protected GitHubManifest gitHubManifest() {
-        def jsonManifest = jsonManifest("build :")
+        return gitHubManifest(environmentVars.jobCorrelator)
+    }
+
+    protected GitHubManifest gitHubManifest(def manifestName) {
+        def jsonManifest = jsonManifest(manifestName)
         return new GitHubManifest(jsonManifest)
     }
 
@@ -217,7 +221,6 @@ abstract class BaseExtractorTest extends Specification {
             this.manifestFile = manifestFile
         }
 
-        @Memoized
         protected Object jsonRepositorySnapshot() {
             def jsonSlurper = new JsonSlurper()
             println(manifestFile.text)

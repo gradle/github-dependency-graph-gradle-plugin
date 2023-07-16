@@ -9,8 +9,8 @@ internal interface EnvironmentVariableLoader {
     interface Default {
         fun Gradle.loadEnvironmentVariable(envName: String, default: String? = null): Provider<String> =
             service<ProviderFactory>().run {
-                environmentVariable(envName)
-                    .orElse(systemProperty(ENV_VIA_SYS_PROP_PREFIX + envName))
+                systemProperty(ENV_VIA_SYS_PROP_PREFIX + envName)
+                    .orElse(environmentVariable(envName))
                     .orElse(provider {
                         default ?: throwEnvironmentVariableMissingException(envName)
                     })
@@ -19,8 +19,8 @@ internal interface EnvironmentVariableLoader {
 
     interface Legacy {
         fun Gradle.loadEnvironmentVariable(envName: String, default: String? = null): String {
-            return System.getenv()[envName]
-                ?: System.getProperty(ENV_VIA_SYS_PROP_PREFIX + envName)
+            return System.getProperty(ENV_VIA_SYS_PROP_PREFIX + envName)
+                ?: System.getenv()[envName]
                 ?: default
                 ?: throwEnvironmentVariableMissingException(envName)
         }

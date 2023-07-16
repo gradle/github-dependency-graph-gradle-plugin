@@ -1,6 +1,8 @@
 package org.gradle.github.dependencygraph
 
 import org.gradle.test.fixtures.maven.MavenModule
+import org.gradle.util.GradleVersion
+import spock.lang.IgnoreIf
 
 class DependencyExtractorConfigTest extends BaseExtractorTest {
     private MavenModule foo
@@ -48,5 +50,31 @@ class DependencyExtractorConfigTest extends BaseExtractorTest {
         def job = snapshot.job as Map
         assert job.correlator == "TEST_CORRELATOR"
         assert job.id == environmentVars.jobId
+    }
+
+    @IgnoreIf({
+        // There's an issue where BuildService is closed too early in Gradle 8.0,
+        // resulting in empty dependency graph.
+        GradleVersion.version(testGradleVersion) < GradleVersion.version("8.1")
+    })
+    def "is compatible with configuration-cache for Gradle 8.1+"() {
+        given:
+        buildFile << """
+        dependencies {
+            implementation "org.test:foo:1.0"
+        }
+        """
+
+        when:
+        executer.withArgument("--configuration-cache")
+        run()
+
+        then:
+        def manifest = gitHubManifest()
+        manifest.sourceFile == "build.gradle"
+
+        manifest.assertResolved([
+            "org.test:foo:1.0": [package_url: purlFor(foo)]
+        ])
     }
 }

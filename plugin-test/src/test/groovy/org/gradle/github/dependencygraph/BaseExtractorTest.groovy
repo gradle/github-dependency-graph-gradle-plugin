@@ -205,7 +205,7 @@ abstract class BaseExtractorTest extends Specification {
     }
 
     @CompileStatic
-    private static class JsonRepositorySnapshotLoader {
+    protected static class JsonRepositorySnapshotLoader {
         private static final String SCHEMA = "schema/github-repository-snapshot-schema.json"
         private final File manifestFile
 
@@ -214,14 +214,14 @@ abstract class BaseExtractorTest extends Specification {
         }
 
         @Memoized
-        protected Object jsonRepositorySnapshot() {
+        protected Map jsonRepositorySnapshot() {
             def jsonSlurper = new JsonSlurper()
             println(manifestFile.text)
             JsonSchema schema = createSchemaValidator()
             ObjectMapper mapper = new ObjectMapper()
             JsonNode node = mapper.readTree(manifestFile)
             validateAgainstJsonSchema(schema, node)
-            return jsonSlurper.parse(manifestFile)
+            return jsonSlurper.parse(manifestFile) as Map
         }
 
         private static void validateAgainstJsonSchema(JsonSchema schema, JsonNode json) {

@@ -18,7 +18,6 @@ class GitHubDependencyGraphPlugin : Plugin<Gradle> {
     }
 
     override fun apply(gradle: Gradle) {
-        LOGGER.lifecycle("Applying Plugin: GitHubDependencyGraphPlugin")
         // Only apply the dependency extractor to the root build
         if (gradle.parent == null) {
             gradle.pluginManager.apply(GitHubDependencyExtractorPlugin::class.java)

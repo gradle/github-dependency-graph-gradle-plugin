@@ -45,10 +45,6 @@ abstract class DependencyExtractor :
 
     private val thrownExceptions = Collections.synchronizedList(mutableListOf<Throwable>())
 
-    init {
-        println("Creating: DependencyExtractorService")
-    }
-
     override fun started(buildOperation: BuildOperationDescriptor, startEvent: OperationStartEvent) {
         // This method will never be called when registered in a `BuildServiceRegistry` (ie. Gradle 6.1 & higher)
         // No-op

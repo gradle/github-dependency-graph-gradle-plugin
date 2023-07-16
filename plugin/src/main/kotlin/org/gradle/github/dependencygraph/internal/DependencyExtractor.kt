@@ -6,10 +6,9 @@ import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.internal.artifacts.DefaultProjectComponentIdentifier
 import org.gradle.api.internal.artifacts.configurations.ResolveConfigurationDependenciesBuildOperationType
 import org.gradle.github.GitHubDependencyGraphPlugin
-import org.gradle.github.dependencygraph.internal.model.DependencyCoordinates
-import org.gradle.github.dependencygraph.internal.model.DependencySource
-import org.gradle.github.dependencygraph.internal.model.ResolvedDependency
-import org.gradle.github.dependencygraph.internal.model.ResolvedConfiguration
+import org.gradle.github.dependencygraph.internal.github.GitHubDependencyGraphOutput
+import org.gradle.github.dependencygraph.internal.github.GitHubSnapshotParams
+import org.gradle.github.dependencygraph.internal.model.*
 import org.gradle.internal.exceptions.DefaultMultiCauseException
 import org.gradle.internal.operations.*
 import java.io.File
@@ -211,20 +210,12 @@ abstract class DependencyExtractor :
         }
     }
 
-    private fun writeAndGetSnapshotFile() {
-        val outputFile = File(getOutputDir(), "${dependencyGraphJobCorrelator}.json")
-        val fileWriter = DependencyFileWriter(outputFile)
-
-        val gitHubRepositorySnapshotBuilder =
-            GitHubRepositorySnapshotBuilder(
-                dependencyGraphJobCorrelator = dependencyGraphJobCorrelator,
-                dependencyGraphJobId = dependencyGraphJobId,
-                gitSha = gitSha,
-                gitRef = gitRef
-            )
-
-        val snapshot = gitHubRepositorySnapshotBuilder.build(resolvedConfigurations, buildLayout)
-        fileWriter.writeDependencySnapshot(snapshot)
+    private fun writeDependencyGraph() {
+        val builder = GitHubDependencyGraphOutput(
+            GitHubSnapshotParams(dependencyGraphJobCorrelator, dependencyGraphJobId, gitSha, gitRef),
+            getOutputDir()
+        )
+        builder.outputDependencyGraph(resolvedConfigurations, buildLayout)
     }
 
     private fun getOutputDir(): File {
@@ -250,7 +241,7 @@ abstract class DependencyExtractor :
             )
         }
         try {
-            writeAndGetSnapshotFile()
+            writeDependencyGraph()
         } catch (e: RuntimeException) {
             throw GradleException(
                     "The ${GitHubDependencyGraphPlugin::class.simpleName} plugin encountered errors while writing the dependency snapshot json file. " +

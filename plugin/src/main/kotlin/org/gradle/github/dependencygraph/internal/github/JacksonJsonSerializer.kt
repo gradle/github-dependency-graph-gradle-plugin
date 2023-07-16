@@ -1,8 +1,8 @@
-package org.gradle.github.dependencygraph.internal
+package org.gradle.github.dependencygraph.internal.github
 
 import com.fasterxml.jackson.module.kotlin.jsonMapper
 import com.fasterxml.jackson.module.kotlin.kotlinModule
-import org.gradle.github.dependencygraph.internal.json.GitHubRepositorySnapshot
+import org.gradle.github.dependencygraph.internal.github.json.GitHubRepositorySnapshot
 
 object JacksonJsonSerializer {
 

@@ -40,10 +40,16 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         settingsFile << "include 'a', 'b'"
 
         buildFile << """
-            allprojects {
-                apply plugin: 'java'
+            project(':a') {
+                apply plugin: 'java-library'
                 dependencies {
-                    implementation 'org.test:foo:1.0'
+                    api 'org.test:foo:1.0'
+                }
+            }
+            project(':b') {
+                apply plugin: 'java-library'
+                dependencies {
+                    api 'org.test:bar:1.0'
                 }
             }
         """
@@ -52,21 +58,12 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         run()
 
         then:
-        manifestNames == ["project :", "project :a", "project :b"]
-
-        def rootProjectManifest = gitHubManifest("project :")
-        rootProjectManifest.sourceFile == "build.gradle"
-        rootProjectManifest.assertResolved([
-            "org.test:foo:1.0": [package_url: purlFor(foo)]
+        def manifest = gitHubManifest()
+        manifest.sourceFile == "build.gradle"
+        manifest.assertResolved([
+            "org.test:foo:1.0": [package_url: purlFor(foo)],
+            "org.test:bar:1.0": [package_url: purlFor(bar)]
         ])
-
-        ["a", "b"].each { name ->
-            def manifest = gitHubManifest("project :${name}")
-            manifest.sourceFile == name + "/build.gradle"
-            manifest.assertResolved([
-                "org.test:foo:1.0": [package_url: purlFor(foo)]
-            ])
-        }
     }
 
     def "extracts transitive project dependencies in multi-project build with #description"() {
@@ -98,17 +95,10 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         run(task)
 
         then:
-        manifestNames == ["project :a", "project :c"]
-
-        def manifestA = gitHubManifest("project :a")
-        manifestA.sourceFile == "a/build.gradle"
-        manifestA.assertResolved([
-            "org.test:foo:1.0": [package_url: purlFor(foo)]
-        ])
-
-        def manifestC = gitHubManifest("project :c")
-        manifestC.sourceFile == "c/build.gradle"
-        manifestC.assertResolved([
+        def manifest = gitHubManifest()
+        manifest.sourceFile == "build.gradle"
+        manifest.assertResolved([
+            "org.test:foo:1.0": [package_url: purlFor(foo)],
             "org.test:bar:1.0": [package_url: purlFor(bar)]
         ])
 
@@ -144,18 +134,10 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         run()
 
         then:
-        manifestNames == ["project :a", "project :b"]
-
-        def manifestA = gitHubManifest("project :a")
-        manifestA.sourceFile == "a/build.gradle"
-        manifestA.assertResolved([
+        def manifest = gitHubManifest()
+        manifest.sourceFile == "build.gradle"
+        manifest.assertResolved([
             "org.test:bar:1.0": [package_url: purlFor(bar)],
-            "org.test:bar:1.1": [package_url: purlFor(bar11)]
-        ])
-
-        def manifestB = gitHubManifest("project :b")
-        manifestB.sourceFile == "b/build.gradle"
-        manifestB.assertResolved([
             "org.test:bar:1.1": [package_url: purlFor(bar11)]
         ])
     }
@@ -190,11 +172,9 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         run()
 
         then:
-        manifestNames == ["project :a"]
-
-        def manifestA = gitHubManifest("project :a")
-        manifestA.sourceFile == "a/build.gradle"
-        manifestA.assertResolved([
+        def manifest = gitHubManifest()
+        manifest.sourceFile == "build.gradle"
+        manifest.assertResolved([
             "org.test:bar:1.0": [package_url: purlFor(bar)],
             "org.test:bar:1.1": [package_url: purlFor(bar11)]
         ])
@@ -226,17 +206,10 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         run()
 
         then:
-        manifestNames == ["project :", "project :buildSrc"]
-
-        def buildSrcManifest = gitHubManifest("project :buildSrc")
-        buildSrcManifest.sourceFile == "buildSrc/build.gradle"
-        buildSrcManifest.assertResolved([
-            "org.test:foo:1.0": [package_url: purlFor(foo)]
-        ])
-
-        def projectManifest = gitHubManifest("project :")
-        projectManifest.sourceFile == "build.gradle"
-        projectManifest.assertResolved([
+        def manifest = gitHubManifest()
+        manifest.sourceFile == "build.gradle"
+        manifest.assertResolved([
+            "org.test:foo:1.0": [package_url: purlFor(foo)],
             "org.test:bar:1.0": [package_url: purlFor(bar)]
         ])
     }
@@ -270,17 +243,10 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         run()
 
         then:
-        manifestNames == ["project :", "project :included-child"]
-
-        def projectManifest = gitHubManifest("project :")
-        projectManifest.sourceFile == "build.gradle"
-        projectManifest.assertResolved([
-            "org.test:bar:1.0": [package_url: purlFor(bar)]
-        ])
-
-        def includedManifest = gitHubManifest("project :included-child")
-        includedManifest.sourceFile == "included-child/build.gradle"
-        includedManifest.assertResolved([
+        def manifest = gitHubManifest()
+        manifest.sourceFile == "build.gradle"
+        manifest.assertResolved([
+            "org.test:bar:1.0": [package_url: purlFor(bar)],
             "org.test:foo:1.0": [package_url: purlFor(foo)]
         ])
     }

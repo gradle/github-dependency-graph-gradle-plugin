@@ -37,17 +37,22 @@ abstract class DependencyExtractor :
      * Map of the project identifier to the relative path of the git workspace directory [gitWorkspaceDirectory].
      */
     private val buildLayout by lazy {
-        val gitWorkspaceDirectory = Paths.get(pluginParameters.load(ENV_GITHUB_WORKSPACE))
+        val gitWorkspaceDirectory = Paths.get(pluginParameters.load(PARAM_GITHUB_WORKSPACE))
         BuildLayout(gitWorkspaceDirectory)
     }
 
-    private val dependencyGraphReportDir = pluginParameters.load(ENV_DEPENDENCY_GRAPH_REPORT_DIR, "")
+    private val dependencyGraphReportDir = pluginParameters.loadOptional(PARAM_REPORT_DIR)
 
     private val gitHubSnapshotParams = GitHubSnapshotParams(
-        pluginParameters.load(ENV_DEPENDENCY_GRAPH_JOB_CORRELATOR),
-        pluginParameters.load(ENV_DEPENDENCY_GRAPH_JOB_ID),
-        pluginParameters.load(ENV_GITHUB_SHA),
-        pluginParameters.load(ENV_GITHUB_REF)
+        pluginParameters.load(PARAM_JOB_CORRELATOR),
+        pluginParameters.load(PARAM_JOB_ID),
+        pluginParameters.load(PARAM_GITHUB_SHA),
+        pluginParameters.load(PARAM_GITHUB_REF)
+    )
+
+    private val configurationFilter = ResolvedConfigurationFilter(
+        pluginParameters.loadOptional(PARAM_INCLUDE_PROJECTS),
+        pluginParameters.loadOptional(PARAM_INCLUDE_CONFIGURATIONS)
     )
 
     private val thrownExceptions = Collections.synchronizedList(mutableListOf<Throwable>())
@@ -112,13 +117,19 @@ abstract class DependencyExtractor :
             // No dependencies to extract: can safely ignore
             return
         }
+        val projectIdentityPath = (rootComponent.id as? DefaultProjectComponentIdentifier)?.identityPath?.path
 
         // TODO: At this point, any resolution not bound to a particular project will be assigned to the root "build :"
         // This is because `details.buildPath` is always ':', which isn't correct in a composite build.
         // It is possible to do better. By tracking the current build operation context, we can assign more precisely.
         // See the Gradle Enterprise Build Scan Plugin: `ConfigurationResolutionCapturer_5_0`
-        val projectIdentityPath = (rootComponent.id as? DefaultProjectComponentIdentifier)?.identityPath?.path
         val rootPath = projectIdentityPath ?: details.buildPath
+
+        if (!configurationFilter.include(rootPath, details.configurationName)) {
+            println("Ignoring resolved configuration: ${rootPath} - ${details.configurationName}")
+            return
+        }
+
         val rootId = if (projectIdentityPath == null) "build $rootPath" else componentId(rootComponent)
         val rootSource = DependencySource(rootId, rootPath)
         val resolvedConfiguration = ResolvedConfiguration(rootSource)
@@ -219,7 +230,7 @@ abstract class DependencyExtractor :
     }
 
     private fun getOutputDir(): File {
-        if (dependencyGraphReportDir.isNotEmpty()) {
+        if (dependencyGraphReportDir != null) {
             return File(dependencyGraphReportDir)
         }
 

@@ -38,8 +38,8 @@ class DependencyExtractorConfigTest extends BaseExtractorTest {
 
         when:
         executer
-            .withArgument("-Dorg.gradle.github.env.GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR=TEST_CORRELATOR")
-            .withArgument("-Dorg.gradle.github.env.GITHUB_REF=refs/my-branch/foo")
+            .withArgument("-Dgithub-dependency-graph-job-correlator=TEST_CORRELATOR")
+            .withArgument("-Dgithub-ref=refs/my-branch/foo")
         run()
 
         then:

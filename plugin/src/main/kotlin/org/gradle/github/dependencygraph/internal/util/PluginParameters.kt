@@ -19,23 +19,19 @@ const val PARAM_GITHUB_WORKSPACE = "GITHUB_WORKSPACE"
 
 class PluginParameters {
     fun load(envName: String, default: String? = null): String {
-        return System.getProperty(sysPropName(envName))
+        return System.getProperty(envName)
             ?: System.getenv()[envName]
             ?: default
             ?: throwEnvironmentVariableMissingException(envName)
     }
 
     fun loadOptional(envName: String): String? {
-        return System.getProperty(sysPropName(envName))
+        return System.getProperty(envName)
             ?: System.getenv()[envName]
-    }
-
-    private fun sysPropName(envName: String): String {
-        return envName.toLowerCase().replace('_', '-')
     }
 
     private fun throwEnvironmentVariableMissingException(variable: String): Nothing {
         throw IllegalStateException("The configuration parameter '$variable' must be set: " +
-            "set an environment variable, or '-D${sysPropName(variable)}=value' on the command-line.")
+            "set an environment variable, or use '-D${variable}=value' on the command-line.")
     }
 }

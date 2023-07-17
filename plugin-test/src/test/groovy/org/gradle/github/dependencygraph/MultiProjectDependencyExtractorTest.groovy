@@ -271,7 +271,7 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         """
 
         when:
-        executer.withArgument("-Ddependency-graph-include-projects=:b")
+        executer.withArgument("-DDEPENDENCY_GRAPH_INCLUDE_PROJECTS=:b")
         run()
 
         then:
@@ -304,7 +304,7 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         """
 
         when:
-        executer.withArgument("-Ddependency-graph-include-configurations=compileClasspath")
+        executer.withArgument("-DDEPENDENCY_GRAPH_INCLUDE_CONFIGURATIONS=compileClasspath")
         run()
 
         then:

@@ -38,8 +38,8 @@ class DependencyExtractorConfigTest extends BaseExtractorTest {
 
         when:
         executer
-            .withArgument("-Dgithub-job-correlator=TEST_CORRELATOR")
-            .withArgument("-Dgithub-ref=refs/my-branch/foo")
+            .withArgument("-DGITHUB_JOB_CORRELATOR=TEST_CORRELATOR")
+            .withArgument("-DGITHUB_REF=refs/my-branch/foo")
         run()
 
         then:

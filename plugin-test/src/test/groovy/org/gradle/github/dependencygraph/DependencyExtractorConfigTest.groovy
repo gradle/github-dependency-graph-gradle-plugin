@@ -77,4 +77,15 @@ class DependencyExtractorConfigTest extends BaseExtractorTest {
             "org.test:foo:1.0": [package_url: purlFor(foo)]
         ])
     }
+
+    def "fails gracefully if configuration values not set"() {
+        when:
+        def envVars = environmentVars.asEnvironmentMap()
+        envVars.remove("GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR")
+        executer.withEnvironmentVars(envVars)
+        def result = executer.runWithFailure()
+
+        then:
+        result.output.contains("'GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR' must be set")
+    }
 }

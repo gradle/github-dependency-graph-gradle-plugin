@@ -9,11 +9,12 @@ import org.gradle.github.GitHubDependencyGraphPlugin
 import org.gradle.github.dependencygraph.internal.github.GitHubDependencyGraphOutput
 import org.gradle.github.dependencygraph.internal.github.GitHubSnapshotParams
 import org.gradle.github.dependencygraph.internal.model.*
+import org.gradle.github.dependencygraph.internal.util.*
 import org.gradle.internal.exceptions.DefaultMultiCauseException
 import org.gradle.internal.operations.*
 import java.io.File
 import java.net.URI
-import java.nio.file.Path
+import java.nio.file.Paths
 import java.util.*
 import org.gradle.api.internal.artifacts.configurations.ResolveConfigurationDependenciesBuildOperationType as ResolveConfigurationDependenciesBOT
 import org.gradle.initialization.LoadProjectsBuildOperationType as LoadProjectsBOT
@@ -22,12 +23,7 @@ abstract class DependencyExtractor :
     BuildOperationListener,
     AutoCloseable {
 
-    protected abstract val dependencyGraphJobCorrelator: String
-    protected abstract val dependencyGraphJobId: String
-    protected abstract val dependencyGraphReportDir: String
-    protected abstract val gitSha: String
-    protected abstract val gitRef: String
-    protected abstract val gitWorkspaceDirectory: Path
+    val pluginParameters = PluginParameters()
 
     var rootProjectBuildDirectory: File? = null
 
@@ -36,12 +32,23 @@ abstract class DependencyExtractor :
      */
     private val resolvedConfigurations = Collections.synchronizedList(mutableListOf<ResolvedConfiguration>())
 
+
     /**
      * Map of the project identifier to the relative path of the git workspace directory [gitWorkspaceDirectory].
      */
     private val buildLayout by lazy {
+        val gitWorkspaceDirectory = Paths.get(pluginParameters.load(ENV_GITHUB_WORKSPACE))
         BuildLayout(gitWorkspaceDirectory)
     }
+
+    private val dependencyGraphReportDir = pluginParameters.load(ENV_DEPENDENCY_GRAPH_REPORT_DIR, "")
+
+    private val gitHubSnapshotParams = GitHubSnapshotParams(
+        pluginParameters.load(ENV_DEPENDENCY_GRAPH_JOB_CORRELATOR),
+        pluginParameters.load(ENV_DEPENDENCY_GRAPH_JOB_ID),
+        pluginParameters.load(ENV_GITHUB_SHA),
+        pluginParameters.load(ENV_GITHUB_REF)
+    )
 
     private val thrownExceptions = Collections.synchronizedList(mutableListOf<Throwable>())
 
@@ -207,10 +214,7 @@ abstract class DependencyExtractor :
     }
 
     private fun writeDependencyGraph() {
-        val builder = GitHubDependencyGraphOutput(
-            GitHubSnapshotParams(dependencyGraphJobCorrelator, dependencyGraphJobId, gitSha, gitRef),
-            getOutputDir()
-        )
+        val builder = GitHubDependencyGraphOutput(gitHubSnapshotParams, getOutputDir())
         builder.outputDependencyGraph(resolvedConfigurations, buildLayout)
     }
 

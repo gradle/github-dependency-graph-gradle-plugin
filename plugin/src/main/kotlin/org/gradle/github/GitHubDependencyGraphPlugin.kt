@@ -3,9 +3,9 @@ package org.gradle.github
 import org.gradle.api.Plugin
 import org.gradle.api.invocation.Gradle
 import org.gradle.api.logging.Logging
-import org.gradle.github.dependencygraph.ForceDependencyResolutionPlugin
+import org.gradle.github.forceresolve.ForceDependencyResolutionPlugin
 import org.gradle.github.dependencygraph.GitHubDependencyExtractorPlugin
-import org.gradle.github.dependencygraph.internal.util.PluginCompanionUtils
+import org.gradle.github.dependencygraph.internal.util.GradleExtensions
 
 /**
  * A plugin that collects all resolved dependencies in a Gradle build for submission to the
@@ -13,7 +13,7 @@ import org.gradle.github.dependencygraph.internal.util.PluginCompanionUtils
  */
 @Suppress("unused")
 class GitHubDependencyGraphPlugin : Plugin<Gradle> {
-    private companion object : PluginCompanionUtils() {
+    private companion object : GradleExtensions() {
         private val LOGGER = Logging.getLogger(GitHubDependencyGraphPlugin::class.java)
     }
 

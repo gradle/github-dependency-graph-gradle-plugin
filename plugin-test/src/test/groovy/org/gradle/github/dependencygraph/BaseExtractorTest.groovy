@@ -285,9 +285,9 @@ abstract class BaseExtractorTest extends Specification {
 
         Map<String, String> asEnvironmentMap() {
             return [
-                "GITHUB_DEPENDENCY_GRAPH_JOB_ID"        : jobId,
-                "GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR": jobCorrelator,
-                "GITHUB_DEPENDENCY_GRAPH_REPORT_DIR"    : reportDir,
+                "GITHUB_JOB_ID"        : jobId,
+                "GITHUB_JOB_CORRELATOR": jobCorrelator,
+                "DEPENDENCY_GRAPH_REPORT_DIR"    : reportDir,
                 "GITHUB_REF"                            : ref,
                 "GITHUB_SHA"                            : sha,
                 "GITHUB_WORKSPACE"                      : workspace,

@@ -38,8 +38,8 @@ class DependencyExtractorConfigTest extends BaseExtractorTest {
 
         when:
         executer
-            .withArgument("-Dorg.gradle.github.env.GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR=TEST_CORRELATOR")
-            .withArgument("-Dorg.gradle.github.env.GITHUB_REF=refs/my-branch/foo")
+            .withArgument("-Dgithub-job-correlator=TEST_CORRELATOR")
+            .withArgument("-Dgithub-ref=refs/my-branch/foo")
         run()
 
         then:
@@ -76,5 +76,16 @@ class DependencyExtractorConfigTest extends BaseExtractorTest {
         manifest.assertResolved([
             "org.test:foo:1.0": [package_url: purlFor(foo)]
         ])
+    }
+
+    def "fails gracefully if configuration values not set"() {
+        when:
+        def envVars = environmentVars.asEnvironmentMap()
+        envVars.remove("GITHUB_JOB_CORRELATOR")
+        executer.withEnvironmentVars(envVars)
+        def result = executer.runWithFailure()
+
+        then:
+        result.output.contains("'GITHUB_JOB_CORRELATOR' must be set")
     }
 }

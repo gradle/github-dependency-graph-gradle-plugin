@@ -250,4 +250,71 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
             "org.test:foo:1.0": [package_url: purlFor(foo)]
         ])
     }
+
+    def "can filter projects to extract dependencies"() {
+        given:
+        settingsFile << "include 'a', 'b'"
+
+        buildFile << """
+            project(':a') {
+                apply plugin: 'java-library'
+                dependencies {
+                    api 'org.test:foo:1.0'
+                }
+            }
+            project(':b') {
+                apply plugin: 'java-library'
+                dependencies {
+                    api 'org.test:bar:1.0'
+                }
+            }
+        """
+
+        when:
+        executer.withArgument("-Ddependency-graph-include-projects=:b")
+        run()
+
+        then:
+        def manifest = gitHubManifest()
+        manifest.sourceFile == "build.gradle"
+        manifest.assertResolved([
+            "org.test:bar:1.0": [package_url: purlFor(bar)]
+        ])
+    }
+
+    def "can filter configurations to extract dependencies"() {
+        given:
+        settingsFile << "include 'a', 'b'"
+
+        buildFile << """
+            project(':a') {
+                apply plugin: 'java-library'
+                dependencies {
+                    api 'org.test:foo:1.0'
+                    testImplementation 'org.test:baz:1.0'
+                }
+            }
+            project(':b') {
+                apply plugin: 'java-library'
+                dependencies {
+                    implementation 'org.test:bar:1.0'
+                    testImplementation 'org.test:baz:1.0'
+                }
+            }
+        """
+
+        when:
+        executer.withArgument("-Ddependency-graph-include-configurations=compileClasspath")
+        run()
+
+        then:
+        def manifest = gitHubManifest()
+        manifest.sourceFile == "build.gradle"
+        manifest.assertResolved([
+            "org.test:foo:1.0": [package_url: purlFor(foo)],
+            "org.test:bar:1.0": [package_url: purlFor(bar)]
+        ])
+    }
+
+
 }

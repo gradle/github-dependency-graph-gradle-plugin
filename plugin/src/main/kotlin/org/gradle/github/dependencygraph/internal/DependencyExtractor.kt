@@ -9,11 +9,12 @@ import org.gradle.github.GitHubDependencyGraphPlugin
 import org.gradle.github.dependencygraph.internal.github.GitHubDependencyGraphOutput
 import org.gradle.github.dependencygraph.internal.github.GitHubSnapshotParams
 import org.gradle.github.dependencygraph.internal.model.*
+import org.gradle.github.dependencygraph.internal.util.*
 import org.gradle.internal.exceptions.DefaultMultiCauseException
 import org.gradle.internal.operations.*
 import java.io.File
 import java.net.URI
-import java.nio.file.Path
+import java.nio.file.Paths
 import java.util.*
 import org.gradle.api.internal.artifacts.configurations.ResolveConfigurationDependenciesBuildOperationType as ResolveConfigurationDependenciesBOT
 import org.gradle.initialization.LoadProjectsBuildOperationType as LoadProjectsBOT
@@ -22,28 +23,40 @@ abstract class DependencyExtractor :
     BuildOperationListener,
     AutoCloseable {
 
-    protected abstract val dependencyGraphJobCorrelator: String
-    protected abstract val dependencyGraphJobId: String
-    protected abstract val dependencyGraphReportDir: String
-    protected abstract val gitSha: String
-    protected abstract val gitRef: String
-    protected abstract val gitWorkspaceDirectory: Path
+    private val pluginParameters = PluginParameters()
+
+    private val resolvedConfigurations = Collections.synchronizedList(mutableListOf<ResolvedConfiguration>())
+
+    private val thrownExceptions = Collections.synchronizedList(mutableListOf<Throwable>())
 
     var rootProjectBuildDirectory: File? = null
 
-    /**
-     * Map of all resolved configurations by name
-     */
-    private val resolvedConfigurations = Collections.synchronizedList(mutableListOf<ResolvedConfiguration>())
-
-    /**
-     * Map of the project identifier to the relative path of the git workspace directory [gitWorkspaceDirectory].
-     */
+    // Properties are lazily initialized so that System Properties are initialized by the time
+    // the values are used. This is required due to a bug in older Gradle versions. (https://github.com/gradle/gradle/issues/6825)
     private val buildLayout by lazy {
+        val gitWorkspaceDirectory = Paths.get(pluginParameters.load(PARAM_GITHUB_WORKSPACE))
         BuildLayout(gitWorkspaceDirectory)
     }
 
-    private val thrownExceptions = Collections.synchronizedList(mutableListOf<Throwable>())
+    private val configurationFilter by lazy {
+        ResolvedConfigurationFilter(
+            pluginParameters.loadOptional(PARAM_INCLUDE_PROJECTS),
+            pluginParameters.loadOptional(PARAM_INCLUDE_CONFIGURATIONS)
+        )
+    }
+
+    private val dependencyGraphReportDir by lazy {
+        pluginParameters.loadOptional(PARAM_REPORT_DIR)
+    }
+
+    private val gitHubSnapshotParams by lazy {
+        GitHubSnapshotParams(
+            pluginParameters.load(PARAM_JOB_CORRELATOR),
+            pluginParameters.load(PARAM_JOB_ID),
+            pluginParameters.load(PARAM_GITHUB_SHA),
+            pluginParameters.load(PARAM_GITHUB_REF)
+        )
+    }
 
     override fun started(buildOperation: BuildOperationDescriptor, startEvent: OperationStartEvent) {
         // This method will never be called when registered in a `BuildServiceRegistry` (ie. Gradle 6.1 & higher)
@@ -105,13 +118,19 @@ abstract class DependencyExtractor :
             // No dependencies to extract: can safely ignore
             return
         }
+        val projectIdentityPath = (rootComponent.id as? DefaultProjectComponentIdentifier)?.identityPath?.path
 
         // TODO: At this point, any resolution not bound to a particular project will be assigned to the root "build :"
         // This is because `details.buildPath` is always ':', which isn't correct in a composite build.
         // It is possible to do better. By tracking the current build operation context, we can assign more precisely.
         // See the Gradle Enterprise Build Scan Plugin: `ConfigurationResolutionCapturer_5_0`
-        val projectIdentityPath = (rootComponent.id as? DefaultProjectComponentIdentifier)?.identityPath?.path
         val rootPath = projectIdentityPath ?: details.buildPath
+
+        if (!configurationFilter.include(rootPath, details.configurationName)) {
+            println("Ignoring resolved configuration: ${rootPath} - ${details.configurationName}")
+            return
+        }
+
         val rootId = if (projectIdentityPath == null) "build $rootPath" else componentId(rootComponent)
         val rootSource = DependencySource(rootId, rootPath)
         val resolvedConfiguration = ResolvedConfiguration(rootSource)
@@ -207,15 +226,12 @@ abstract class DependencyExtractor :
     }
 
     private fun writeDependencyGraph() {
-        val builder = GitHubDependencyGraphOutput(
-            GitHubSnapshotParams(dependencyGraphJobCorrelator, dependencyGraphJobId, gitSha, gitRef),
-            getOutputDir()
-        )
+        val builder = GitHubDependencyGraphOutput(gitHubSnapshotParams, getOutputDir())
         builder.outputDependencyGraph(resolvedConfigurations, buildLayout)
     }
 
     private fun getOutputDir(): File {
-        if (dependencyGraphReportDir.isNotEmpty()) {
+        if (dependencyGraphReportDir != null) {
             return File(dependencyGraphReportDir)
         }
 

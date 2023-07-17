@@ -52,6 +52,19 @@ You can provide this value via the `DEPENDENCY_GRAPH_INCLUDE_PROJECTS` environme
 To restrict which Gradle configurations contribute to the report, you can filter configurations by name using a regular expression.
 You can provide this value via the `DEPENDENCY_GRAPH_INCLUDE_CONFIGURATIONS` environment variable, or the `dependency-graph-include-configurations` System property.
 
+### Gradle compatibility
+
+The plugin should be compatible with all versions of Gradle >= 5.0, and has been tested against 
+Gradle versions "5.6.4", "6.9.4", "7.0.2", "7.6.2", "8.0.2" and the current Gradle release.
+
+The plugin is compatible with running Gradle with the configuration-cache enabled. However, this support is
+limited to Gradle "8.1.0" and later:
+- With Gradle "8.0", the build should run successfully, but an empty dependency graph will be generated.
+- With Gradle <= "7.6.4", the plugin will cause the build to fail with configuration-cache enabled.
+
+To use this plugin with versions of Gradle older than "8.1.0", you'll need to invoke Gradle with the
+configuration-cache disabled.
+
 ## Building/Testing
 
 To build and test this plugin, run the following task:

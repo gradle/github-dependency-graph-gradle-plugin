@@ -4,8 +4,6 @@ on:
   push:
     paths-ignore:
     - 'release/**'
-  pull_request:
-    branches: [ main ]
 
 jobs:
   quick-check:

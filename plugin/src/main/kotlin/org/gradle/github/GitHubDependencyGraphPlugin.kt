@@ -3,7 +3,7 @@ package org.gradle.github
 import org.gradle.api.Plugin
 import org.gradle.api.invocation.Gradle
 import org.gradle.api.logging.Logging
-import org.gradle.github.dependencygraph.ForceDependencyResolutionPlugin
+import org.gradle.github.forceresolve.ForceDependencyResolutionPlugin
 import org.gradle.github.dependencygraph.GitHubDependencyExtractorPlugin
 import org.gradle.github.dependencygraph.internal.util.PluginCompanionUtils
 

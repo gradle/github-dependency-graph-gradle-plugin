@@ -23,39 +23,40 @@ abstract class DependencyExtractor :
     BuildOperationListener,
     AutoCloseable {
 
-    val pluginParameters = PluginParameters()
+    private val pluginParameters = PluginParameters()
+
+    private val resolvedConfigurations = Collections.synchronizedList(mutableListOf<ResolvedConfiguration>())
+
+    private val thrownExceptions = Collections.synchronizedList(mutableListOf<Throwable>())
 
     var rootProjectBuildDirectory: File? = null
 
-    /**
-     * Map of all resolved configurations by name
-     */
-    private val resolvedConfigurations = Collections.synchronizedList(mutableListOf<ResolvedConfiguration>())
-
-
-    /**
-     * Map of the project identifier to the relative path of the git workspace directory [gitWorkspaceDirectory].
-     */
+    // Properties are lazily initialized so that System Properties are initialized by the time
+    // the values are used. This is required due to a bug in older Gradle versions. (https://github.com/gradle/gradle/issues/6825)
     private val buildLayout by lazy {
         val gitWorkspaceDirectory = Paths.get(pluginParameters.load(PARAM_GITHUB_WORKSPACE))
         BuildLayout(gitWorkspaceDirectory)
     }
 
-    private val dependencyGraphReportDir = pluginParameters.loadOptional(PARAM_REPORT_DIR)
+    private val configurationFilter by lazy {
+        ResolvedConfigurationFilter(
+            pluginParameters.loadOptional(PARAM_INCLUDE_PROJECTS),
+            pluginParameters.loadOptional(PARAM_INCLUDE_CONFIGURATIONS)
+        )
+    }
 
-    private val gitHubSnapshotParams = GitHubSnapshotParams(
-        pluginParameters.load(PARAM_JOB_CORRELATOR),
-        pluginParameters.load(PARAM_JOB_ID),
-        pluginParameters.load(PARAM_GITHUB_SHA),
-        pluginParameters.load(PARAM_GITHUB_REF)
-    )
+    private val dependencyGraphReportDir by lazy {
+        pluginParameters.loadOptional(PARAM_REPORT_DIR)
+    }
 
-    private val configurationFilter = ResolvedConfigurationFilter(
-        pluginParameters.loadOptional(PARAM_INCLUDE_PROJECTS),
-        pluginParameters.loadOptional(PARAM_INCLUDE_CONFIGURATIONS)
-    )
-
-    private val thrownExceptions = Collections.synchronizedList(mutableListOf<Throwable>())
+    private val gitHubSnapshotParams by lazy {
+        GitHubSnapshotParams(
+            pluginParameters.load(PARAM_JOB_CORRELATOR),
+            pluginParameters.load(PARAM_JOB_ID),
+            pluginParameters.load(PARAM_GITHUB_SHA),
+            pluginParameters.load(PARAM_GITHUB_REF)
+        )
+    }
 
     override fun started(buildOperation: BuildOperationDescriptor, startEvent: OperationStartEvent) {
         // This method will never be called when registered in a `BuildServiceRegistry` (ie. Gradle 6.1 & higher)

@@ -62,6 +62,10 @@ abstract class BaseExtractorTest extends Specification {
         return GradleVersion.version(testGradleVersion) >= GradleVersion.version("6.0")
     }
 
+    static enforcesEitherSettingsOrBuildFile() {
+        return GradleVersion.version(testGradleVersion) >= GradleVersion.version("7.0")
+    }
+
     SimpleGradleExecuter createExecuter(String gradleVersion) {
         println("Executing test with Gradle $gradleVersion")
         def testKitDir = file("test-kit")

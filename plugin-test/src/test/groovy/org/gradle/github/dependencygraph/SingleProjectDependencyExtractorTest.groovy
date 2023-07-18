@@ -47,7 +47,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
 
         then:
         def manifest = gitHubManifest()
-        manifest.sourceFile == "build.gradle"
+        manifest.sourceFile == "settings.gradle"
 
         manifest.assertResolved([
             "org.test:foo:1.0": [
@@ -77,7 +77,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
 
         then:
         def manifest = gitHubManifest()
-        manifest.sourceFile == "build.gradle"
+        manifest.sourceFile == "settings.gradle"
 
         manifest.assertResolved([
             "org.test:foo:1.0": [package_url: purlFor(foo)]
@@ -100,7 +100,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
 
         then:
         def manifest = gitHubManifest()
-        manifest.sourceFile == "build.gradle"
+        manifest.sourceFile == "settings.gradle"
 
         manifest.assertResolved([
             "org.test:foo:1.0": [
@@ -125,7 +125,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
 
         then:
         def manifest = gitHubManifest()
-        manifest.sourceFile == "build.gradle"
+        manifest.sourceFile == "settings.gradle"
 
         manifest.assertResolved([
             "org.test:foo:2.0": [
@@ -156,7 +156,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
 
         then:
         def manifest = gitHubManifest()
-        manifest.sourceFile == "build.gradle"
+        manifest.sourceFile == "settings.gradle"
         manifest.assertResolved([
             "org.test:baz:1.0": [
                 package_url : purlFor(baz),
@@ -183,7 +183,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
 
         then:
         def manifest = gitHubManifest()
-        manifest.sourceFile == "build.gradle"
+        manifest.sourceFile == "settings.gradle"
 
         manifest.assertResolved([
             "org.test:bar:1.0": [
@@ -213,7 +213,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
 
         then:
         def manifest = gitHubManifest()
-        manifest.sourceFile == "build.gradle"
+        manifest.sourceFile == "settings.gradle"
 
         manifest.assertResolved([
             "org.test:baz:1.0": [
@@ -261,7 +261,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
 
         then:
         def manifestA = gitHubManifest()
-        manifestA.sourceFile == "build.gradle"
+        manifestA.sourceFile == "settings.gradle"
         manifestA.assertResolved([
             "org.test:direct:1.0"    : [package_url: (purlFor(directDep)),
                                         dependencies: ["org.test:transitive:1.0"]],
@@ -295,7 +295,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
 
         then:
         def manifest = gitHubManifest()
-        manifest.sourceFile == "build.gradle"
+        manifest.sourceFile == "settings.gradle"
 
         manifest.assertResolved([
             "org.test:baz:1.0": [
@@ -327,7 +327,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
 
         then:
         def manifest = gitHubManifest()
-        manifest.sourceFile == "build.gradle"
+        manifest.sourceFile == "settings.gradle"
 
         manifest.assertResolved([
             "org.test:baz:1.0": [
@@ -363,7 +363,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
 
         then:
         def manifest = gitHubManifest()
-        manifest.sourceFile == "build.gradle"
+        manifest.sourceFile == "settings.gradle"
         manifest.assertResolved([
             "my.project.plugin:my.project.plugin.gradle.plugin:1.0": [
                 package_url : purlFor("my.project.plugin", "my.project.plugin.gradle.plugin", "1.0"),
@@ -399,7 +399,7 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
 
         then:
         def manifest = gitHubManifest()
-        manifest.sourceFile == "build.gradle"
+        manifest.sourceFile == "settings.gradle"
         manifest.assertResolved([
             "my.settings.plugin:my.settings.plugin.gradle.plugin:1.0": [
                 package_url : purlFor("my.settings.plugin", "my.settings.plugin.gradle.plugin", "1.0"),

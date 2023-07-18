@@ -71,7 +71,7 @@ class DependencyExtractorConfigTest extends BaseExtractorTest {
 
         then:
         def manifest = gitHubManifest()
-        manifest.sourceFile == "build.gradle"
+        manifest.sourceFile == "settings.gradle"
 
         manifest.assertResolved([
             "org.test:foo:1.0": [package_url: purlFor(foo)]

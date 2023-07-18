@@ -5,6 +5,7 @@ import org.gradle.api.invocation.Gradle
 import org.gradle.api.provider.Provider
 import org.gradle.github.dependencygraph.internal.DependencyExtractor
 import org.gradle.github.dependencygraph.internal.DependencyExtractorBuildService
+import org.gradle.github.dependencygraph.internal.LegacyDependencyExtractor
 import org.gradle.github.dependencygraph.internal.util.GradleExtensions
 import org.gradle.github.dependencygraph.internal.util.service
 import org.gradle.internal.build.event.BuildEventListenerRegistryInternal
@@ -67,10 +68,8 @@ class GitHubDependencyExtractorPlugin : Plugin<Gradle> {
             override fun createExtractorService(
                 gradle: Gradle
             ): Provider<out DependencyExtractor> {
-                // Create a constant value that the provider will always return.
-                // IE. Memoize the value
-                val constantDependencyExtractor = object : DependencyExtractor() {}
-                return gradle.providerFactory.provider { constantDependencyExtractor }
+                val dependencyExtractor = LegacyDependencyExtractor()
+                return gradle.providerFactory.provider { dependencyExtractor }
             }
 
             override fun registerExtractorListener(

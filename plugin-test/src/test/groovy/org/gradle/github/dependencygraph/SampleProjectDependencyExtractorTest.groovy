@@ -21,6 +21,7 @@ class SampleProjectDependencyExtractorTest extends BaseExtractorTest {
 
         then:
         def manifest = gitHubManifest()
+        manifest.sourceFile == "settings.gradle"
         def manifestDependencies = manifest.resolved
 
         [   // plugin dependencies
@@ -54,6 +55,7 @@ class SampleProjectDependencyExtractorTest extends BaseExtractorTest {
 
         then:
         def manifest = gitHubManifest()
+        manifest.sourceFile == "settings.gradle"
         manifest.resolved.keySet().containsAll([
             "org.apache.commons:commons-math3:3.5",
             "org.apache.commons:commons-math3:3.6.1", // buildSrc dependency with different version
@@ -76,6 +78,7 @@ class SampleProjectDependencyExtractorTest extends BaseExtractorTest {
 
         then:
         def manifest = gitHubManifest()
+        manifest.sourceFile == "settings.gradle.kts"
         manifest.resolved.keySet().containsAll([
             "org.slf4j:slf4j-api:2.0.6",
             "org.apache.commons:commons-text:1.9",

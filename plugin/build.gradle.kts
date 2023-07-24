@@ -198,7 +198,6 @@ githubRelease {
     repo.set("github-dependency-graph-gradle-plugin")
     releaseName.set(releaseVersion)
     tagName.set(releaseTag)
-    prerelease.set(true)
     body.set(releaseNotes)
 }
 

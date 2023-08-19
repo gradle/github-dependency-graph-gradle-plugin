@@ -53,7 +53,7 @@ class DependencyExtractorConfigTest extends BaseExtractorTest {
     }
 
     @IgnoreIf({
-        // There's an issue where BuildService is closed too early in Gradle 8.0,
+        // There is an issue where BuildService is closed too early in Gradle 8.0,
         // resulting in empty dependency graph.
         GradleVersion.version(testGradleVersion) < GradleVersion.version("8.1")
     })

@@ -1,6 +1,5 @@
 package org.gradle.github.dependencygraph.internal.model
 
-import org.gradle.github.dependencygraph.internal.github.json.GitHubManifestFile
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -18,12 +17,13 @@ class BuildLayout(private val gitWorkspaceDirectory: Path) {
         projectPathToBuildFile[identityPath] = buildFileAbsolutePath
     }
 
-    fun getManifestFile(): GitHubManifestFile? {
-        return getManifestFileRelativePath(":")?.let { filePath ->
-            // Clean up path for Windows systems
-            val sourceLocation = filePath.toString().replace('\\', '/')
-            GitHubManifestFile(sourceLocation = sourceLocation)
-        }
+    /**
+     * Returns the relative path to the root build settings file if it exists, or the root build file if not.
+     */
+    fun getRootBuildFileRelativePath(): String? {
+        val filePath = getManifestFileRelativePath(":")
+        // Clean up path for Windows systems
+        return filePath?.toString()?.replace('\\', '/')
     }
 
     private fun getManifestFileRelativePath(identityPath: String): Path? {

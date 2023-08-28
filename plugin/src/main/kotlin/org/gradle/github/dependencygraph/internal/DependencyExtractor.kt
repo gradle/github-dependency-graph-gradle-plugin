@@ -5,9 +5,8 @@ import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.internal.artifacts.DefaultProjectComponentIdentifier
 import org.gradle.api.internal.artifacts.configurations.ResolveConfigurationDependenciesBuildOperationType
+import org.gradle.api.logging.Logging
 import org.gradle.github.GitHubDependencyGraphPlugin
-import org.gradle.github.dependencygraph.internal.github.GitHubDependencyGraphOutput
-import org.gradle.github.dependencygraph.internal.github.GitHubSnapshotParams
 import org.gradle.github.dependencygraph.internal.model.*
 import org.gradle.github.dependencygraph.internal.util.*
 import org.gradle.initialization.EvaluateSettingsBuildOperationType
@@ -50,14 +49,7 @@ abstract class DependencyExtractor :
         pluginParameters.loadOptional(PARAM_REPORT_DIR)
     }
 
-    private val gitHubSnapshotParams by lazy {
-        GitHubSnapshotParams(
-            pluginParameters.load(PARAM_JOB_CORRELATOR),
-            pluginParameters.load(PARAM_JOB_ID),
-            pluginParameters.load(PARAM_GITHUB_SHA),
-            pluginParameters.load(PARAM_GITHUB_REF)
-        )
-    }
+    abstract fun getRendererClassName(): String
 
     override fun started(buildOperation: BuildOperationDescriptor, startEvent: OperationStartEvent) {
         // This method will never be called when registered in a `BuildServiceRegistry` (ie. Gradle 6.1 & higher)
@@ -239,8 +231,12 @@ abstract class DependencyExtractor :
     }
 
     private fun writeDependencyGraph() {
-        val builder = GitHubDependencyGraphOutput(gitHubSnapshotParams, getOutputDir())
-        builder.outputDependencyGraph(resolvedConfigurations, buildLayout)
+        createRenderer().outputDependencyGraph(pluginParameters, buildLayout, resolvedConfigurations, getOutputDir())
+    }
+
+    private fun createRenderer(): DependencyGraphRenderer {
+        LOGGER.lifecycle("Constructing renderer: ${getRendererClassName()}")
+        return Class.forName(getRendererClassName()).getDeclaredConstructor().newInstance() as DependencyGraphRenderer
     }
 
     private fun getOutputDir(): File {
@@ -274,6 +270,10 @@ abstract class DependencyExtractor :
                     e
             )
         }
+    }
+
+    companion object {
+        private val LOGGER = Logging.getLogger(DependencyExtractor::class.java)
     }
 }
 

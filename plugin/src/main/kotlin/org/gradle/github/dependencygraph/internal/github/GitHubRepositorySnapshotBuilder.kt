@@ -31,11 +31,11 @@ class GitHubRepositorySnapshotBuilder(
         }
 
         // Use the root build as the Manifest file location
-        val manifestFile = buildLayout.getManifestFile()
+        val manifestFile = buildLayout.getRootBuildFileRelativePath()
         return GitHubManifest(
             manifestName,
             dependencyCollector.getDependencies(),
-            manifestFile
+            manifestFile?.let { GitHubManifestFile(sourceLocation = it) }
         )
     }
 

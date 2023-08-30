@@ -103,9 +103,9 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         ])
 
         where:
-        task                                                  | description
-        "GitHubDependencyGraphPlugin_generateDependencyGraph" | "All dependencies resolved"
-        ":c:dependencies"                                     | "One project resolved"
+        task                                                     | description
+        "ForceDependencyResolutionPlugin_resolveAllDependencies" | "All dependencies resolved"
+        ":c:dependencies"                                        | "One project resolved"
     }
 
     def "extracts direct dependency for transitive dependency updated by constraint"() {

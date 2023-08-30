@@ -8,8 +8,8 @@ import org.gradle.api.tasks.TaskProvider
 import org.gradle.util.GradleVersion
 
 // TODO: Rename these
-private const val RESOLVE_TASK = "GitHubDependencyGraphPlugin_resolveProjectDependencies"
-private const val GENERATE_TASK = "GitHubDependencyGraphPlugin_generateDependencyGraph"
+private const val RESOLVE_PROJECT_TASK = "ForceDependencyResolutionPlugin_resolveProjectDependencies"
+private const val RESOLVE_ALL_TASK = "ForceDependencyResolutionPlugin_resolveAllDependencies"
 
 /**
  * Adds a task to resolve all dependencies in a Gradle build tree.
@@ -17,7 +17,7 @@ private const val GENERATE_TASK = "GitHubDependencyGraphPlugin_generateDependenc
 class ForceDependencyResolutionPlugin : Plugin<Gradle> {
     override fun apply(gradle: Gradle) {
         gradle.projectsEvaluated {
-            val resolveAllDeps = gradle.rootProject.tasks.register(GENERATE_TASK)
+            val resolveAllDeps = gradle.rootProject.tasks.register(RESOLVE_ALL_TASK)
 
             // Depend on "dependencies" task in all projects
             gradle.allprojects { project ->
@@ -31,7 +31,7 @@ class ForceDependencyResolutionPlugin : Plugin<Gradle> {
             // Depend on all 'resolveBuildDependencies' task in each included build
             gradle.includedBuilds.forEach { includedBuild ->
                 resolveAllDeps.configure {
-                    it.dependsOn(includedBuild.task(":$GENERATE_TASK"))
+                    it.dependsOn(includedBuild.task(":$RESOLVE_ALL_TASK"))
                 }
             }
         }
@@ -52,13 +52,13 @@ class ForceDependencyResolutionPlugin : Plugin<Gradle> {
 
         object Current : ResolveProjectDependenciesTaskFactory {
             override fun create(project: Project): TaskProvider<out Task> {
-                return project.tasks.register(RESOLVE_TASK, ResolveProjectDependenciesTask::class.java)
+                return project.tasks.register(RESOLVE_PROJECT_TASK, ResolveProjectDependenciesTask::class.java)
             }
         }
 
         object Legacy : ResolveProjectDependenciesTaskFactory {
             override fun create(project: Project): TaskProvider<out Task> {
-                return project.tasks.register(RESOLVE_TASK, LegacyResolveProjectDependenciesTask::class.java)
+                return project.tasks.register(RESOLVE_PROJECT_TASK, LegacyResolveProjectDependenciesTask::class.java)
             }
         }
     }

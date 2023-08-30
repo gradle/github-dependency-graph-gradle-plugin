@@ -97,7 +97,7 @@ abstract class AbstractDependencyExtractorPlugin : Plugin<Gradle> {
         }
 
         object DefaultPluginApplicatorStrategy : PluginApplicatorStrategy {
-            private const val SERVICE_NAME = "gitHubDependencyExtractorService"
+            private const val SERVICE_NAME = "dependencyExtractorService"
 
             override fun createExtractorService(
                 gradle: Gradle,

@@ -25,7 +25,7 @@ apply plugin: GitHubDependencyGraphPlugin
 
 This causes 2 separate plugins to be applied, that can be used independently:
 - `GitHubDependencyExtractorPlugin` collects all dependencies that are resolved during a build execution and writes these to a file. The output file can be found at `<root>/build/reports/github-depenency-graph-snapshots/<job-correlator>.json`.
-- `ForceDependencyResolutionPlugin` creates a `GitHubDependencyGraphPlugin_generateDependencyGraph` task that will attempt to resolve all dependencies for a Gradle build, by simply invoking `dependencies` on all projects.
+- `ForceDependencyResolutionPlugin` creates a `ForceDependencyResolutionPlugin_resolveAllDependencies` task that will attempt to resolve all dependencies for a Gradle build, by simply invoking `dependencies` on all projects.
 
 ### Required environment variables
 

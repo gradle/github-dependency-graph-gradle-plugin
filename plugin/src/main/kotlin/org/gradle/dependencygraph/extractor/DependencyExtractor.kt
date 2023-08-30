@@ -9,7 +9,6 @@ import org.gradle.api.logging.Logging
 import org.gradle.dependencygraph.DependencyGraphRenderer
 import org.gradle.dependencygraph.model.*
 import org.gradle.dependencygraph.util.*
-import org.gradle.github.GitHubDependencyGraphPlugin
 import org.gradle.initialization.EvaluateSettingsBuildOperationType
 import org.gradle.initialization.LoadProjectsBuildOperationType
 import org.gradle.internal.exceptions.DefaultMultiCauseException
@@ -291,14 +290,14 @@ abstract class DependencyExtractor :
         }
         return File(
             rootProjectBuildDirectory,
-            "reports/github-dependency-graph-snapshots"
+            "reports/dependency-graph-snapshots"
         )
     }
 
     override fun close() {
         if (thrownExceptions.isNotEmpty()) {
             throw DefaultMultiCauseException(
-                "The ${GitHubDependencyGraphPlugin::class.simpleName} plugin encountered errors while extracting dependencies. " +
+                "The dependency-graph extractor plugin encountered errors while extracting dependencies. " +
                     "Please report this issue at: https://github.com/gradle/github-dependency-graph-gradle-plugin/issues",
                 thrownExceptions
             )
@@ -307,7 +306,7 @@ abstract class DependencyExtractor :
             writeDependencyGraph()
         } catch (e: RuntimeException) {
             throw GradleException(
-                "The ${GitHubDependencyGraphPlugin::class.simpleName} plugin encountered errors while writing the dependency snapshot json file. " +
+                "The dependency-graph extractor plugin encountered errors while writing the dependency snapshot json file. " +
                     "Please report this issue at: https://github.com/gradle/github-dependency-graph-gradle-plugin/issues",
                 e
             )

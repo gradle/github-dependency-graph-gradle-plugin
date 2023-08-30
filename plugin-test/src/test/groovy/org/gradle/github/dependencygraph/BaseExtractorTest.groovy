@@ -88,7 +88,7 @@ abstract class BaseExtractorTest extends Specification {
     }
 
     protected BuildResult run() {
-        return run("GitHubDependencyGraphPlugin_generateDependencyGraph")
+        return run("ForceDependencyResolutionPlugin_resolveAllDependencies")
     }
 
     protected BuildResult run(String... names) {

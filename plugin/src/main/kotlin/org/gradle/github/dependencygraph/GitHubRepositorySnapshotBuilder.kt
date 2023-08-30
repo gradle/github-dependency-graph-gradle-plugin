@@ -18,7 +18,7 @@ class GitHubRepositorySnapshotBuilder(
         )
     }
 
-    fun buildManifest(manifestName: String, resolvedConfigurations: MutableList<ResolvedConfiguration>, buildLayout: BuildLayout): GitHubManifest {
+    fun buildManifest(manifestName: String, resolvedConfigurations: List<ResolvedConfiguration>, buildLayout: BuildLayout): GitHubManifest {
         val dependencyCollector = DependencyCollector()
 
         for (resolutionRoot in resolvedConfigurations) {

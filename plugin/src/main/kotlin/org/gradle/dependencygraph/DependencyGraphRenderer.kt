@@ -6,9 +6,10 @@ import org.gradle.dependencygraph.util.PluginParameters
 import java.io.File
 
 interface DependencyGraphRenderer {
-    fun outputDependencyGraph(pluginParameters: PluginParameters,
-                              buildLayout: BuildLayout,
-                              resolvedConfigurations: MutableList<ResolvedConfiguration>,
-                              outputDirectory: File
+    fun outputDependencyGraph(
+        pluginParameters: PluginParameters,
+        buildLayout: BuildLayout,
+        resolvedConfigurations: List<ResolvedConfiguration>,
+        outputDirectory: File
     )
 }

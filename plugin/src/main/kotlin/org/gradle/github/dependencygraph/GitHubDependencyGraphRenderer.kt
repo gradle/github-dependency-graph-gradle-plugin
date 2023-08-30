@@ -13,7 +13,7 @@ class GitHubDependencyGraphRenderer() : DependencyGraphRenderer {
     override fun outputDependencyGraph(
         pluginParameters: PluginParameters,
         buildLayout: BuildLayout,
-        resolvedConfigurations: MutableList<ResolvedConfiguration>,
+        resolvedConfigurations: List<ResolvedConfiguration>,
         outputDirectory: File
     ) {
         val snapshotParams = GitHubSnapshotParams(pluginParameters)
@@ -29,7 +29,6 @@ class GitHubDependencyGraphRenderer() : DependencyGraphRenderer {
     }
 
     private fun writeDependencySnapshot(graph: GitHubRepositorySnapshot, manifestFile: File) {
-        manifestFile.parentFile.mkdirs()
         manifestFile.writeText(JacksonJsonSerializer.serializeToJson(graph))
         LOGGER.lifecycle("\nGitHubDependencyGraphRenderer: Wrote dependency snapshot to \n${manifestFile.canonicalPath}")
     }

@@ -157,7 +157,7 @@ abstract class DependencyExtractor :
 
         val rootId = if (projectIdentityPath == null) "build $rootPath" else componentId(rootComponent)
         val rootSource = DependencySource(rootId, rootPath)
-        val resolvedConfiguration = ResolvedConfiguration(rootSource)
+        val resolvedConfiguration = ResolvedConfiguration(rootSource, details.configurationName)
 
         for (directDependency in getResolvedDependencies(rootComponent)) {
             val directDep = createComponentNode(
@@ -261,7 +261,9 @@ abstract class DependencyExtractor :
     }
 
     private fun writeDependencyGraph() {
-        createRenderer().outputDependencyGraph(pluginParameters, buildLayout, resolvedConfigurations, getOutputDir())
+        val outputDirectory = getOutputDir()
+        outputDirectory.mkdirs()
+        createRenderer().outputDependencyGraph(pluginParameters, buildLayout, resolvedConfigurations, outputDirectory)
     }
 
     private fun createRenderer(): DependencyGraphRenderer {

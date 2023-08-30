@@ -1,5 +1,6 @@
 package org.gradle.github.dependencygraph.internal
 
+import org.gradle.dependencygraph.extractor.ResolvedConfigurationFilter
 import spock.lang.Specification
 
 class ResolvedConfigurationTest extends Specification {

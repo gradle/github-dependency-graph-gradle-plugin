@@ -30,13 +30,25 @@ class GitHubRepositorySnapshotBuilder(
             }
         }
 
-        // Use the root build as the Manifest file location
-        val manifestFile = buildLayout.getRootBuildFileRelativePath()
         return GitHubManifest(
             manifestName,
             dependencyCollector.getDependencies(),
-            manifestFile?.let { GitHubManifestFile(sourceLocation = it) }
+            getManifestFile(buildLayout)
         )
+    }
+
+    /**
+     * Manifest file is the root build settings file if it exists, or the root build file if not.
+     */
+    private fun getManifestFile(buildLayout: BuildLayout): GitHubManifestFile? {
+        val path = buildLayout.getRootBuildPath()
+        return path?.let {
+            val filePath = snapshotParams.gitHubWorkspace
+                .relativize(path)
+                .toString()
+                .replace('\\', '/') // Clean up path for Windows systems
+            GitHubManifestFile(sourceLocation = filePath)
+        }
     }
 
     // TODO:DAZ Model this better

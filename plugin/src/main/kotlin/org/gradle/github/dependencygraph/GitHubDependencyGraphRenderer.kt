@@ -8,12 +8,6 @@ import org.gradle.dependencygraph.model.ResolvedConfiguration
 import org.gradle.dependencygraph.util.*
 import java.io.File
 
-// TODO work out the best place for different constants
-const val PARAM_JOB_ID = "GITHUB_JOB_ID"
-const val PARAM_JOB_CORRELATOR = "GITHUB_JOB_CORRELATOR"
-const val PARAM_GITHUB_REF = "GITHUB_REF"
-const val PARAM_GITHUB_SHA = "GITHUB_SHA"
-
 class GitHubDependencyGraphRenderer() : DependencyGraphRenderer {
 
     override fun outputDependencyGraph(
@@ -22,13 +16,7 @@ class GitHubDependencyGraphRenderer() : DependencyGraphRenderer {
         resolvedConfigurations: MutableList<ResolvedConfiguration>,
         outputDirectory: File
     ) {
-        val snapshotParams = GitHubSnapshotParams(
-            pluginParameters.load(PARAM_JOB_CORRELATOR),
-            pluginParameters.load(PARAM_JOB_ID),
-            pluginParameters.load(PARAM_GITHUB_SHA),
-            pluginParameters.load(PARAM_GITHUB_REF)
-        )
-
+        val snapshotParams = GitHubSnapshotParams(pluginParameters)
         val gitHubRepositorySnapshotBuilder = GitHubRepositorySnapshotBuilder(snapshotParams)
         // Use the job correlator as the manifest name
         val manifestName = snapshotParams.dependencyGraphJobCorrelator

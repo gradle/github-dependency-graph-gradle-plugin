@@ -15,20 +15,12 @@ import org.gradle.internal.exceptions.DefaultMultiCauseException
 import org.gradle.internal.operations.*
 import java.io.File
 import java.net.URI
-import java.nio.file.Paths
 import java.util.*
 
 const val PARAM_INCLUDE_PROJECTS = "DEPENDENCY_GRAPH_INCLUDE_PROJECTS"
 const val PARAM_INCLUDE_CONFIGURATIONS = "DEPENDENCY_GRAPH_INCLUDE_CONFIGURATIONS"
 
 const val PARAM_REPORT_DIR = "DEPENDENCY_GRAPH_REPORT_DIR"
-
-// TODO: Move this to the GitHub-specific code
-/**
- * Environment variable should be set to the workspace directory that the Git repository is checked out in.
- * This is used to determine relative path to build files referenced in the dependency graph.
- */
-const val PARAM_GITHUB_WORKSPACE = "GITHUB_WORKSPACE"
 
 abstract class DependencyExtractor :
     BuildOperationListener,
@@ -42,13 +34,10 @@ abstract class DependencyExtractor :
 
     var rootProjectBuildDirectory: File? = null
 
+    private val buildLayout = BuildLayout()
+
     // Properties are lazily initialized so that System Properties are initialized by the time
     // the values are used. This is required due to a bug in older Gradle versions. (https://github.com/gradle/gradle/issues/6825)
-    private val buildLayout by lazy {
-        val gitWorkspaceDirectory = Paths.get(pluginParameters.load(PARAM_GITHUB_WORKSPACE))
-        BuildLayout(gitWorkspaceDirectory)
-    }
-
     private val configurationFilter by lazy {
         ResolvedConfigurationFilter(
             pluginParameters.loadOptional(PARAM_INCLUDE_PROJECTS),

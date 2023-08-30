@@ -5,7 +5,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.ConcurrentHashMap
 
-class BuildLayout(private val gitWorkspaceDirectory: Path) {
+class BuildLayout {
     private val buildPathToSettingsFile = ConcurrentHashMap<String, String>()
     private val projectPathToBuildFile = ConcurrentHashMap<String, String>()
 
@@ -18,26 +18,18 @@ class BuildLayout(private val gitWorkspaceDirectory: Path) {
     }
 
     /**
-     * Returns the relative path to the root build settings file if it exists, or the root build file if not.
+     * Returns the absolute path to the root build settings file if it exists, or the root build file if not.
      */
-    fun getRootBuildFileRelativePath(): String? {
-        val filePath = getManifestFileRelativePath(":")
-        // Clean up path for Windows systems
-        return filePath?.toString()?.replace('\\', '/')
+    fun getRootBuildPath(): Path? {
+        return getRootBuildAbsoluteFile()?.let { Paths.get(it) }
     }
 
-    private fun getManifestFileRelativePath(identityPath: String): Path? {
-        val settingsFile = buildPathToSettingsFile[identityPath]
+    private fun getRootBuildAbsoluteFile(): String? {
+        val rootPath = ":"
+        val settingsFile = buildPathToSettingsFile[rootPath]
         if (settingsFile != null && File(settingsFile).exists()) {
-            return toRelativePath(settingsFile)
+            return settingsFile
         }
-        val buildFile = projectPathToBuildFile[identityPath]
-        return toRelativePath(buildFile)
-    }
-
-    private fun toRelativePath(fileAbsolutePath: String?): Path? {
-        return fileAbsolutePath?.let {
-            gitWorkspaceDirectory.relativize(Paths.get(fileAbsolutePath))
-        }
+        return projectPathToBuildFile[rootPath]
     }
 }

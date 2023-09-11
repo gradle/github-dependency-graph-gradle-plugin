@@ -6,7 +6,7 @@ import java.util.jar.JarFile
 
 plugins {
     kotlin("jvm") version(libs.versions.kotlin)
-    id("com.gradle.plugin-publish") version "1.2.0"
+    id("com.gradle.plugin-publish") version "1.2.1"
     id("com.github.breadmoirai.github-release") version "2.4.1"
     signing
     groovy

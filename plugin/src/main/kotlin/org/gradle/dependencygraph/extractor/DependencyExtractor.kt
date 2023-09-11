@@ -151,7 +151,7 @@ abstract class DependencyExtractor :
         val rootPath = projectIdentityPath ?: details.buildPath
 
         if (!configurationFilter.include(rootPath, details.configurationName)) {
-            println("Ignoring resolved configuration: ${rootPath} - ${details.configurationName}")
+            LOGGER.debug("Ignoring resolved configuration: ${rootPath} - ${details.configurationName}")
             return
         }
 

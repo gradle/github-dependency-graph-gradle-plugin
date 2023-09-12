@@ -1,4 +1,4 @@
 Preliminary release of the github dependency graph plugin.
 
-- Dependency graph uses Settings file as the manifest file location (#48) 
-- Root project build file will be as manifest file location used if Settings file does not exist (#57)
+- Added `SimpleDependencyGraphPlugin` which produces a generic depenency graph without requiring GitHub specific env vars (#34)
+- Removed spurious logging when configuration filters are applied (#66)

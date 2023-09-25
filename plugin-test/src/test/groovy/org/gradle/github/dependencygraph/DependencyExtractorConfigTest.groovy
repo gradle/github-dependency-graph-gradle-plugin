@@ -38,8 +38,8 @@ class DependencyExtractorConfigTest extends BaseExtractorTest {
 
         when:
         executer
-            .withArgument("-DGITHUB_JOB_CORRELATOR=TEST_CORRELATOR")
-            .withArgument("-DGITHUB_REF=refs/my-branch/foo")
+            .withArgument("-DGITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR=TEST_CORRELATOR")
+            .withArgument("-DGITHUB_DEPENDENCY_GRAPH_REF=refs/my-branch/foo")
         run()
 
         then:
@@ -81,11 +81,11 @@ class DependencyExtractorConfigTest extends BaseExtractorTest {
     def "fails gracefully if configuration values not set"() {
         when:
         def envVars = environmentVars.asEnvironmentMap()
-        envVars.remove("GITHUB_JOB_CORRELATOR")
+        envVars.remove("GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR")
         executer.withEnvironmentVars(envVars)
         def result = executer.runWithFailure()
 
         then:
-        result.output.contains("'GITHUB_JOB_CORRELATOR' must be set")
+        result.output.contains("'GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR' must be set")
     }
 }

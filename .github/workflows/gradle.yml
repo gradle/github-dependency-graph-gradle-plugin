@@ -72,8 +72,11 @@ jobs:
             run: ./plugin-self-test ForceDependencyResolutionPlugin_resolveAllDependencies
             env:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                GITHUB_JOB_ID: ${{ github.run_id }}
-                GITHUB_JOB_CORRELATOR: "plugin-self-test"
+                GITHUB_DEPENDENCY_GRAPH_JOB_ID: ${{ github.run_id }}
+                GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR: "plugin-self-test"
+                GITHUB_DEPENDENCY_GRAPH_REF: ${{ github.ref }}
+                GITHUB_DEPENDENCY_GRAPH_SHA: ${{ github.sha }}
+                GITHUB_DEPENDENCY_GRAPH_WORKSPACE: ${{ github.workspace }}
 
           - name: Save plugin JSON report
             uses: actions/upload-artifact@v3

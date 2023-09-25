@@ -136,8 +136,6 @@ interface MavenModule extends Module {
 
     TestFile getMetaDataFile()
 
-    MavenPom getParsedPom()
-
     ModuleArtifact getRootMetaData()
 
     ModuleArtifact getSnapshotMetaData()
@@ -150,15 +148,4 @@ interface MavenModule extends Module {
      * Asserts pom and module files have not been published.
      */
     void assertNotPublished()
-
-    /**
-     * Asserts pom and module files are published correctly. Does not verify artifacts.
-     */
-    void assertPublished()
-
-    /**
-     * Asserts exactly pom and jar published, along with checksums.
-     * If created {@link #withModuleMetadata()}, module file is also expected.
-     */
-    void assertPublishedAsJavaModule()
 }

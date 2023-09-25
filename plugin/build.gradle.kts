@@ -39,7 +39,6 @@ dependencies {
         because("kotlin std lib is bundled with Gradle. 2.12.3 because higher versions depend upon Kotlin 1.5")
     }
     shadowImplementation(libs.github.packageurl)
-    shadowImplementation(libs.apache.httpclient)
 
     // Use JUnit Jupiter for testing.
     testImplementation(libs.junit.jupiter)

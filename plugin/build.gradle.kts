@@ -6,8 +6,8 @@ import java.util.jar.JarFile
 
 plugins {
     kotlin("jvm") version(libs.versions.kotlin)
-    id("com.gradle.plugin-publish") version "1.2.0"
-    id("com.github.breadmoirai.github-release") version "2.4.1"
+    alias(libs.plugins.plugin.publish)
+    alias(libs.plugins.github.release)
     signing
     groovy
     alias(libs.plugins.shadow.jar)

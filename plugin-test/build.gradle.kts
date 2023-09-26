@@ -23,6 +23,7 @@ dependencies {
 
     testFixturesImplementation(gradleApi())
     testFixturesImplementation(libs.google.gson)
+    testFixturesImplementation(libs.apache.commons.io)
 }
 
 val writeTestConfig by tasks.registering(WriteConfigTask::class) {

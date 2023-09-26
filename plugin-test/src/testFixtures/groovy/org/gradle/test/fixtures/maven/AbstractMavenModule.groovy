@@ -242,83 +242,6 @@ abstract class AbstractMavenModule extends AbstractModule implements MavenModule
         moduleMetadata.file.assertDoesNotExist()
     }
 
-    void assertPublished() {
-        assert pomFile.assertExists()
-        assert parsedPom.groupId == groupId
-        assert parsedPom.artifactId == artifactId
-        assert parsedPom.version == version
-        def checkExtraChecksums = extraChecksums
-        Set<String> missingExtra = missingExtraChecksums
-        if (getModuleMetadata().file.exists()) {
-            def metadata = parsedModuleMetadata
-            if (metadata.component) {
-                assert metadata.component.group == groupId
-                assert metadata.component.module == artifactId
-                assert metadata.component.version == version
-            }
-            if (metadata.owner) {
-                def otherMetadataArtifact = getArtifact(metadata.owner.url)
-                assert otherMetadataArtifact.file.file
-            }
-            metadata.variants.each { variant ->
-                def ref = variant.availableAt
-                if (ref != null) {
-                    // Verify the modules are connected together correctly
-                    def otherMetadataArtifact = getArtifact(this.correctURLForSnapshot(ref.url))
-                    assert otherMetadataArtifact.file.file
-                    def otherMetadata = new GradleModuleMetadata(otherMetadataArtifact.file)
-                    def owner = otherMetadata.owner
-                    assert otherMetadataArtifact.file.parentFile.file(this.correctURLForSnapshot(owner.url)) == getModuleMetadata().file
-                    assert owner.group == groupId
-                    assert owner.module == artifactId
-                    assert owner.version == version
-                    assert variant.dependencies.empty
-                    assert variant.files.empty
-                }
-                variant.files.each { TestFile ->
-                    def artifact = getArtifact(file.url)
-                    assert artifact.file.file
-                    assert artifact.file.length() == file.size
-                    assert Hashing.sha1().hashFile(artifact.file) == file.sha1
-                    if (checkExtraChecksums && (!artifact.file.name in missingExtra)) {
-                        assert Hashing.sha256().hashFile(artifact.file) == file.sha256
-                        assert Hashing.sha512().hashFile(artifact.file) == file.sha512
-                    }
-                    assert Hashing.md5(). hashFile(artifact.file) == file.md5
-                }
-            }
-        }
-    }
-
-    void assertPublishedAsPomModule() {
-        assertPublished()
-        assertArtifactsPublished("${artifactId}-${publishArtifactVersion}.pom")
-        assert parsedPom.packaging == "pom"
-    }
-
-    @Override
-    void assertPublishedAsJavaModule() {
-        assertPublishedWithSingleArtifact("jar", null)
-    }
-
-    void assertPublishedAsWebModule() {
-        assertPublishedWithSingleArtifact('war')
-    }
-
-    void assertPublishedAsEarModule() {
-        assertPublishedWithSingleArtifact('ear')
-    }
-
-    private assertPublishedWithSingleArtifact(String extension, String packaging = extension) {
-        assertPublished()
-        def expectedArtifacts = ["${artifactId}-${publishArtifactVersion}.${extension}", "${artifactId}-${publishArtifactVersion}.pom"]
-        if (hasModuleMetadata) {
-            expectedArtifacts << "${artifactId}-${publishArtifactVersion}.module"
-        }
-        assertArtifactsPublished(expectedArtifacts)
-        assert parsedPom.packaging == packaging
-    }
-
     /**
      * Asserts that exactly the given artifacts have been deployed, along with their checksum files
      */
@@ -367,11 +290,6 @@ abstract class AbstractMavenModule extends AbstractModule implements MavenModule
         } else {
             return url
         }
-    }
-
-    @Override
-    MavenPom getParsedPom() {
-        return new MavenPom(pomFile)
     }
 
     @Override

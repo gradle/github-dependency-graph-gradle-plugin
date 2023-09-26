@@ -19,7 +19,7 @@ package org.gradle.test.fixtures
 import org.gradle.internal.IoActions
 import org.gradle.internal.hash.HashFunction
 import org.gradle.internal.hash.Hashing
-import org.gradle.internal.impldep.org.apache.commons.io.FilenameUtils
+import org.apache.commons.io.FilenameUtils
 import org.gradle.test.fixtures.file.TestFile
 import org.gradle.util.internal.TextUtil
 

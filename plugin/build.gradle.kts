@@ -6,8 +6,8 @@ import java.util.jar.JarFile
 
 plugins {
     kotlin("jvm") version(libs.versions.kotlin)
-    id("com.gradle.plugin-publish") version "1.2.0"
-    id("com.github.breadmoirai.github-release") version "2.4.1"
+    alias(libs.plugins.plugin.publish)
+    alias(libs.plugins.github.release)
     signing
     groovy
     alias(libs.plugins.shadow.jar)
@@ -39,7 +39,6 @@ dependencies {
         because("kotlin std lib is bundled with Gradle. 2.12.3 because higher versions depend upon Kotlin 1.5")
     }
     shadowImplementation(libs.github.packageurl)
-    shadowImplementation(libs.apache.httpclient)
 
     // Use JUnit Jupiter for testing.
     testImplementation(libs.junit.jupiter)

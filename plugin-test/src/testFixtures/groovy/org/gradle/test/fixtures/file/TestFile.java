@@ -16,14 +16,11 @@
 
 package org.gradle.test.fixtures.file;
 
-import org.apache.tools.ant.Project;
-import org.apache.tools.ant.taskdefs.Zip;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 import org.gradle.api.UncheckedIOException;
 import org.gradle.internal.hash.HashCode;
 import org.gradle.internal.hash.Hashing;
-import org.gradle.internal.impldep.com.google.common.collect.Lists;
-import org.gradle.internal.impldep.org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FileUtils;
 import org.hamcrest.Matcher;
 import org.intellij.lang.annotations.Language;
 import org.junit.Assert;
@@ -31,7 +28,6 @@ import org.junit.Assert;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.ObjectStreamException;
@@ -58,9 +54,7 @@ import java.util.jar.Manifest;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeTrue;
 
 public class TestFile extends File {
     private final File relativeBase;
@@ -542,73 +536,7 @@ public class TestFile extends File {
 //        return new TestFileHelper(this).getMode();
 //    }
 
-    /**
-     * Asserts that this is a directory and contains exactly the given set of descendant files and child directories. Ignores directories that are not empty.
-     */
-    public TestFile assertHasDescendants(String... descendants) {
-        return assertHasDescendants(Arrays.asList(descendants));
-    }
 
-    /**
-     * Asserts that this is a directory and contains exactly the given set of descendant files and child directories. Ignores directories that are not empty.
-     */
-    public TestFile assertHasDescendants(Iterable<String> descendants) {
-        return assertHasDescendants(descendants, false);
-    }
-
-    public TestFile assertHasDescendants(Iterable<String> descendants, boolean ignoreDirs) {
-        Set<String> actual = new TreeSet<String>();
-        assertIsDir();
-        visit(actual, "", this, ignoreDirs);
-        Set<String> expected = new TreeSet<>(Lists.newArrayList(descendants));
-
-        Set<String> extras = new TreeSet<>(actual);
-        extras.removeAll(expected);
-        Set<String> missing = new TreeSet<>(expected);
-        missing.removeAll(actual);
-
-        assertEquals(String.format("For dir: %s\n extra files: %s, missing files: %s, expected: %s", this, extras, missing, expected), expected, actual);
-
-        return this;
-    }
-
-    /**
-     * Asserts that this is a directory and contains the given set of descendant files and child directories (and possibly other files). Ignores directories that are not empty.
-     */
-    public TestFile assertContainsDescendants(Iterable<String> descendants) {
-        assertIsDir();
-        Set<String> actual = new TreeSet<String>();
-        visit(actual, "", this, false);
-
-        Set<String> expected = new TreeSet<String>(Lists.newArrayList(descendants));
-
-        Set<String> missing = new TreeSet<String>(expected);
-        missing.removeAll(actual);
-
-        assertTrue(String.format("For dir: %s\n missing files: %s, expected: %s, actual: %s", this, missing, expected, actual), missing.isEmpty());
-
-        return this;
-    }
-
-    /**
-     * Asserts that this is a directory and contains the given set of descendant files (and possibly other files). Ignores directories that are not empty.
-     */
-    public TestFile assertContainsDescendants(String... descendants) {
-        return assertContainsDescendants(Arrays.asList(descendants));
-    }
-
-    public TestFile assertIsEmptyDir() {
-        assertHasDescendants();
-        return this;
-    }
-
-    public Set<String> allDescendants() {
-        Set<String> names = new TreeSet<String>();
-        if (isDirectory()) {
-            visit(names, "", this, false);
-        }
-        return names;
-    }
 
     private void visit(Set<String> names, String prefix, File file, boolean ignoreDirs) {
         for (File child : file.listFiles()) {
@@ -618,13 +546,6 @@ public class TestFile extends File {
                 visit(names, prefix + child.getName() + "/", child, ignoreDirs);
             }
         }
-    }
-
-    public boolean isSelfOrDescendent(File file) {
-        if (file.getAbsolutePath().equals(getAbsolutePath())) {
-            return true;
-        }
-        return file.getAbsolutePath().startsWith(getAbsolutePath() + File.separatorChar);
     }
 
     public TestFile createDir() {
@@ -637,29 +558,6 @@ public class TestFile extends File {
         throw new AssertionError("Problems creating dir: " + this
             + ". Diagnostics: exists=" + this.exists() + ", isFile=" + this.isFile() + ", isDirectory=" + this.isDirectory());
     }
-
-    public TestFile createDir(Object path) {
-        return new TestFile(this, path).createDir();
-    }
-
-//    public TestFile deleteDir() {
-//        new TestFileHelper(this).delete(useNativeTools);
-//        return this;
-//    }
-
-//    /**
-//     * Attempts to delete this directory, ignoring failures to do so.
-//     *
-//     * @return this
-//     */
-//    public TestFile maybeDeleteDir() {
-//        try {
-//            deleteDir();
-//        } catch (RuntimeException e) {
-//            // Ignore
-//        }
-//        return this;
-//    }
 
     /**
      * Recursively delete this directory, reporting all failed paths.
@@ -725,74 +623,6 @@ public class TestFile extends File {
         return this;
     }
 
-    public TestFile makeReadable() {
-        setReadable(true, false);
-        assert Files.isReadable(toPath());
-        return this;
-    }
-
-    public TestFile createFile(Object path) {
-        return file(path).createFile();
-    }
-
-    public TestFile createZip(Object path) {
-        Zip zip = new Zip();
-        zip.setWhenempty((Zip.WhenEmpty) Zip.WhenEmpty.getInstance(Zip.WhenEmpty.class, "create"));
-        TestFile zipFile = file(path);
-        zip.setDestFile(zipFile);
-        zip.setBasedir(this);
-        zip.setExcludes("**");
-        zip.setProject(new Project());
-        zip.execute();
-        return zipFile;
-    }
-
-//    public TestFile zipTo(TestFile zipFile) {
-//        return zipTo(zipFile, false);
-//    }
-//
-//    public TestFile zipTo(TestFile zipFile, boolean readOnly) {
-//        new TestFileHelper(this).zipTo(zipFile, useNativeTools, readOnly);
-//        return this;
-//    }
-//
-//    public TestFile tarTo(TestFile tarFile) {
-//        return tarTo(tarFile, false);
-//    }
-//
-//    public TestFile tarTo(TestFile tarFile, boolean readOnly) {
-//        new TestFileHelper(this).tarTo(tarFile, useNativeTools, readOnly);
-//        return this;
-//    }
-//
-//    public TestFile tgzTo(TestFile tarFile) {
-//        return tgzTo(tarFile, false);
-//    }
-//
-//    public TestFile tgzTo(TestFile tarFile, boolean readOnly) {
-//        new TestFileHelper(this).tgzTo(tarFile, readOnly);
-//        return this;
-//    }
-//
-//    public TestFile tbzTo(TestFile tarFile) {
-//        return tbzTo(tarFile, false);
-//    }
-//
-//    public TestFile tbzTo(TestFile tarFile, boolean readOnly) {
-//        new TestFileHelper(this).tbzTo(tarFile, readOnly);
-//        return this;
-//    }
-//
-//    public TestFile bzip2To(TestFile compressedFile) {
-//        new TestFileHelper(this).bzip2To(compressedFile);
-//        return this;
-//    }
-//
-//    public TestFile gzipTo(TestFile compressedFile) {
-//        new TestFileHelper(this).gzipTo(compressedFile);
-//        return this;
-//    }
-
     public Snapshot snapshot() {
         assertIsFile();
         return new Snapshot(lastModified(), md5(this));
@@ -803,53 +633,6 @@ public class TestFile extends File {
         assertTrue(String.format("contents or modification time of %s have not changed", this), now.modTime != snapshot.modTime || !now.hash.equals(snapshot.hash));
     }
 
-    public void assertContentsHaveChangedSince(Snapshot snapshot) {
-        Snapshot now = snapshot();
-        assertNotEquals(String.format("contents of %s have not changed", this), snapshot.hash, now.hash);
-    }
-
-    public void assertContentsHaveNotChangedSince(Snapshot snapshot) {
-        Snapshot now = snapshot();
-        assertEquals(String.format("contents of %s has changed", this), snapshot.hash, now.hash);
-    }
-
-    public void assertHasNotChangedSince(Snapshot snapshot) {
-        Snapshot now = snapshot();
-        assertEquals(String.format("last modified time of %s has changed", this), snapshot.modTime, now.modTime);
-        assertEquals(String.format("contents of %s has changed", this), snapshot.hash, now.hash);
-    }
-
-    public void writeProperties(Map<?, ?> properties) {
-        Properties props = new Properties();
-        props.putAll(properties);
-        try {
-            FileOutputStream stream = new FileOutputStream(this);
-            try {
-                props.store(stream, "comment");
-            } finally {
-                stream.close();
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void assumeExists() {
-        assumeTrue(this.exists());
-    }
-
-//    public ExecOutput exec(Object... args) {
-//        return new TestFileHelper(this).executeSuccess(Arrays.asList(args), null);
-//    }
-//
-//    public ExecOutput execWithFailure(List<?> args, List<?> env) {
-//        return new TestFileHelper(this).executeFailure(args, env);
-//    }
-//
-//    public ExecOutput execute(List<?> args, List<?> env) {
-//        return new TestFileHelper(this).executeSuccess(args, env);
-//    }
-
     /**
      * Relativizes the URI of this file according to the base directory.
      */
@@ -857,18 +640,6 @@ public class TestFile extends File {
         return baseDir.toURI().relativize(toURI());
     }
 
-    /**
-     * Returns a human-readable relative path to this file from the base directory passed to create this TestFile.
-     *
-     * Fails if this TestFile was created in a way that did not provide a relative base.
-     *
-     * @see #relativizeFrom(TestFile)
-     * @see Path#relativize(Path)
-     */
-    public String getRelativePathFromBase() {
-        Assert.assertTrue("relativeBase must have been set during construction", !relativeBase.toPath().equals(this.toPath()));
-        return relativeBase.toPath().relativize(this.toPath()).toString();
-    }
 
     public static class Snapshot {
         private final long modTime;

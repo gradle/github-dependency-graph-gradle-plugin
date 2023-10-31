@@ -1,5 +1,5 @@
 [versions]
-spock = "2.3-groovy-3.0"
+spock = "2.3-groovy-4.0"
 kotlin = "1.8.10"
 
 [libraries]

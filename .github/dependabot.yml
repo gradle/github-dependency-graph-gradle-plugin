@@ -10,17 +10,9 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    groups:
-      github-actions:
-        patterns:
-        - "*"
   - package-ecosystem: "gradle"
     directory: "/"
     registries:
       - gradle-plugin-portal
     schedule:
       interval: "weekly"
-    groups:
-      gradle-dependencies:
-        patterns:
-        - "*"

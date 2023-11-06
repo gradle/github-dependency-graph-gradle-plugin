@@ -7,7 +7,6 @@ import org.gradle.api.invocation.Gradle
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.util.GradleVersion
 
-// TODO: Rename these
 private const val RESOLVE_PROJECT_TASK = "ForceDependencyResolutionPlugin_resolveProjectDependencies"
 private const val RESOLVE_ALL_TASK = "ForceDependencyResolutionPlugin_resolveAllDependencies"
 
@@ -40,10 +39,10 @@ class ForceDependencyResolutionPlugin : Plugin<Gradle> {
     private fun getResolveProjectDependenciesTaskFactory(): ResolveProjectDependenciesTaskFactory {
         val gradleVersion = GradleVersion.current()
         val gradle8 = GradleVersion.version("8.0")
-        if (gradleVersion >= gradle8) {
-            return ResolveProjectDependenciesTaskFactory.Current
+        return if (gradleVersion >= gradle8) {
+            ResolveProjectDependenciesTaskFactory.Current
         } else {
-            return ResolveProjectDependenciesTaskFactory.Legacy
+            ResolveProjectDependenciesTaskFactory.Legacy
         }
     }
 

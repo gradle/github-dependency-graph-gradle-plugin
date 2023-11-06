@@ -144,8 +144,9 @@ abstract class DependencyExtractor :
         }
         val projectIdentityPath = (rootComponent.id as? DefaultProjectComponentIdentifier)?.identityPath?.path
 
-        // TODO: At this point, any resolution not bound to a particular project will be assigned to the root "build :"
+        // At this point, any resolution not bound to a particular project will be assigned to the root "build :"
         // This is because `details.buildPath` is always ':', which isn't correct in a composite build.
+        // This is inconsequential for GitHub Dependency Graph, since all dependencies are mapped to a single manifest.
         // It is possible to do better. By tracking the current build operation context, we can assign more precisely.
         // See the Gradle Enterprise Build Scan Plugin: `ConfigurationResolutionCapturer_5_0`
         val rootPath = projectIdentityPath ?: details.buildPath

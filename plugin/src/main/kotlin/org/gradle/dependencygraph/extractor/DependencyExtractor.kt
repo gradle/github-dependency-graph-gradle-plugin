@@ -227,13 +227,12 @@ abstract class DependencyExtractor :
     }
 
     private fun coordinates(component: ResolvedComponentResult): DependencyCoordinates {
-        // TODO: Consider and handle null moduleVersion
-        val moduleVersionIdentifier = component.moduleVersion!!
-        return DependencyCoordinates(
-            moduleVersionIdentifier.group,
-            moduleVersionIdentifier.name,
-            moduleVersionIdentifier.version
-        )
+        val mv = component.moduleVersion
+        return if (mv != null) {
+            DependencyCoordinates(mv.group, mv.name, mv.version)
+        } else {
+            DependencyCoordinates("unknown", "unknown", "unknown")
+        }
     }
 
     private class RepositoryUrlLookup(

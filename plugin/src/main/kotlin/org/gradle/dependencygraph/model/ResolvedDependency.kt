@@ -7,7 +7,8 @@ private const val DEFAULT_MAVEN_REPOSITORY_URL = "https://repo.maven.apache.org/
 data class ResolvedDependency(
     val id: String,
     val source: DependencySource,
-    val direct: Boolean,
+    val isDirect: Boolean,
+    val isProject: Boolean,
     val coordinates: DependencyCoordinates,
     val repositoryUrl: String?,
     val dependencies: List<String>
@@ -17,7 +18,7 @@ data class ResolvedDependency(
         PackageURLBuilder
             .aPackageURL()
             .withType("maven")
-            .withNamespace(coordinates.group.ifEmpty { coordinates.module }) // TODO: This is a sign of broken mapping from component -> PURL
+            .withNamespace(coordinates.group.ifEmpty { coordinates.module })
             .withName(coordinates.module)
             .withVersion(coordinates.version)
             .also {

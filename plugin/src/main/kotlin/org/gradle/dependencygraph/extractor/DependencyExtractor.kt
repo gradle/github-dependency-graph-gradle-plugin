@@ -1,6 +1,7 @@
 package org.gradle.dependencygraph.extractor
 
 import org.gradle.api.GradleException
+import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.internal.artifacts.DefaultProjectComponentIdentifier
@@ -144,8 +145,9 @@ abstract class DependencyExtractor :
         }
         val projectIdentityPath = (rootComponent.id as? DefaultProjectComponentIdentifier)?.identityPath?.path
 
-        // TODO: At this point, any resolution not bound to a particular project will be assigned to the root "build :"
+        // At this point, any resolution not bound to a particular project will be assigned to the root "build :"
         // This is because `details.buildPath` is always ':', which isn't correct in a composite build.
+        // This is inconsequential for GitHub Dependency Graph, since all dependencies are mapped to a single manifest.
         // It is possible to do better. By tracking the current build operation context, we can assign more precisely.
         // See the Gradle Enterprise Build Scan Plugin: `ConfigurationResolutionCapturer_5_0`
         val rootPath = projectIdentityPath ?: details.buildPath
@@ -159,17 +161,17 @@ abstract class DependencyExtractor :
         val rootSource = DependencySource(rootId, rootPath)
         val resolvedConfiguration = ResolvedConfiguration(rootSource, details.configurationName)
 
-        for (directDependency in getResolvedDependencies(rootComponent)) {
+        for (dependencyComponent in getResolvedDependencies(rootComponent)) {
             val directDep = createComponentNode(
-                componentId(directDependency),
+                componentId(dependencyComponent),
                 rootSource,
                 true,
-                directDependency,
+                dependencyComponent,
                 repositoryLookup
             )
             resolvedConfiguration.addDependency(directDep)
 
-            walkComponentDependencies(directDependency, directDep.source, repositoryLookup, resolvedConfiguration)
+            walkComponentDependencies(dependencyComponent, directDep.source, repositoryLookup, resolvedConfiguration)
         }
 
         resolvedConfigurations.add(resolvedConfiguration)
@@ -184,11 +186,11 @@ abstract class DependencyExtractor :
         val componentSource = getSource(component, parentSource)
         val direct = componentSource != parentSource
 
-        val dependencyComponents = getResolvedDependencies(component)
-        for (dependencyComponent in dependencyComponents) {
+        for (dependencyComponent in getResolvedDependencies(component)) {
             val dependencyId = componentId(dependencyComponent)
             if (!resolvedConfiguration.hasDependency(dependencyId)) {
-                val dependencyNode = createComponentNode(dependencyId, componentSource, direct, dependencyComponent, repositoryLookup)
+                val dependencyNode =
+                    createComponentNode(dependencyId, componentSource, direct, dependencyComponent, repositoryLookup)
                 resolvedConfiguration.addDependency(dependencyNode)
 
                 walkComponentDependencies(dependencyComponent, componentSource, repositoryLookup, resolvedConfiguration)
@@ -208,13 +210,15 @@ abstract class DependencyExtractor :
         return component.dependencies.filterIsInstance<ResolvedDependencyResult>().map { it.selected }.filter { it != component }
     }
 
-    private fun createComponentNode(componentId: String, source: DependencySource, direct: Boolean, component: ResolvedComponentResult, repositoryLookup: RepositoryUrlLookup): ResolvedDependency {
+    private fun createComponentNode(componentId: String, source: DependencySource, isDirectDependency: Boolean, component: ResolvedComponentResult, repositoryLookup: RepositoryUrlLookup): ResolvedDependency {
         val componentDependencies = component.dependencies.filterIsInstance<ResolvedDependencyResult>().map { componentId(it.selected) }
         val repositoryUrl = repositoryLookup.doLookup(component)
+        val isProjectDependency = component.id is ProjectComponentIdentifier
         return ResolvedDependency(
             componentId,
             source,
-            direct,
+            isDirectDependency,
+            isProjectDependency,
             coordinates(component),
             repositoryUrl,
             componentDependencies
@@ -226,13 +230,12 @@ abstract class DependencyExtractor :
     }
 
     private fun coordinates(component: ResolvedComponentResult): DependencyCoordinates {
-        // TODO: Consider and handle null moduleVersion
-        val moduleVersionIdentifier = component.moduleVersion!!
-        return DependencyCoordinates(
-            moduleVersionIdentifier.group,
-            moduleVersionIdentifier.name,
-            moduleVersionIdentifier.version
-        )
+        val mv = component.moduleVersion
+        return if (mv != null) {
+            DependencyCoordinates(mv.group, mv.name, mv.version)
+        } else {
+            DependencyCoordinates("unknown", "unknown", "unknown")
+        }
     }
 
     private class RepositoryUrlLookup(

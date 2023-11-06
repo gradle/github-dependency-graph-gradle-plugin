@@ -24,7 +24,7 @@ class GitHubRepositorySnapshotBuilder(
         for (resolutionRoot in resolvedConfigurations) {
             for (dependency in resolutionRoot.allDependencies) {
                 // Ignore project dependencies (transitive deps of projects will be reported with project)
-                if (isProject(dependency)) continue
+                if (dependency.isProject) continue
 
                 dependencyCollector.addResolved(dependency)
             }
@@ -49,11 +49,6 @@ class GitHubRepositorySnapshotBuilder(
                 .replace('\\', '/') // Clean up path for Windows systems
             GitHubManifestFile(sourceLocation = filePath)
         }
-    }
-
-    // TODO:DAZ Model this better
-    private fun isProject(dependency: ResolvedDependency): Boolean {
-        return dependency.id.startsWith("project ")
     }
 
     fun buildSnapshot(manifest: GitHubManifest): GitHubRepositorySnapshot {
@@ -90,7 +85,7 @@ class GitHubRepositorySnapshotBuilder(
         }
 
         private fun relationship(component: ResolvedDependency) =
-            if (component.direct) GitHubDependency.Relationship.direct else GitHubDependency.Relationship.indirect
+            if (component.isDirect) GitHubDependency.Relationship.direct else GitHubDependency.Relationship.indirect
 
         private class GitHubDependencyBuilder(val package_url: String) {
             var relationship: GitHubDependency.Relationship = GitHubDependency.Relationship.indirect

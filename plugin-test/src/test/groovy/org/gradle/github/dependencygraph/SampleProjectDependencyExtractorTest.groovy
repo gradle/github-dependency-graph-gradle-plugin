@@ -1,10 +1,11 @@
 package org.gradle.github.dependencygraph
 
 import org.apache.commons.io.FileUtils
+import org.gradle.util.GradleVersion
 import spock.lang.IgnoreIf
 
-@IgnoreIf({ System.getProperty("testGradleVersion") == "5.6.4" })
 // Samples aren't designed to run on Gradle 5.x
+@IgnoreIf({ GradleVersion.version(testGradleVersion) < GradleVersion.version("6.0") })
 class SampleProjectDependencyExtractorTest extends BaseExtractorTest {
     def setup() {
         applyDependencyGraphPlugin()
@@ -65,9 +66,8 @@ class SampleProjectDependencyExtractorTest extends BaseExtractorTest {
         ])
     }
 
-    // Temporarily disable test that hangs on Gradle < 7.6
-    // TODO: Re-enable this test
-    @IgnoreIf({ System.getProperty("testGradleVersion") != null })
+    // Test hangs on Gradle < 7 (but cannot reproduce this outside of TestKit)
+    @IgnoreIf({ GradleVersion.version(testGradleVersion) < GradleVersion.version("7.0") })
     def "check java-included-builds sample"() {
         def sampleDir = new File("../sample-projects/java-included-builds")
 

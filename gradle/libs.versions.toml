@@ -17,7 +17,7 @@ github-packageurl = { group = "com.github.package-url", name = "packageurl-java"
 spock-core = { group = "org.spockframework", name = "spock-core", version.ref = "spock" }
 spock-junit4 = { group = "org.spockframework", name = "spock-junit4", version.ref = "spock" }
 junit-junit4 = { group = "junit", name = "junit", version = "4.13.2" }
-junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version = "5.10.0" }
+junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version = "5.10.1" }
 
 groovy-json = { group = "org.codehaus.groovy", name = "groovy-json", version = "3.0.19" }
 json-schema-validator = { group = "com.networknt", name = "json-schema-validator", version = "1.0.87" }

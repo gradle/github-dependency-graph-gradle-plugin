@@ -30,10 +30,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Test latest version 5.x, 6.x and 7.x, plus oldest patched 7.x
-        # Test all patched minor versions of 8.x
+        # Test latest version 5.x, 6.x and 7.x, as well as all patched minor versions of 8.x
         # Latest 8.x is tested in 'quick-check' job
-        gradle-version: [ "5.6.4", "6.9.4", "7.0.2", "7.6.2", "8.0.2", "8.1.1", "8.2.1"]
+        gradle-version: [ "5.6.4", "6.9.4", "7.6.3", "8.0.2", "8.1.1", "8.2.1", "8.3"]
     runs-on: ubuntu-latest
     env:
       GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}

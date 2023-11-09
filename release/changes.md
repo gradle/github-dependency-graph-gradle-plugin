@@ -1,3 +1,3 @@
-Preliminary release of the github dependency graph plugin.
+Release candidate for v1.0.0 of the GitHub Dependency Graph Gradle Plugin.
 
-- [FIX] PGP key to sign the artifacts needs to be rotated
+Contains only minor refactorings and dependency updates from v0.4.0.

@@ -1,4 +1,5 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import com.gradle.publish.PublishTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -202,6 +203,10 @@ githubRelease {
 
 tasks.named("githubRelease").configure {
     dependsOn(createReleaseTag)
+}
+
+tasks.withType(PublishTask::class).configureEach {
+    notCompatibleWithConfigurationCache("$name task does not support configuration caching")
 }
 
 abstract class CreateGitTag : DefaultTask() {

@@ -51,7 +51,7 @@ java {
     targetCompatibility = JavaVersion.VERSION_1_8
 }
 
-tasks.withType<KotlinCompile> {
+tasks.withType<KotlinCompile>().configureEach {
     compilerOptions {
         apiVersion.set(KotlinVersion.KOTLIN_1_3)
         languageVersion.set(KotlinVersion.KOTLIN_1_3)

@@ -78,7 +78,7 @@ jobs:
                 GITHUB_DEPENDENCY_GRAPH_WORKSPACE: ${{ github.workspace }}
 
           - name: Save plugin JSON report
-            uses: actions/upload-artifact@v3
+            uses: actions/upload-artifact@v4
             with:
                 name: plugin-json
                 path: build/reports/dependency-graph-snapshots/plugin-self-test.json

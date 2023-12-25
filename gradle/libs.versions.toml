@@ -3,7 +3,7 @@ spock = "2.3-groovy-3.0"
 kotlin = "1.8.10"
 
 [libraries]
-jackson-platform = { group = "com.fasterxml.jackson", name = "jackson-bom", version = "2.14.2" } # Cannot upgrade to 2.15.x, due to https://github.com/gradle/gradle/issues/24390
+jackson-platform = { group = "com.fasterxml.jackson", name = "jackson-bom", version = "2.16.1" } # Cannot upgrade to 2.15.x, due to https://github.com/gradle/gradle/issues/24390
 jackson-databind = { group = "com.fasterxml.jackson.core", name = "jackson-databind" }
 jackson-parameter-names = { group = "com.fasterxml.jackson.module", name = "jackson-module-parameter-names" }
 jackson-kotlin = { group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin" }

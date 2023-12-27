@@ -51,11 +51,11 @@ java {
     targetCompatibility = JavaVersion.VERSION_1_8
 }
 
-tasks.withType<KotlinCompile> {
+tasks.withType<KotlinCompile>().configureEach {
     compilerOptions {
-        apiVersion.set(KotlinVersion.KOTLIN_1_3)
-        languageVersion.set(KotlinVersion.KOTLIN_1_3)
-        jvmTarget.set(JvmTarget.JVM_1_8)
+        apiVersion = KotlinVersion.KOTLIN_1_3
+        languageVersion = KotlinVersion.KOTLIN_1_3
+        jvmTarget = JvmTarget.JVM_1_8
     }
 }
 
@@ -77,7 +77,7 @@ tasks.withType<PluginUnderTestMetadata>().configureEach {
 }
 
 val shadowJarTask = tasks.named<ShadowJar>("shadowJar") {
-    archiveClassifier.set("")
+    archiveClassifier = ""
     configurations = listOf(shadowImplementation)
     val projectGroup = project.group
     doFirst {
@@ -133,8 +133,8 @@ tasks.named("jar").configure {
  * Configuration for publishing the plugin, locally and to the Gradle Plugin Portal.
  */
 gradlePlugin {
-    website.set("https://github.com/gradle/github-dependency-graph-gradle-plugin")
-    vcsUrl.set("https://github.com/gradle/github-dependency-graph-gradle-plugin")
+    website = "https://github.com/gradle/github-dependency-graph-gradle-plugin"
+    vcsUrl = "https://github.com/gradle/github-dependency-graph-gradle-plugin"
 
     plugins {
         create("dependencyGraphPlugin") {
@@ -162,8 +162,8 @@ publishing {
 }
 
 tasks.withType(ValidatePlugins::class).configureEach {
-    failOnWarning.set(true)
-    enableStricterValidation.set(true)
+    failOnWarning = true
+    enableStricterValidation = true
 }
 
 signing {
@@ -189,16 +189,16 @@ fun loadReleaseNotes():String {
 }
 
 val createReleaseTag = tasks.register<CreateGitTag>("createReleaseTag") {
-    tagName.set(releaseTag)
+    tagName = releaseTag
 }
 
 githubRelease {
     setToken(System.getenv("GITHUB_DEPENDENCY_GRAPH_GIT_TOKEN") ?: "")
-    owner.set("gradle")
-    repo.set("github-dependency-graph-gradle-plugin")
-    releaseName.set(releaseVersion)
-    tagName.set(releaseTag)
-    body.set(releaseNotes)
+    owner = "gradle"
+    repo = "github-dependency-graph-gradle-plugin"
+    releaseName = releaseVersion
+    tagName = releaseTag
+    body = releaseNotes
 }
 
 tasks.named("githubRelease").configure {

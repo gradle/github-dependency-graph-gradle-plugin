@@ -36,7 +36,7 @@ abstract class AbstractDependencyExtractorPlugin : Plugin<Gradle> {
         gradle.rootProject { project ->
             dependencyExtractorProvider
                 .get()
-                .rootProjectBuildDirectory = project.buildDir
+                .rootProjectBuildDirectory = project.layout.buildDirectory.get().asFile
         }
 
         // Register the service to listen for Build Events

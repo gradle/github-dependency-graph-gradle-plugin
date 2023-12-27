@@ -15,7 +15,7 @@ dependencies {
 }
 
 application {
-    mainClass = "org.example.java.app.app.App"
+    mainClass.set("org.example.java.app.app.App")
 }
 
 tasks.named<Test>("test") {

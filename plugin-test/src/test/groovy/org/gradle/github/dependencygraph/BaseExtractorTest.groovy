@@ -6,7 +6,6 @@ import com.networknt.schema.*
 import groovy.json.JsonSlurper
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
-import groovy.transform.Memoized
 import org.gradle.github.dependencygraph.fixture.TestConfig
 import org.gradle.internal.hash.Hashing
 import org.gradle.test.fixtures.SimpleGradleExecuter
@@ -49,9 +48,12 @@ abstract class BaseExtractorTest extends Specification {
 
     SimpleGradleExecuter createExecuter() {
         // Create a new JsonManifestLoader for each invocation of the executer
-        File manifestFile = reportDir.file("dummy-job-correlator.json")
-        loader = new JsonRepositorySnapshotLoader(manifestFile)
+        loader = new JsonRepositorySnapshotLoader(dependencyGraphFile)
         return createExecuter(testGradleVersion)
+    }
+
+    File getDependencyGraphFile() {
+        reportDir.file("dummy-job-correlator.json")
     }
 
     static String getTestGradleVersion() {
@@ -219,20 +221,20 @@ abstract class BaseExtractorTest extends Specification {
     @CompileStatic
     protected static class JsonRepositorySnapshotLoader {
         private static final String SCHEMA = "schema/github-repository-snapshot-schema.json"
-        private final File manifestFile
+        private final File dependencyGraphFile
 
-        JsonRepositorySnapshotLoader(File manifestFile) {
-            this.manifestFile = manifestFile
+        JsonRepositorySnapshotLoader(File dependencyGraphFile) {
+            this.dependencyGraphFile = dependencyGraphFile
         }
 
         protected Map jsonRepositorySnapshot() {
             def jsonSlurper = new JsonSlurper()
-            println(manifestFile.text)
+            println(dependencyGraphFile.text)
             JsonSchema schema = createSchemaValidator()
             ObjectMapper mapper = new ObjectMapper()
-            JsonNode node = mapper.readTree(manifestFile)
+            JsonNode node = mapper.readTree(dependencyGraphFile)
             validateAgainstJsonSchema(schema, node)
-            return jsonSlurper.parse(manifestFile) as Map
+            return jsonSlurper.parse(dependencyGraphFile) as Map
         }
 
         private static void validateAgainstJsonSchema(JsonSchema schema, JsonNode json) {

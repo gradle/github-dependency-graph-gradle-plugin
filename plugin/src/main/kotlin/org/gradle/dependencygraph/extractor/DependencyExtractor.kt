@@ -29,6 +29,8 @@ abstract class DependencyExtractor :
 
     private val pluginParameters = PluginParameters()
 
+    private var settingsEvaluated = false
+
     private val resolvedConfigurations = Collections.synchronizedList(mutableListOf<ResolvedConfiguration>())
 
     private val thrownExceptions = Collections.synchronizedList(mutableListOf<Throwable>())
@@ -112,6 +114,7 @@ abstract class DependencyExtractor :
     open fun extractSettings(
         details: EvaluateSettingsBuildOperationType.Details
     ) {
+        settingsEvaluated = true
         val settingsFile = details.settingsFile
         if (settingsFile != null) {
             buildLayout.addSettings(details.buildPath, settingsFile)
@@ -295,6 +298,15 @@ abstract class DependencyExtractor :
                     "Please report this issue at: https://github.com/gradle/github-dependency-graph-gradle-plugin/issues",
                 thrownExceptions
             )
+        }
+
+        // We use the absence of Settings Evaluated to determine if the build was loaded from the configuration-cache
+        if (!settingsEvaluated) {
+            LOGGER.lifecycle(
+                "Gradle build state was reused from the configuration-cache: " +
+                    "Dependency Graph file will not be generated."
+            )
+            return
         }
         try {
             writeDependencyGraph()

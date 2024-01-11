@@ -76,6 +76,16 @@ class DependencyExtractorConfigTest extends BaseExtractorTest {
         manifest.assertResolved([
             "org.test:foo:1.0": [package_url: purlFor(foo)]
         ])
+
+        // Execute again to test loading from config-cache
+        when:
+        dependencyGraphFile.delete()
+        executer.withArgument("--configuration-cache")
+        def buildResult = run()
+
+        then:
+        buildResult.output.contains("Gradle build state was reused from the configuration-cache: Dependency Graph file will not be generated.")
+        !dependencyGraphFile.exists()
     }
 
     def "fails gracefully if configuration values not set"() {

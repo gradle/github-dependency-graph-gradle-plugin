@@ -161,20 +161,20 @@ abstract class DependencyExtractor :
         }
 
         val rootId = if (projectIdentityPath == null) "build $rootPath" else componentId(rootComponent)
-        val rootSource = DependencySource(rootId, rootPath)
-        val resolvedConfiguration = ResolvedConfiguration(rootSource, details.configurationName)
+        val rootOrigin = DependencyOrigin(rootId, rootPath)
+        val resolvedConfiguration = ResolvedConfiguration(rootOrigin, details.configurationName)
 
         for (dependencyComponent in getResolvedDependencies(rootComponent)) {
             val directDep = createComponentNode(
                 componentId(dependencyComponent),
-                rootSource,
+                rootOrigin,
                 true,
                 dependencyComponent,
                 repositoryLookup
             )
             resolvedConfiguration.addDependency(directDep)
 
-            walkComponentDependencies(dependencyComponent, directDep.source, repositoryLookup, resolvedConfiguration)
+            walkComponentDependencies(dependencyComponent, directDep.origin, repositoryLookup, resolvedConfiguration)
         }
 
         resolvedConfigurations.add(resolvedConfiguration)
@@ -182,44 +182,44 @@ abstract class DependencyExtractor :
 
     private fun walkComponentDependencies(
         component: ResolvedComponentResult,
-        parentSource: DependencySource,
+        parentOrigin: DependencyOrigin,
         repositoryLookup: RepositoryUrlLookup,
         resolvedConfiguration: ResolvedConfiguration
     ) {
-        val componentSource = getSource(component, parentSource)
-        val direct = componentSource != parentSource
+        val componentOrigin = getOrigin(component, parentOrigin)
+        val direct = componentOrigin != parentOrigin
 
         for (dependencyComponent in getResolvedDependencies(component)) {
             val dependencyId = componentId(dependencyComponent)
             if (!resolvedConfiguration.hasDependency(dependencyId)) {
                 val dependencyNode =
-                    createComponentNode(dependencyId, componentSource, direct, dependencyComponent, repositoryLookup)
+                    createComponentNode(dependencyId, componentOrigin, direct, dependencyComponent, repositoryLookup)
                 resolvedConfiguration.addDependency(dependencyNode)
 
-                walkComponentDependencies(dependencyComponent, componentSource, repositoryLookup, resolvedConfiguration)
+                walkComponentDependencies(dependencyComponent, componentOrigin, repositoryLookup, resolvedConfiguration)
             }
         }
     }
 
-    private fun getSource(component: ResolvedComponentResult, source: DependencySource): DependencySource {
+    private fun getOrigin(component: ResolvedComponentResult, parentOrigin: DependencyOrigin): DependencyOrigin {
         val componentId = component.id
         if (componentId is DefaultProjectComponentIdentifier) {
-            return DependencySource(componentId(component), componentId.identityPath.path)
+            return DependencyOrigin(componentId(component), componentId.identityPath.path)
         }
-        return source
+        return parentOrigin
     }
 
     private fun getResolvedDependencies(component: ResolvedComponentResult): List<ResolvedComponentResult> {
         return component.dependencies.filterIsInstance<ResolvedDependencyResult>().map { it.selected }.filter { it != component }
     }
 
-    private fun createComponentNode(componentId: String, source: DependencySource, isDirectDependency: Boolean, component: ResolvedComponentResult, repositoryLookup: RepositoryUrlLookup): ResolvedDependency {
+    private fun createComponentNode(componentId: String, origin: DependencyOrigin, isDirectDependency: Boolean, component: ResolvedComponentResult, repositoryLookup: RepositoryUrlLookup): ResolvedDependency {
         val componentDependencies = component.dependencies.filterIsInstance<ResolvedDependencyResult>().map { componentId(it.selected) }
         val repositoryUrl = repositoryLookup.doLookup(component)
         val isProjectDependency = component.id is ProjectComponentIdentifier
         return ResolvedDependency(
             componentId,
-            source,
+            origin,
             isDirectDependency,
             isProjectDependency,
             coordinates(component),

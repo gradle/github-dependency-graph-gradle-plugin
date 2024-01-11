@@ -1,7 +1,7 @@
 package org.gradle.dependencygraph.model
 
 data class ResolvedConfiguration(
-    val rootSource: DependencySource,
+    val rootOrigin: DependencyOrigin,
     val configurationName: String,
     val allDependencies: MutableList<ResolvedDependency> = mutableListOf()
 ) {

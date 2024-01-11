@@ -6,7 +6,7 @@ private const val DEFAULT_MAVEN_REPOSITORY_URL = "https://repo.maven.apache.org/
 
 data class ResolvedDependency(
     val id: String,
-    val source: DependencySource,
+    val origin: DependencyOrigin,
     val isDirect: Boolean,
     val isProject: Boolean,
     val coordinates: DependencyCoordinates,

@@ -26,6 +26,12 @@ class GitHubDependencyGraphRenderer() : DependencyGraphRenderer {
         val outputFile = File(outputDirectory, "${snapshotParams.dependencyGraphJobCorrelator}.json")
 
         writeDependencySnapshot(snapshot, outputFile)
+
+        // Write the output file as a GitHub Actions step output
+        val githubOutput = System.getenv("GITHUB_OUTPUT")
+        if (githubOutput !== null && File(githubOutput).isFile) {
+            File(githubOutput).appendText("dependency-graph-file=${outputFile.absolutePath}\n")
+        }
     }
 
     private fun writeDependencySnapshot(graph: GitHubRepositorySnapshot, manifestFile: File) {

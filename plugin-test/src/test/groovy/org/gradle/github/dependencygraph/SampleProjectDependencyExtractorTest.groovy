@@ -4,8 +4,8 @@ import org.apache.commons.io.FileUtils
 import org.gradle.util.GradleVersion
 import spock.lang.IgnoreIf
 
-// Samples aren't designed to run on Gradle 5.x
-@IgnoreIf({ GradleVersion.version(testGradleVersion) < GradleVersion.version("6.0") })
+// Samples aren't designed to run on Gradle < 6.4
+@IgnoreIf({ GradleVersion.version(testGradleVersion) < GradleVersion.version("6.4") })
 class SampleProjectDependencyExtractorTest extends BaseExtractorTest {
     def setup() {
         applyDependencyGraphPlugin()

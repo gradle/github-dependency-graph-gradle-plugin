@@ -53,16 +53,23 @@ You can provide this value via the `DEPENDENCY_GRAPH_INCLUDE_CONFIGURATIONS` env
 
 ### Gradle compatibility
 
-The plugin should be compatible with all versions of Gradle >= 5.0, and has been tested against 
-Gradle versions "5.6.4", "6.9.4", "7.0.2", "7.6.2", "8.0.2" and the current Gradle release.
+The plugin should be compatible with most versions of Gradle >= 5.2, and has been tested against 
+Gradle versions "5.2.1", "5.6.4", "6.0.1", "6.9.4", "7.1.1" and "7.6.3", as well as all patched versions of Gradle 8.x.
 
-The plugin is compatible with running Gradle with the configuration-cache enabled. However, this support is
-limited to Gradle "8.1.0" and later:
-- With Gradle "8.0", the build should run successfully, but an empty dependency graph will be generated.
-- With Gradle <= "7.6.4", the plugin will cause the build to fail with configuration-cache enabled.
+The plugin is compatible with running Gradle with the configuration-cache enabled: this support is
+limited to Gradle "8.1.0" and later. Earlier Gradle versions will not work with `--configuration-cache`.
+Note that no dependency graph will be generated when configuration state is loaded from the configuration-cache.
 
-To use this plugin with versions of Gradle older than "8.1.0", you'll need to invoke Gradle with the
-configuration-cache disabled.
+| Gradle version | Compatible | Compatible with configuration-cache |
+| -------------- | ------- | ------------------------ |
+| 1.x - 4.x      | :x: | :x: |
+| 5.0 - 5.1.1 | :x: | :x: |
+| 5.2 - 5.6.4 | ✅ | :x: |
+| 6.0 - 6.9.4 | ✅ | :x: |
+| 7.0 - 7.0.2 | :x: | :x: |
+| 7.1 - 7.6.3 | ✅ | :x: |
+| 8.0 - 8.0.2 | ✅ | :x: |
+| 8.1+ | ✅ | ✅ |
 
 ## Building/Testing
 

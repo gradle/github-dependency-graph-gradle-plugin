@@ -7,10 +7,6 @@ import org.gradle.api.provider.ProviderFactory
 import org.gradle.internal.operations.BuildOperationListenerManager
 
 internal abstract class GradleExtensions {
-
-    inline val Gradle.objectFactory: ObjectFactory
-        get() = service()
-
     inline val Gradle.providerFactory: ProviderFactory
         get() = service()
 

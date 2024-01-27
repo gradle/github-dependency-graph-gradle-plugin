@@ -20,7 +20,7 @@ abstract class AbstractDependencyExtractorPlugin : Plugin<Gradle> {
      */
     abstract fun getRendererClassName(): String
 
-    internal lateinit var dependencyExtractorProvider: Provider<out DependencyExtractor>
+    private lateinit var dependencyExtractorProvider: Provider<out DependencyExtractor>
 
     override fun apply(gradle: Gradle) {
         val gradleVersion = GradleVersion.current()

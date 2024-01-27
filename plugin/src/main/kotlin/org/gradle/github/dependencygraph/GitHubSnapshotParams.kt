@@ -14,7 +14,7 @@ const val PARAM_GITHUB_SHA = "GITHUB_DEPENDENCY_GRAPH_SHA"
  */
 const val PARAM_GITHUB_WORKSPACE = "GITHUB_DEPENDENCY_GRAPH_WORKSPACE"
 
-class GitHubSnapshotParams(private val pluginParameters: PluginParameters) {
+class GitHubSnapshotParams(pluginParameters: PluginParameters) {
     val dependencyGraphJobCorrelator: String = pluginParameters.load(PARAM_JOB_CORRELATOR)
     val dependencyGraphJobId: String =pluginParameters.load(PARAM_JOB_ID)
     val gitSha: String = pluginParameters.load(PARAM_GITHUB_SHA)

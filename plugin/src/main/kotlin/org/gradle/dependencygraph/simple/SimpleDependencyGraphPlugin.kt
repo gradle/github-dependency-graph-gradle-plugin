@@ -4,7 +4,6 @@ import org.gradle.api.Plugin
 import org.gradle.api.invocation.Gradle
 import org.gradle.dependencygraph.AbstractDependencyExtractorPlugin
 import org.gradle.forceresolve.ForceDependencyResolutionPlugin
-import org.gradle.github.GitHubDependencyExtractorPlugin
 
 @Suppress("unused")
 class SimpleDependencyGraphPlugin : Plugin<Gradle> {

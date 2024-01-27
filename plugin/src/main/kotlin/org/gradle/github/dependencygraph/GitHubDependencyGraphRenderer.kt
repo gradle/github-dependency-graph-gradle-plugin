@@ -8,7 +8,7 @@ import org.gradle.dependencygraph.model.ResolvedConfiguration
 import org.gradle.dependencygraph.util.*
 import java.io.File
 
-class GitHubDependencyGraphRenderer() : DependencyGraphRenderer {
+class GitHubDependencyGraphRenderer : DependencyGraphRenderer {
 
     override fun outputDependencyGraph(
         pluginParameters: PluginParameters,

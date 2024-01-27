@@ -13,4 +13,8 @@ class ResolvedConfigurationFilter(projectFilter: String?, configurationFilter: S
         }
         return true
     }
+
+    fun isConfigured(): Boolean {
+        return projectFilter != null || configurationFilter != null
+    }
 }

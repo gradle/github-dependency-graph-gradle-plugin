@@ -9,8 +9,7 @@ import org.gradle.api.internal.artifacts.configurations.ResolveConfigurationDepe
 import org.gradle.api.logging.Logging
 import org.gradle.dependencygraph.DependencyGraphRenderer
 import org.gradle.dependencygraph.model.*
-import org.gradle.dependencygraph.model.DependencyScope.RUNTIME
-import org.gradle.dependencygraph.model.DependencyScope.DEVELOPMENT
+import org.gradle.dependencygraph.model.DependencyScope.*
 import org.gradle.dependencygraph.util.*
 import org.gradle.initialization.EvaluateSettingsBuildOperationType
 import org.gradle.initialization.LoadProjectsBuildOperationType
@@ -176,7 +175,7 @@ abstract class DependencyExtractor :
             return
         }
 
-        val scope = if (runtimeFilter.include(rootPath, configurationName)) RUNTIME else DEVELOPMENT
+        val scope = dependencyScope(rootPath, configurationName)
 
         val rootId = if (projectIdentityPath == null) "build $rootPath" else componentId(rootComponent)
         val rootOrigin = DependencyOrigin(rootId, rootPath)
@@ -196,6 +195,16 @@ abstract class DependencyExtractor :
         }
 
         resolvedConfigurations.add(resolvedConfiguration)
+    }
+
+    private fun dependencyScope(
+        rootPath: String,
+        configurationName: String
+    ): DependencyScope {
+        if (runtimeFilter.isConfigured()) {
+            return if (runtimeFilter.include(rootPath, configurationName)) RUNTIME else DEVELOPMENT
+        }
+        return UNKNOWN
     }
 
     private fun walkComponentDependencies(

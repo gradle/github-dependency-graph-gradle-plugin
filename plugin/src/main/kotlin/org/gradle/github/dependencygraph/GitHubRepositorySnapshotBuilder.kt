@@ -38,10 +38,11 @@ class GitHubRepositorySnapshotBuilder(
         )
     }
 
-    private fun determineGitHubScope(configuration: ResolvedConfiguration): GitHubDependency.Scope {
+    private fun determineGitHubScope(configuration: ResolvedConfiguration): GitHubDependency.Scope? {
         return when(configuration.scope) {
             DependencyScope.DEVELOPMENT -> GitHubDependency.Scope.development
             DependencyScope.RUNTIME -> GitHubDependency.Scope.runtime
+            DependencyScope.UNKNOWN -> null
         }
     }
 
@@ -75,7 +76,7 @@ class GitHubRepositorySnapshotBuilder(
         /**
          * Merge each resolved component with the same ID into a single GitHubDependency.
          */
-        fun addResolved(component: ResolvedDependency, scope: GitHubDependency.Scope) {
+        fun addResolved(component: ResolvedDependency, scope: GitHubDependency.Scope?) {
             val dep = dependencyBuilders.getOrPut(component.id) {
                 GitHubDependencyBuilder(component.packageUrl())
             }
@@ -98,7 +99,7 @@ class GitHubRepositorySnapshotBuilder(
 
         private class GitHubDependencyBuilder(val package_url: String) {
             var relationship: GitHubDependency.Relationship = GitHubDependency.Relationship.indirect
-            var scope: GitHubDependency.Scope = GitHubDependency.Scope.development
+            var scope: GitHubDependency.Scope? = null
             val dependencies = mutableListOf<String>()
 
             fun addRelationship(newRelationship: GitHubDependency.Relationship) {
@@ -108,8 +109,9 @@ class GitHubRepositorySnapshotBuilder(
                 }
             }
 
-            fun addScope(newScope: GitHubDependency.Scope) {
-                if (scope == GitHubDependency.Scope.development) {
+            fun addScope(newScope: GitHubDependency.Scope?) {
+                if (newScope == null) return
+                if (scope == null || scope == GitHubDependency.Scope.development) {
                     scope = newScope
                 }
             }

@@ -51,6 +51,25 @@ You can provide this value via the `DEPENDENCY_GRAPH_INCLUDE_PROJECTS` environme
 To restrict which Gradle configurations contribute to the report, you can filter configurations by name using a regular expression.
 You can provide this value via the `DEPENDENCY_GRAPH_INCLUDE_CONFIGURATIONS` environment variable or system property.
 
+### Controlling the scope of dependencies in the dependency graph
+
+The GitHub dependency graph allows a scope to be assigned to each reported dependency.
+The only permissible values for scope are 'runtime' and 'development'.
+
+By default, no scope is assigned to dependencies in the graph. To enable scopes in the generated dependency graph, 
+at least one of `DEPENDENCY_GRAPH_RUNTIME_PROJECTS` or `DEPENDENCY_GRAPH_RUNTIME_CONFIGURATIONS` must be configured.
+
+To restrict which Gradle subprojects contribute 'runtime' dependencies to the report, specify which projects to include via a regular expression.
+You can provide this value via the `DEPENDENCY_GRAPH_RUNTIME_PROJECTS` environment variable or system property.
+For a project not matching this filter, all dependencies will be scoped 'development'.
+
+To restrict which Gradle configurations contribute 'runtime' dependencies to the report, you can filter configurations by name using a regular expression.
+You can provide this value via the `DEPENDENCY_GRAPH_RUNTIME_CONFIGURATIONS` environment variable or system property.
+Dependencies resolved by a matching configuration will be scoped 'runtime': all other dependencies will be scoped 'development'.
+
+For dependencies that are resolved in multiple projects and/or multiple configurations, only a single 'runtime' scoped resolution
+is required for that dependency to be scoped 'runtime'.
+
 ### Gradle compatibility
 
 The plugin should be compatible with most versions of Gradle >= 5.2, and has been tested against 

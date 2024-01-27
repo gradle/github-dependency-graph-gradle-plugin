@@ -3,6 +3,7 @@ package org.gradle.dependencygraph.simple
 import org.gradle.dependencygraph.DependencyGraphRenderer
 import org.gradle.dependencygraph.model.BuildLayout
 import org.gradle.dependencygraph.model.ResolvedConfiguration
+import org.gradle.dependencygraph.model.DependencyScope
 import org.gradle.dependencygraph.util.JacksonJsonSerializer
 import org.gradle.dependencygraph.util.PluginParameters
 import java.io.File
@@ -40,21 +41,24 @@ class SimpleDependencyGraphRenderer : DependencyGraphRenderer {
         resolvedConfigurations: List<ResolvedConfiguration>
     ) {
         val outputFile = File(outputDirectory, "dependency-scopes.json")
-        val dependencyList: MutableMap<String, MutableSet<SimpleDependencyOrigin>> = mutableMapOf()
+        val dependencyList: MutableMap<String, MutableSet<SimpleDependencyResolution>> = mutableMapOf()
         for (config in resolvedConfigurations) {
             for (dependency in config.allDependencies) {
-                val dependencyOrigins = dependencyList.getOrPut(dependency.id) { mutableSetOf() }
-                dependencyOrigins.add(
-                    SimpleDependencyOrigin(
+                if (dependency.isProject) continue
+
+                val dependencyScopes = dependencyList.getOrPut(dependency.id) { mutableSetOf() }
+                dependencyScopes.add(
+                    SimpleDependencyResolution(
                         config.rootOrigin.path,
-                        config.configurationName
+                        config.configurationName,
+                        config.scope
                     )
                 )
             }
         }
 
-        val simpleDependencies = dependencyList.map { (id, origins) ->
-            SimpleDependency(id, origins.toList())
+        val simpleDependencies = dependencyList.map { (id, resolutions) ->
+            SimpleDependency(id, DependencyScope.getEffectiveScope(resolutions.map {it.scope}), resolutions.toList())
         }
         val jsonContent = JacksonJsonSerializer.serializeToJson(simpleDependencies)
         outputFile.writeText(jsonContent)
@@ -67,7 +71,7 @@ class SimpleDependencyGraphRenderer : DependencyGraphRenderer {
         val outputFile = File(outputDirectory, "dependency-list.txt")
         val dependencyList = resolvedConfigurations.flatMap { config ->
             config.allDependencies.map {
-                "${it.coordinates.group}:${it.coordinates.module}:${it.coordinates.version} ---- ${config.rootOrigin.id} ${config.rootOrigin.path} ${config.configurationName}"
+                "${it.coordinates.group}:${it.coordinates.module}:${it.coordinates.version}"
             }
         }.distinct().sorted()
 
@@ -78,7 +82,8 @@ class SimpleDependencyGraphRenderer : DependencyGraphRenderer {
 
 data class SimpleDependency(
     val dependency: String,
-    val resolvedBy: List<SimpleDependencyOrigin>
+    val effectiveScope: DependencyScope,
+    val resolvedBy: List<SimpleDependencyResolution>
 )
 
-data class SimpleDependencyOrigin(val path: String, val configuration: String)
+data class SimpleDependencyResolution(val path: String, val configuration: String, val scope: DependencyScope)

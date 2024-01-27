@@ -95,4 +95,18 @@ class ResolvedConfigurationTest extends Specification {
         !filter.include(":proj-a:proj-b:", "")
         !filter.include("parent-proj:proj-a", "")
     }
+
+    def "filters on excluded project path"() {
+        when:
+        def filter = new ResolvedConfigurationFilter(/^:(?!buildSrc).*/, null)
+
+        then:
+        filter.include(":proj-a", "")
+        filter.include(":proj-a:proj-b", "")
+        filter.include(":proj-a:buildSrc", "")
+
+        !filter.include(":buildSrc", "")
+        !filter.include(":buildSrc:", "")
+        !filter.include(":buildSrc:proj-b:", "")
+    }
 }

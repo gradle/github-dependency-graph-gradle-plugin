@@ -3,6 +3,7 @@ package org.gradle.github.dependencygraph
 import org.gradle.dependencygraph.model.ResolvedDependency
 import org.gradle.dependencygraph.model.ResolvedConfiguration
 import org.gradle.dependencygraph.model.BuildLayout
+import org.gradle.dependencygraph.model.DependencyScope
 import org.gradle.github.dependencygraph.model.*
 
 class GitHubRepositorySnapshotBuilder(
@@ -21,12 +22,12 @@ class GitHubRepositorySnapshotBuilder(
     fun buildManifest(manifestName: String, resolvedConfigurations: List<ResolvedConfiguration>, buildLayout: BuildLayout): GitHubManifest {
         val dependencyCollector = DependencyCollector()
 
-        for (resolutionRoot in resolvedConfigurations) {
-            for (dependency in resolutionRoot.allDependencies) {
+        for (configuration in resolvedConfigurations) {
+            for (dependency in configuration.allDependencies) {
                 // Ignore project dependencies (transitive deps of projects will be reported with project)
                 if (dependency.isProject) continue
 
-                dependencyCollector.addResolved(dependency)
+                dependencyCollector.addResolved(dependency, determineGitHubScope(configuration))
             }
         }
 
@@ -35,6 +36,13 @@ class GitHubRepositorySnapshotBuilder(
             dependencyCollector.getDependencies(),
             getManifestFile(buildLayout)
         )
+    }
+
+    private fun determineGitHubScope(configuration: ResolvedConfiguration): GitHubDependency.Scope {
+        return when(configuration.scope) {
+            DependencyScope.DEVELOPMENT -> GitHubDependency.Scope.development
+            DependencyScope.RUNTIME -> GitHubDependency.Scope.runtime
+        }
     }
 
     /**
@@ -67,11 +75,12 @@ class GitHubRepositorySnapshotBuilder(
         /**
          * Merge each resolved component with the same ID into a single GitHubDependency.
          */
-        fun addResolved(component: ResolvedDependency) {
+        fun addResolved(component: ResolvedDependency, scope: GitHubDependency.Scope) {
             val dep = dependencyBuilders.getOrPut(component.id) {
                 GitHubDependencyBuilder(component.packageUrl())
             }
             dep.addRelationship(relationship(component))
+            dep.addScope(scope)
             dep.addDependencies(component.dependencies)
         }
 
@@ -89,12 +98,19 @@ class GitHubRepositorySnapshotBuilder(
 
         private class GitHubDependencyBuilder(val package_url: String) {
             var relationship: GitHubDependency.Relationship = GitHubDependency.Relationship.indirect
+            var scope: GitHubDependency.Scope = GitHubDependency.Scope.development
             val dependencies = mutableListOf<String>()
 
             fun addRelationship(newRelationship: GitHubDependency.Relationship) {
                 // Direct relationship trumps indirect
                 if (relationship == GitHubDependency.Relationship.indirect) {
                     relationship = newRelationship
+                }
+            }
+
+            fun addScope(newScope: GitHubDependency.Scope) {
+                if (scope == GitHubDependency.Scope.development) {
+                    scope = newScope
                 }
             }
 
@@ -106,7 +122,7 @@ class GitHubRepositorySnapshotBuilder(
             }
 
             fun build(): GitHubDependency {
-                return GitHubDependency(package_url, relationship, dependencies)
+                return GitHubDependency(package_url, relationship, scope, dependencies)
             }
         }
     }

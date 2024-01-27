@@ -9,6 +9,8 @@ import org.gradle.api.internal.artifacts.configurations.ResolveConfigurationDepe
 import org.gradle.api.logging.Logging
 import org.gradle.dependencygraph.DependencyGraphRenderer
 import org.gradle.dependencygraph.model.*
+import org.gradle.dependencygraph.model.DependencyScope.RUNTIME
+import org.gradle.dependencygraph.model.DependencyScope.DEVELOPMENT
 import org.gradle.dependencygraph.util.*
 import org.gradle.initialization.EvaluateSettingsBuildOperationType
 import org.gradle.initialization.LoadProjectsBuildOperationType
@@ -21,6 +23,9 @@ import java.util.*
 
 const val PARAM_INCLUDE_PROJECTS = "DEPENDENCY_GRAPH_INCLUDE_PROJECTS"
 const val PARAM_INCLUDE_CONFIGURATIONS = "DEPENDENCY_GRAPH_INCLUDE_CONFIGURATIONS"
+const val PARAM_RUNTIME_PROJECTS = "DEPENDENCY_GRAPH_RUNTIME_PROJECTS"
+const val PARAM_RUNTIME_CONFIGURATIONS = "DEPENDENCY_GRAPH_RUNTIME_CONFIGURATIONS"
+
 
 const val PARAM_REPORT_DIR = "DEPENDENCY_GRAPH_REPORT_DIR"
 
@@ -42,10 +47,17 @@ abstract class DependencyExtractor :
 
     // Properties are lazily initialized so that System Properties are initialized by the time
     // the values are used. This is required due to a bug in older Gradle versions. (https://github.com/gradle/gradle/issues/6825)
-    private val configurationFilter by lazy {
+    private val includeFilter by lazy {
         ResolvedConfigurationFilter(
             pluginParameters.loadOptional(PARAM_INCLUDE_PROJECTS),
             pluginParameters.loadOptional(PARAM_INCLUDE_CONFIGURATIONS)
+        )
+    }
+
+    private val runtimeFilter by lazy {
+        ResolvedConfigurationFilter(
+            pluginParameters.loadOptional(PARAM_RUNTIME_PROJECTS),
+            pluginParameters.loadOptional(PARAM_RUNTIME_CONFIGURATIONS)
         )
     }
 
@@ -157,15 +169,18 @@ abstract class DependencyExtractor :
         // It is possible to do better. By tracking the current build operation context, we can assign more precisely.
         // See the Gradle Enterprise Build Scan Plugin: `ConfigurationResolutionCapturer_5_0`
         val rootPath = projectIdentityPath ?: details.buildPath
+        val configurationName = details.configurationName
 
-        if (!configurationFilter.include(rootPath, details.configurationName)) {
-            LOGGER.debug("Ignoring resolved configuration: $rootPath - ${details.configurationName}")
+        if (!includeFilter.include(rootPath, configurationName)) {
+            LOGGER.debug("Ignoring resolved configuration: $rootPath - $configurationName")
             return
         }
 
+        val scope = if (runtimeFilter.include(rootPath, configurationName)) RUNTIME else DEVELOPMENT
+
         val rootId = if (projectIdentityPath == null) "build $rootPath" else componentId(rootComponent)
         val rootOrigin = DependencyOrigin(rootId, rootPath)
-        val resolvedConfiguration = ResolvedConfiguration(rootOrigin, details.configurationName)
+        val resolvedConfiguration = ResolvedConfiguration(rootOrigin, configurationName, scope)
 
         for (dependencyComponent in getResolvedDependencies(rootComponent)) {
             val directDep = createComponentNode(

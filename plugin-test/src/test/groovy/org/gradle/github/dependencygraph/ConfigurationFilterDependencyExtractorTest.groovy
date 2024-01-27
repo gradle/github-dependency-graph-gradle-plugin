@@ -3,7 +3,7 @@ package org.gradle.github.dependencygraph
 
 import org.gradle.test.fixtures.maven.MavenModule
 
-class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
+class ConfigurationFilterDependencyExtractorTest extends BaseExtractorTest {
     private MavenModule foo
     private MavenModule bar
     private MavenModule baz
@@ -35,7 +35,7 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         """
     }
 
-    def "extracts dependencies from multiple unrelated projects"() {
+    def "can filter projects to extract dependencies"() {
         given:
         settingsFile << "include 'a', 'b'"
 
@@ -55,6 +55,40 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         """
 
         when:
+        executer.withArgument("-DDEPENDENCY_GRAPH_INCLUDE_PROJECTS=:b")
+        run()
+
+        then:
+        def manifest = gitHubManifest()
+        manifest.sourceFile == "settings.gradle"
+        manifest.assertResolved([
+            "org.test:bar:1.0": [package_url: purlFor(bar)]
+        ])
+    }
+
+    def "can filter configurations to extract dependencies"() {
+        given:
+        settingsFile << "include 'a', 'b'"
+
+        buildFile << """
+            project(':a') {
+                apply plugin: 'java-library'
+                dependencies {
+                    api 'org.test:foo:1.0'
+                    testImplementation 'org.test:baz:1.0'
+                }
+            }
+            project(':b') {
+                apply plugin: 'java-library'
+                dependencies {
+                    implementation 'org.test:bar:1.0'
+                    testImplementation 'org.test:baz:1.0'
+                }
+            }
+        """
+
+        when:
+        executer.withArgument("-DDEPENDENCY_GRAPH_INCLUDE_CONFIGURATIONS=compileClasspath")
         run()
 
         then:
@@ -66,9 +100,10 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         ])
     }
 
-    def "extracts transitive project dependencies in multi-project build with #description"() {
+    def "can filter runtime projects to determine scope"() {
         given:
-        settingsFile << "include 'a', 'b', 'c'"
+        settingsFile << "include 'a', 'b'"
+
         buildFile << """
             project(':a') {
                 apply plugin: 'java-library'
@@ -79,175 +114,129 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
             project(':b') {
                 apply plugin: 'java-library'
                 dependencies {
-                    api project(':a')
-                }
-            }
-            project(':c') {
-                apply plugin: 'java'
-                dependencies {
-                    implementation project(':b')
                     implementation 'org.test:bar:1.0'
                 }
             }
         """
 
         when:
-        run(task)
+        executer.withArgument("-DDEPENDENCY_GRAPH_RUNTIME_PROJECTS=:a")
+        run()
 
         then:
         def manifest = gitHubManifest()
         manifest.sourceFile == "settings.gradle"
         manifest.assertResolved([
-            "org.test:foo:1.0": [package_url: purlFor(foo)],
-            "org.test:bar:1.0": [package_url: purlFor(bar)]
+            "org.test:foo:1.0": [package_url: purlFor(foo), scope: "runtime"],
+            "org.test:bar:1.0": [package_url: purlFor(bar), scope: "development"],
         ])
-
-        where:
-        task                                                     | description
-        "ForceDependencyResolutionPlugin_resolveAllDependencies" | "All dependencies resolved"
-        ":c:dependencies"                                        | "One project resolved"
     }
 
-    def "extracts direct dependency for transitive dependency updated by constraint"() {
+    def "can filter runtime configurations to determine scope"() {
         given:
-        def bar11 = mavenRepo.module("org.test", "bar", "1.1").publish()
         settingsFile << "include 'a', 'b'"
+
         buildFile << """
             project(':a') {
                 apply plugin: 'java-library'
                 dependencies {
-                    api 'org.test:bar:1.0'
+                    api 'org.test:foo:1.0'
+                    testImplementation 'org.test:baz:1.0'
                 }
             }
             project(':b') {
                 apply plugin: 'java-library'
                 dependencies {
-                    api project(':a')
-                    constraints {
-                        api "org.test:bar:1.1"
-                    }
+                    implementation 'org.test:bar:1.0'
+                    testImplementation 'org.test:baz:1.0'
                 }
             }
         """
 
         when:
+        executer.withArgument("-DDEPENDENCY_GRAPH_RUNTIME_CONFIGURATIONS=compileClasspath")
         run()
 
         then:
         def manifest = gitHubManifest()
         manifest.sourceFile == "settings.gradle"
         manifest.assertResolved([
-            "org.test:bar:1.0": [package_url: purlFor(bar)],
-            "org.test:bar:1.1": [package_url: purlFor(bar11)]
+            "org.test:foo:1.0": [package_url: purlFor(foo), scope: "runtime"],
+            "org.test:bar:1.0": [package_url: purlFor(bar), scope: "runtime"],
+            "org.test:baz:1.0": [package_url: purlFor(baz), scope: "development", dependencies: ["org.test:bar:1.0"]]
         ])
     }
 
-    def "extracts all versions for transitive dependency updated by rule"() {
+    def "can filter runtime configurations to determine scope"() {
         given:
-        def bar11 = mavenRepo.module("org.test", "bar", "1.1").publish()
         settingsFile << "include 'a', 'b'"
+
         buildFile << """
             project(':a') {
                 apply plugin: 'java-library'
                 dependencies {
-                    api 'org.test:bar:1.0'
+                    api 'org.test:foo:1.0'
+                    testImplementation 'org.test:baz:1.0'
                 }
             }
             project(':b') {
                 apply plugin: 'java-library'
                 dependencies {
-                    api project(':a')
-                }
-                configurations.all {
-                    resolutionStrategy.eachDependency { details ->
-                        if (details.requested.group == 'org.test' && details.requested.name == 'bar') {
-                            details.useVersion("1.1")
-                        }
-                    }
+                    implementation 'org.test:bar:1.0'
+                    testImplementation 'org.test:baz:1.0'
                 }
             }
         """
 
         when:
+        executer.withArgument("-DDEPENDENCY_GRAPH_RUNTIME_CONFIGURATIONS=compileClasspath")
         run()
 
         then:
         def manifest = gitHubManifest()
         manifest.sourceFile == "settings.gradle"
         manifest.assertResolved([
-            "org.test:bar:1.0": [package_url: purlFor(bar)],
-            "org.test:bar:1.1": [package_url: purlFor(bar11)]
+            "org.test:foo:1.0": [package_url: purlFor(foo), scope: "runtime"],
+            "org.test:bar:1.0": [package_url: purlFor(bar), scope: "runtime"],
+            "org.test:baz:1.0": [package_url: purlFor(baz), scope: "development", dependencies: ["org.test:bar:1.0"]]
         ])
     }
 
-    def "extracts dependencies from buildSrc project"() {
+    def "can filter runtime projects and configurations to determine scope"() {
         given:
-        file("buildSrc/settings.gradle") << "rootProject.name = 'buildSrc'"
-        file("buildSrc/build.gradle") << """
-            apply plugin: 'java'
-            group = 'org.test.buildSrc'
-            version = '1.0'
-            repositories {
-                maven { url "${mavenRepo.uri}" }
-            }
-            dependencies {
-                implementation 'org.test:foo:1.0'
-            }
-        """
+        settingsFile << "include 'a', 'b'"
 
         buildFile << """
-            apply plugin: 'java'
-            dependencies {
-                implementation 'org.test:bar:1.0'
+            project(':a') {
+                apply plugin: 'java-library'
+                dependencies {
+                    api 'org.test:foo:1.0'
+                    testImplementation 'org.test:baz:1.0'
+                }
+            }
+            project(':b') {
+                apply plugin: 'java-library'
+                dependencies {
+                    api 'org.test:bar:1.0'
+                    testImplementation 'org.test:baz:1.0'
+                }
             }
         """
 
         when:
+        executer
+            .withArgument("-DDEPENDENCY_GRAPH_RUNTIME_CONFIGURATIONS=compileClasspath")
+            .withArgument("-DDEPENDENCY_GRAPH_RUNTIME_PROJECTS=:a")
         run()
 
         then:
         def manifest = gitHubManifest()
         manifest.sourceFile == "settings.gradle"
         manifest.assertResolved([
-            "org.test:foo:1.0": [package_url: purlFor(foo)],
-            "org.test:bar:1.0": [package_url: purlFor(bar)]
+            "org.test:foo:1.0": [package_url: purlFor(foo), scope: "runtime"],
+            "org.test:bar:1.0": [package_url: purlFor(bar), scope: "development"],
+            "org.test:baz:1.0": [package_url: purlFor(baz), scope: "development", dependencies: ["org.test:bar:1.0"]]
         ])
     }
 
-    def "extracts dependencies from included build"() {
-        given:
-        file("included-child/settings.gradle") << "rootProject.name = 'included-child'"
-        file("included-child/build.gradle") << """
-            apply plugin: 'java-library'
-            group = 'org.test.included'
-            version = '1.0'
-
-            repositories {
-                maven { url "${mavenRepo.uri}" }
-            }
-            dependencies {
-                implementation 'org.test:foo:1.0'
-            }
-        """
-
-        settingsFile << "includeBuild 'included-child'"
-        buildFile << """
-            apply plugin: 'java'
-            dependencies {
-                implementation 'org.test.included:included-child'
-                implementation 'org.test:bar:1.0'
-            }
-        """
-
-        when:
-        run()
-
-        then:
-        def manifest = gitHubManifest()
-        manifest.sourceFile == "settings.gradle"
-        manifest.assertResolved([
-            "org.test:bar:1.0": [package_url: purlFor(bar)],
-            "org.test:foo:1.0": [package_url: purlFor(foo)]
-        ])
-    }
 }

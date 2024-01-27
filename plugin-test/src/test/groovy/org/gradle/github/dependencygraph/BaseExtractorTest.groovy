@@ -208,6 +208,7 @@ abstract class BaseExtractorTest extends Specification {
                 }
                 assert actual.relationship == (expected.relationship ?: "direct")
                 assert actual.dependencies == (expected.dependencies ?: [])
+                assert actual.scope == (expected.scope ?: "runtime")
             }
 
             return true

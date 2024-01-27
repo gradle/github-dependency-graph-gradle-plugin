@@ -21,18 +21,64 @@ class SimpleDependencyGraphRenderer : DependencyGraphRenderer {
         resolvedConfigurations: List<ResolvedConfiguration>,
         outputDirectory: File
     ) {
-        val graphOutputFile = File(outputDirectory, "dependency-graph.json")
-        val graphJson = JacksonJsonSerializer.serializeToJson(resolvedConfigurations)
-        graphOutputFile.writeText(graphJson)
+        outputDependencyGraph(outputDirectory, resolvedConfigurations)
+        outputDependencyScopes(outputDirectory, resolvedConfigurations)
+        outputDependencyList(outputDirectory, resolvedConfigurations)
+    }
 
-        val listOutputFile = File(outputDirectory, "dependency-list.txt")
-        val dependencyList = resolvedConfigurations.flatMap { it ->
-            it.allDependencies.map {
-                "${it.coordinates.group}:${it.coordinates.module}:${it.coordinates.version}"
+    private fun outputDependencyGraph(
+        outputDirectory: File,
+        resolvedConfigurations: List<ResolvedConfiguration>
+    ) {
+        val outputFile = File(outputDirectory, "dependency-graph.json")
+        val jsonContent = JacksonJsonSerializer.serializeToJson(resolvedConfigurations)
+        outputFile.writeText(jsonContent)
+    }
+
+    private fun outputDependencyScopes(
+        outputDirectory: File,
+        resolvedConfigurations: List<ResolvedConfiguration>
+    ) {
+        val outputFile = File(outputDirectory, "dependency-scopes.json")
+        val dependencyList: MutableMap<String, MutableSet<SimpleDependencyOrigin>> = mutableMapOf()
+        for (config in resolvedConfigurations) {
+            for (dependency in config.allDependencies) {
+                val dependencyOrigins = dependencyList.getOrPut(dependency.id) { mutableSetOf() }
+                dependencyOrigins.add(
+                    SimpleDependencyOrigin(
+                        config.rootOrigin.path,
+                        config.configurationName
+                    )
+                )
+            }
+        }
+
+        val simpleDependencies = dependencyList.map { (id, origins) ->
+            SimpleDependency(id, origins.toList())
+        }
+        val jsonContent = JacksonJsonSerializer.serializeToJson(simpleDependencies)
+        outputFile.writeText(jsonContent)
+    }
+
+    private fun outputDependencyList(
+        outputDirectory: File,
+        resolvedConfigurations: List<ResolvedConfiguration>
+    ) {
+        val outputFile = File(outputDirectory, "dependency-list.txt")
+        val dependencyList = resolvedConfigurations.flatMap { config ->
+            config.allDependencies.map {
+                "${it.coordinates.group}:${it.coordinates.module}:${it.coordinates.version} ---- ${config.rootOrigin.id} ${config.rootOrigin.path} ${config.configurationName}"
             }
         }.distinct().sorted()
 
         val listTxt = dependencyList.joinToString(separator = "\n")
-        listOutputFile.writeText(listTxt)
+        outputFile.writeText(listTxt)
     }
 }
+
+data class SimpleDependency(
+    val dependency: String,
+    val resolvedBy: List<SimpleDependencyOrigin>
+)
+
+data class SimpleDependencyOrigin(val path: String, val configuration: String)

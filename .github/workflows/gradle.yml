@@ -20,8 +20,8 @@ jobs:
             java-version: 11
             distribution: temurin
 
-      - name: Set up Gradle
-        uses: gradle/gradle-build-action@v2
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
 
       - name: Execute Gradle Build
         run: ./gradlew build
@@ -46,10 +46,11 @@ jobs:
           java-version: 11
           distribution: temurin
 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
       - name: Execute Gradle Build
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: -S build -DtestGradleVersion=${{ matrix.gradle-version }}
+        run: ./gradlew -S build -DtestGradleVersion=${{ matrix.gradle-version }}
 
   self-test:
       needs: quick-check
@@ -65,8 +66,8 @@ jobs:
                 java-version: 11
                 distribution: temurin
 
-          - name: Set up Gradle
-            uses: gradle/gradle-build-action@v2
+          - name: Setup Gradle
+            uses: gradle/actions/setup-gradle@v3
 
           - name: Self Test :plugin
             run: ./plugin-self-test ForceDependencyResolutionPlugin_resolveAllDependencies

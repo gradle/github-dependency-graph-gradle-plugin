@@ -101,14 +101,16 @@ abstract class DependencyExtractor :
         val details: D? = buildOperation.details.let {
             if (it is D) it else null
         }
-        val result: R? = finishEvent.result.let {
-            if (it is R) it else null
+        if (details == null) {
+            return  // Ignore other build operation types
         }
-        if (details == null && result == null) {
-            return
-        } else if (details == null || result == null) {
-            throw IllegalStateException("buildOperation.details & finishedEvent.result were unexpected types")
+
+        val failure = finishEvent.failure
+        if (failure != null) {
+            throw failure
         }
+
+        val result: R = finishEvent.result as R
         handler(details, result)
     }
 

@@ -12,6 +12,7 @@ import org.gradle.dependencygraph.model.*
 import org.gradle.dependencygraph.util.*
 import org.gradle.initialization.EvaluateSettingsBuildOperationType
 import org.gradle.initialization.LoadProjectsBuildOperationType
+import org.gradle.internal.exceptions.Contextual
 import org.gradle.internal.exceptions.DefaultMultiCauseException
 import org.gradle.internal.operations.*
 import java.io.File
@@ -311,11 +312,7 @@ abstract class DependencyExtractor :
         try {
             writeDependencyGraph()
         } catch (e: RuntimeException) {
-            throw GradleException(
-                "The dependency-graph extractor plugin encountered errors while writing the dependency snapshot json file. " +
-                    "Please report this issue at: https://github.com/gradle/github-dependency-graph-gradle-plugin/issues",
-                e
-            )
+            throw DefaultMultiCauseException("Failed to write dependency-graph to file", e)
         }
     }
 

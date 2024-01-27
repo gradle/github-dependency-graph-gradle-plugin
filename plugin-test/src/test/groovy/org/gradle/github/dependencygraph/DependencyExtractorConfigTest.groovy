@@ -96,6 +96,6 @@ class DependencyExtractorConfigTest extends BaseExtractorTest {
         def result = executer.runWithFailure()
 
         then:
-        result.output.contains("'GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR' must be set")
+        result.output.contains("> The configuration parameter 'GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR' must be set")
     }
 }

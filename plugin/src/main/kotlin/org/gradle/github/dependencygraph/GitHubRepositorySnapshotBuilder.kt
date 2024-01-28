@@ -40,9 +40,9 @@ class GitHubRepositorySnapshotBuilder(
 
     private fun determineGitHubScope(configuration: ResolvedConfiguration): GitHubDependency.Scope? {
         return when(configuration.scope) {
-            DependencyScope.DEVELOPMENT -> GitHubDependency.Scope.development
-            DependencyScope.RUNTIME -> GitHubDependency.Scope.runtime
-            DependencyScope.UNKNOWN -> null
+            DependencyScope.Development -> GitHubDependency.Scope.development
+            DependencyScope.Runtime -> GitHubDependency.Scope.runtime
+            DependencyScope.Unknown -> null
         }
     }
 

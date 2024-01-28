@@ -6,13 +6,13 @@ package org.gradle.dependencygraph.model
  * Later development may extend this to a richer set of scopes.
  */
 enum class DependencyScope {
-    UNKNOWN, DEVELOPMENT, RUNTIME;
+    Unknown, Development, Runtime;
 
     companion object {
         fun getEffectiveScope(scopes: List<DependencyScope>): DependencyScope {
-            if (scopes.contains(RUNTIME)) return RUNTIME
-            if (scopes.contains(DEVELOPMENT)) return DEVELOPMENT
-            return UNKNOWN
+            if (scopes.contains(Runtime)) return Runtime
+            if (scopes.contains(Development)) return Development
+            return Unknown
         }
     }
 }

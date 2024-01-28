@@ -194,9 +194,9 @@ abstract class DependencyExtractor :
         configurationName: String
     ): DependencyScope {
         if (configurationFilter.scopesAreConfigured()) {
-            return if (configurationFilter.isRuntime(rootPath, configurationName)) RUNTIME else DEVELOPMENT
+            return if (configurationFilter.isRuntime(rootPath, configurationName)) Runtime else Development
         }
-        return UNKNOWN
+        return Unknown
     }
 
     private fun walkComponentDependencies(

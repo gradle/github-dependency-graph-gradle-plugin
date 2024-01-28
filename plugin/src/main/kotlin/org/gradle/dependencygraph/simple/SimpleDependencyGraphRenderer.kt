@@ -40,14 +40,14 @@ class SimpleDependencyGraphRenderer : DependencyGraphRenderer {
         outputDirectory: File,
         resolvedConfigurations: List<ResolvedConfiguration>
     ) {
-        val outputFile = File(outputDirectory, "dependency-scopes.json")
+        val outputFile = File(outputDirectory, "dependency-resolution.json")
         val dependencyList: MutableMap<String, MutableSet<SimpleDependencyResolution>> = mutableMapOf()
         for (config in resolvedConfigurations) {
             for (dependency in config.allDependencies) {
                 if (dependency.isProject) continue
 
-                val dependencyScopes = dependencyList.getOrPut(dependency.id) { mutableSetOf() }
-                dependencyScopes.add(
+                val dependencyResolutions = dependencyList.getOrPut(dependency.id) { mutableSetOf() }
+                dependencyResolutions.add(
                     SimpleDependencyResolution(
                         config.rootOrigin.path,
                         config.configurationName,

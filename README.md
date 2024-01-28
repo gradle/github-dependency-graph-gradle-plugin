@@ -45,27 +45,35 @@ eg: Env var `DEPENDENCY_GRAPH_REPORT_DIR` can be set with `-DDEPENDENCY_GRAPH_RE
 If you do not want to include every dependency configuration in every project in your build, you can limit the
 dependency extraction to a subset of these.
 
-To restrict which Gradle subprojects contribute to the report, specify which projects to include via a regular expression.
-You can provide this value via the `DEPENDENCY_GRAPH_INCLUDE_PROJECTS` environment variable or system property.
+The following parameters control the set of projects and configurations that contribute dependencies.
+Each of these is a regular expression value, and can set either as an environment variable or as a system property on the command line.
 
-To restrict which Gradle configurations contribute to the report, you can filter configurations by name using a regular expression.
-You can provide this value via the `DEPENDENCY_GRAPH_INCLUDE_CONFIGURATIONS` environment variable or system property.
+| Property                                | Description               | Default                         |
+|-----------------------------------------|---------------------------|---------------------------------|
+| DEPENDENCY_GRAPH_INCLUDE_PROJECTS       | Projects to include       | All projects are included       |
+| DEPENDENCY_GRAPH_EXCLUDE_PROJECTS       | Projects to exclude       | No projects are included        |
+| DEPENDENCY_GRAPH_INCLUDE_CONFIGURATIONS | Configurations to include | All configurations are included |
+| DEPENDENCY_GRAPH_EXCLUDE_CONFIGURATIONS | Configurations to exclude | No configurations are included  |
 
 ### Controlling the scope of dependencies in the dependency graph
 
 The GitHub dependency graph allows a scope to be assigned to each reported dependency.
 The only permissible values for scope are 'runtime' and 'development'.
 
-By default, no scope is assigned to dependencies in the graph. To enable scopes in the generated dependency graph, 
-at least one of `DEPENDENCY_GRAPH_RUNTIME_PROJECTS` or `DEPENDENCY_GRAPH_RUNTIME_CONFIGURATIONS` must be configured.
+The following parameters control the set of projects and configurations that provide 'runtime' scoped dependencies.
+Any dependency resolution that does not match these parameters will be scoped 'development'.
 
-To restrict which Gradle subprojects contribute 'runtime' dependencies to the report, specify which projects to include via a regular expression.
-You can provide this value via the `DEPENDENCY_GRAPH_RUNTIME_PROJECTS` environment variable or system property.
-For a project not matching this filter, all dependencies will be scoped 'development'.
+Each of these parameters is a regular expression value, and can set either as an environment variable or as a system property on the command line.
 
-To restrict which Gradle configurations contribute 'runtime' dependencies to the report, you can filter configurations by name using a regular expression.
-You can provide this value via the `DEPENDENCY_GRAPH_RUNTIME_CONFIGURATIONS` environment variable or system property.
-Dependencies resolved by a matching configuration will be scoped 'runtime': all other dependencies will be scoped 'development'.
+| Property                                        | Description                                               | Default                         |
+|-------------------------------------------------|-----------------------------------------------------------|---------------------------------|
+| DEPENDENCY_GRAPH_RUNTIME_INCLUDE_PROJECTS       | Projects that can provide 'runtime' dependencies          | All projects are included       |
+| DEPENDENCY_GRAPH_RUNTIME_EXCLUDE_PROJECTS       | Projects that do not provide 'runtime' dependencies       | No projects are included        |
+| DEPENDENCY_GRAPH_RUNTIME_INCLUDE_CONFIGURATIONS | Configurations that contain 'runtime' dependencies        | All configurations are included |
+| DEPENDENCY_GRAPH_RUNTIME_EXCLUDE_CONFIGURATIONS | Configurations that do not contain 'runtime' dependencies | No configurations are included  |
+
+By default, no scope is assigned to dependencies in the graph. To enable scopes in the generated dependency graph,
+at least one of these parameters must be configured.
 
 For dependencies that are resolved in multiple projects and/or multiple configurations, only a single 'runtime' scoped resolution
 is required for that dependency to be scoped 'runtime'.

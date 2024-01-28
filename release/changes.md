@@ -1,1 +1,2 @@
-- Improve failure when run with unsupported Gradle version
+- Improve failure reporting (#104)
+- Assign dependency scopes based on include/exclude filters (#105)

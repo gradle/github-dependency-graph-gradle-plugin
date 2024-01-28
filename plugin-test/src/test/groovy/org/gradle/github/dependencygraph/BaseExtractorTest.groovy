@@ -113,6 +113,10 @@ abstract class BaseExtractorTest extends Specification {
         }
         apply plugin: GitHubDependencyGraphPlugin
         """.stripMargin()
+        resetArguments()
+    }
+
+    protected SimpleGradleExecuter resetArguments() {
         getExecuter().withArguments("--init-script", "init.gradle")
     }
 
@@ -192,6 +196,12 @@ abstract class BaseExtractorTest extends Specification {
 
         def getSourceFile() {
             return (manifestData.file as Map).source_location
+        }
+
+        def assertResolved(List<String> expectedResolved) {
+            def resolved = manifestData.resolved as Map<String, Map>
+            assert resolved.keySet() == expectedResolved as Set
+            return true
         }
 
         def assertResolved(Map<String, Map> expectedResolved = [:]) {

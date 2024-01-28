@@ -37,7 +37,7 @@ class ConfigurationFilterDependencyExtractorTest extends BaseExtractorTest {
 
     def "can filter projects to extract dependencies"() {
         given:
-        settingsFile << "include 'a', 'b'"
+        settingsFile << "include 'a', 'b', 'c'"
 
         buildFile << """
             project(':a') {
@@ -52,6 +52,12 @@ class ConfigurationFilterDependencyExtractorTest extends BaseExtractorTest {
                     api 'org.test:bar:1.0'
                 }
             }
+            project(':c') {
+                apply plugin: 'java-library'
+                dependencies {
+                    api 'org.test:baz:1.0'
+                }
+            }
         """
 
         when:
@@ -59,11 +65,32 @@ class ConfigurationFilterDependencyExtractorTest extends BaseExtractorTest {
         run()
 
         then:
-        def manifest = gitHubManifest()
-        manifest.sourceFile == "settings.gradle"
-        manifest.assertResolved([
-            "org.test:bar:1.0": [package_url: purlFor(bar)]
-        ])
+        gitHubManifest().assertResolved(["org.test:bar:1.0"])
+
+        when:
+        resetArguments()
+        executer.withArgument("-DDEPENDENCY_GRAPH_INCLUDE_PROJECTS=:[ab]")
+        run()
+
+        then:
+        gitHubManifest().assertResolved(["org.test:foo:1.0", "org.test:bar:1.0"])
+
+        when:
+        resetArguments()
+        executer.withArgument("-DDEPENDENCY_GRAPH_EXCLUDE_PROJECTS=:[bc]")
+        run()
+
+        then:
+        gitHubManifest().assertResolved(["org.test:foo:1.0"])
+
+        when:
+        resetArguments()
+        executer.withArgument("-DDEPENDENCY_GRAPH_INCLUDE_PROJECTS=:[ab]")
+        executer.withArgument("-DDEPENDENCY_GRAPH_EXCLUDE_PROJECTS=:b")
+        run()
+
+        then:
+        gitHubManifest().assertResolved(["org.test:foo:1.0"])
     }
 
     def "can filter configurations to extract dependencies"() {
@@ -92,12 +119,15 @@ class ConfigurationFilterDependencyExtractorTest extends BaseExtractorTest {
         run()
 
         then:
-        def manifest = gitHubManifest()
-        manifest.sourceFile == "settings.gradle"
-        manifest.assertResolved([
-            "org.test:foo:1.0": [package_url: purlFor(foo)],
-            "org.test:bar:1.0": [package_url: purlFor(bar)]
-        ])
+        gitHubManifest().assertResolved(["org.test:foo:1.0", "org.test:bar:1.0"])
+
+        when:
+        resetArguments()
+        executer.withArgument("-DDEPENDENCY_GRAPH_EXCLUDE_CONFIGURATIONS=test(Compile|Runtime)Classpath")
+        run()
+
+        then:
+        gitHubManifest().assertResolved(["org.test:foo:1.0", "org.test:bar:1.0"])
     }
 
     def "can filter runtime projects to determine scope"() {
@@ -120,15 +150,36 @@ class ConfigurationFilterDependencyExtractorTest extends BaseExtractorTest {
         """
 
         when:
-        executer.withArgument("-DDEPENDENCY_GRAPH_RUNTIME_PROJECTS=:a")
+        executer.withArgument("-DDEPENDENCY_GRAPH_RUNTIME_INCLUDE_PROJECTS=:a")
         run()
 
         then:
-        def manifest = gitHubManifest()
-        manifest.sourceFile == "settings.gradle"
-        manifest.assertResolved([
-            "org.test:foo:1.0": [package_url: purlFor(foo), scope: "runtime"],
-            "org.test:bar:1.0": [package_url: purlFor(bar), scope: "development"],
+        gitHubManifest().assertResolved([
+            "org.test:foo:1.0": [scope: "runtime"],
+            "org.test:bar:1.0": [scope: "development"]
+        ])
+
+        when:
+        resetArguments()
+        executer.withArgument("-DDEPENDENCY_GRAPH_RUNTIME_EXCLUDE_PROJECTS=:b")
+        run()
+
+        then:
+        gitHubManifest().assertResolved([
+            "org.test:foo:1.0": [scope: "runtime"],
+            "org.test:bar:1.0": [scope: "development"]
+        ])
+
+        when:
+        resetArguments()
+        executer.withArgument("-DDEPENDENCY_GRAPH_RUNTIME_INCLUDE_PROJECTS=:[ab]")
+        executer.withArgument("-DDEPENDENCY_GRAPH_RUNTIME_EXCLUDE_PROJECTS=:b")
+        run()
+
+        then:
+        gitHubManifest().assertResolved([
+            "org.test:foo:1.0": [scope: "runtime"],
+            "org.test:bar:1.0": [scope: "development"]
         ])
     }
 
@@ -154,57 +205,45 @@ class ConfigurationFilterDependencyExtractorTest extends BaseExtractorTest {
         """
 
         when:
-        executer.withArgument("-DDEPENDENCY_GRAPH_RUNTIME_CONFIGURATIONS=compileClasspath")
+        executer.withArgument("-DDEPENDENCY_GRAPH_RUNTIME_INCLUDE_CONFIGURATIONS=compileClasspath")
         run()
 
         then:
-        def manifest = gitHubManifest()
-        manifest.sourceFile == "settings.gradle"
-        manifest.assertResolved([
-            "org.test:foo:1.0": [package_url: purlFor(foo), scope: "runtime"],
-            "org.test:bar:1.0": [package_url: purlFor(bar), scope: "runtime"],
-            "org.test:baz:1.0": [package_url: purlFor(baz), scope: "development", dependencies: ["org.test:bar:1.0"]]
+        gitHubManifest().assertResolved([
+            "org.test:foo:1.0": [scope: "runtime"],
+            "org.test:bar:1.0": [scope: "runtime"],
+            "org.test:baz:1.0": [scope: "development", dependencies: ["org.test:bar:1.0"]]
         ])
-    }
-
-    def "can filter runtime configurations to determine scope"() {
-        given:
-        settingsFile << "include 'a', 'b'"
-
-        buildFile << """
-            project(':a') {
-                apply plugin: 'java-library'
-                dependencies {
-                    api 'org.test:foo:1.0'
-                    testImplementation 'org.test:baz:1.0'
-                }
-            }
-            project(':b') {
-                apply plugin: 'java-library'
-                dependencies {
-                    implementation 'org.test:bar:1.0'
-                    testImplementation 'org.test:baz:1.0'
-                }
-            }
-        """
 
         when:
-        executer.withArgument("-DDEPENDENCY_GRAPH_RUNTIME_CONFIGURATIONS=compileClasspath")
+        resetArguments()
+        executer.withArgument("-DDEPENDENCY_GRAPH_RUNTIME_INCLUDE_CONFIGURATIONS=.*Classpath")
         run()
 
         then:
-        def manifest = gitHubManifest()
-        manifest.sourceFile == "settings.gradle"
-        manifest.assertResolved([
-            "org.test:foo:1.0": [package_url: purlFor(foo), scope: "runtime"],
-            "org.test:bar:1.0": [package_url: purlFor(bar), scope: "runtime"],
-            "org.test:baz:1.0": [package_url: purlFor(baz), scope: "development", dependencies: ["org.test:bar:1.0"]]
+        gitHubManifest().assertResolved([
+            "org.test:foo:1.0": [scope: "runtime"],
+            "org.test:bar:1.0": [scope: "runtime"],
+            "org.test:baz:1.0": [scope: "runtime", dependencies: ["org.test:bar:1.0"]]
+        ])
+
+        when:
+        resetArguments()
+        executer.withArgument("-DDEPENDENCY_GRAPH_RUNTIME_INCLUDE_CONFIGURATIONS=.*Classpath")
+        executer.withArgument("-DDEPENDENCY_GRAPH_RUNTIME_EXCLUDE_CONFIGURATIONS=test(Compile|Runtime)Classpath")
+        run()
+
+        then:
+        gitHubManifest().assertResolved([
+            "org.test:foo:1.0": [scope: "runtime"],
+            "org.test:bar:1.0": [scope: "runtime"],
+            "org.test:baz:1.0": [scope: "development", dependencies: ["org.test:bar:1.0"]]
         ])
     }
 
     def "can filter runtime projects and configurations to determine scope"() {
         given:
-        settingsFile << "include 'a', 'b'"
+        settingsFile << "include 'a', 'b', 'c'"
 
         buildFile << """
             project(':a') {
@@ -221,21 +260,27 @@ class ConfigurationFilterDependencyExtractorTest extends BaseExtractorTest {
                     testImplementation 'org.test:baz:1.0'
                 }
             }
+            project(':b') {
+                apply plugin: 'java-library'
+                dependencies {
+                    api 'org.test:baz:1.0'
+                }
+            }
         """
 
         when:
         executer
-            .withArgument("-DDEPENDENCY_GRAPH_RUNTIME_CONFIGURATIONS=compileClasspath")
-            .withArgument("-DDEPENDENCY_GRAPH_RUNTIME_PROJECTS=:a")
+            .withArgument("-DDEPENDENCY_GRAPH_RUNTIME_INCLUDE_PROJECTS=:[ab]")
+            .withArgument("-DDEPENDENCY_GRAPH_RUNTIME_INCLUDE_CONFIGURATIONS=.*Classpath")
+            .withArgument("-DDEPENDENCY_GRAPH_RUNTIME_EXCLUDE_PROJECTS=:b")
+            .withArgument("-DDEPENDENCY_GRAPH_RUNTIME_EXCLUDE_CONFIGURATIONS=test(Compile|Runtime)Classpath")
         run()
 
         then:
-        def manifest = gitHubManifest()
-        manifest.sourceFile == "settings.gradle"
-        manifest.assertResolved([
-            "org.test:foo:1.0": [package_url: purlFor(foo), scope: "runtime"],
-            "org.test:bar:1.0": [package_url: purlFor(bar), scope: "development"],
-            "org.test:baz:1.0": [package_url: purlFor(baz), scope: "development", dependencies: ["org.test:bar:1.0"]]
+        gitHubManifest().assertResolved([
+            "org.test:foo:1.0": [scope: "runtime"],
+            "org.test:bar:1.0": [scope: "development"],
+            "org.test:baz:1.0": [scope: "development", dependencies: ["org.test:bar:1.0"]]
         ])
     }
 

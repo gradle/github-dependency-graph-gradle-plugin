@@ -51,9 +51,9 @@ Each of these is a regular expression value, and can set either as an environmen
 | Property                                | Description               | Default                         |
 |-----------------------------------------|---------------------------|---------------------------------|
 | DEPENDENCY_GRAPH_INCLUDE_PROJECTS       | Projects to include       | All projects are included       |
-| DEPENDENCY_GRAPH_EXCLUDE_PROJECTS       | Projects to exclude       | No projects are included        |
+| DEPENDENCY_GRAPH_EXCLUDE_PROJECTS       | Projects to exclude       | No projects are excluded        |
 | DEPENDENCY_GRAPH_INCLUDE_CONFIGURATIONS | Configurations to include | All configurations are included |
-| DEPENDENCY_GRAPH_EXCLUDE_CONFIGURATIONS | Configurations to exclude | No configurations are included  |
+| DEPENDENCY_GRAPH_EXCLUDE_CONFIGURATIONS | Configurations to exclude | No configurations are excluded  |
 
 ### Controlling the scope of dependencies in the dependency graph
 
@@ -68,9 +68,9 @@ Each of these parameters is a regular expression value, and can set either as an
 | Property                                        | Description                                               | Default                         |
 |-------------------------------------------------|-----------------------------------------------------------|---------------------------------|
 | DEPENDENCY_GRAPH_RUNTIME_INCLUDE_PROJECTS       | Projects that can provide 'runtime' dependencies          | All projects are included       |
-| DEPENDENCY_GRAPH_RUNTIME_EXCLUDE_PROJECTS       | Projects that do not provide 'runtime' dependencies       | No projects are included        |
+| DEPENDENCY_GRAPH_RUNTIME_EXCLUDE_PROJECTS       | Projects that do not provide 'runtime' dependencies       | No projects are excluded        |
 | DEPENDENCY_GRAPH_RUNTIME_INCLUDE_CONFIGURATIONS | Configurations that contain 'runtime' dependencies        | All configurations are included |
-| DEPENDENCY_GRAPH_RUNTIME_EXCLUDE_CONFIGURATIONS | Configurations that do not contain 'runtime' dependencies | No configurations are included  |
+| DEPENDENCY_GRAPH_RUNTIME_EXCLUDE_CONFIGURATIONS | Configurations that do not contain 'runtime' dependencies | No configurations are excluded  |
 
 By default, no scope is assigned to dependencies in the graph. To enable scopes in the generated dependency graph,
 at least one of these parameters must be configured.

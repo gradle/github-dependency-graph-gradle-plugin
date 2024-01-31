@@ -98,7 +98,7 @@ Note that no dependency graph will be generated when configuration state is load
 | 8.0 - 8.0.2 | ✅ | :x: |
 | 8.1+ | ✅ | ✅ |
 
-## Using the plugin standalone project
+## Using the plugin to generate dependency reports
 
 As well as the `GitHubDependencyGraphPlugin`, which is tailored for use by the [gradle/actions/dependency-submission](https://github.com/gradle/actions/tree/main/dependency-submission) GitHub Action, this repository also provides the `SimpleDependencyGraphPlugin`, which generates dependency-graph outputs in simple text format.
 
@@ -124,7 +124,7 @@ and then execute the task to resolve all dependencies in your project:
 
 You'll find the generated files in `build/dependency-graph-snapshots`.
 
-### Determine the underlying source of dependencies
+### Using dependency reports to determine the underlying source of a dependency
 
 After generating the dependency reports as described, it is possible to determine the dependency source by:
 

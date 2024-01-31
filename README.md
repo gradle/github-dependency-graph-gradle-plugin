@@ -119,7 +119,7 @@ apply plugin: org.gradle.dependencygraph.simple.SimpleDependencyGraphPlugin
 and then execute the task to resolve all dependencies in your project:
 
 ```
-./gradlew -I init.gradle :ForceDependencyResolutionPlugin_resolveAllDependencies
+./gradlew -I init.gradle --dependency-verification=off --no-configuration-cache --no-configure-on-demand :ForceDependencyResolutionPlugin_resolveAllDependencies
 ```
 
 You'll find the generated files in `build/dependency-graph-snapshots`.

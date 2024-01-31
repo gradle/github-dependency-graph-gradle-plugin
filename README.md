@@ -98,7 +98,7 @@ Note that no dependency graph will be generated when configuration state is load
 | 8.0 - 8.0.2 | ✅ | :x: |
 | 8.1+ | ✅ | ✅ |
 
-## Using the plugin in a standalone project
+## Using the plugin standalone project
 
 As well as the `GitHubDependencyGraphPlugin`, which is tailored for use by the [gradle/actions/dependency-submission](https://github.com/gradle/actions/tree/main/dependency-submission) GitHub Action, this repository also provides the `SimpleDependencyGraphPlugin`, which generates dependency-graph outputs in simple text format.
 
@@ -123,6 +123,39 @@ and then execute the task to resolve all dependencies in your project:
 ```
 
 You'll find the generated files in `build/dependency-graph-snapshots`.
+
+### Determine the underlying source of dependencies
+
+After generating the dependency reports as described, it is possible to determine the dependency source by:
+
+1. Locate the dependency (including matching version) in the `dependency-resolution.json` file.
+2. Inspect each `resolvedBy` entry for the `path` and `configuration` values. The `scope` value is unimportant in this context.
+3. Use the built-in [dependencyInsight](https://docs.gradle.org/current/userguide/viewing_debugging_dependencies.html#dependency_insights) task to determine exactly how the dependency was resolved. The `path` indicates the project where the task should be executed, and the `configuration` is an input to the task.
+
+For example, given the following from the `dependency-resolution.json` report:
+```
+  "dependency" : "com.google.guava:guava:32.1.3-jre",
+  "effectiveScope" : "Unknown",
+  "resolvedBy" : [ {
+    "path" : ":my-subproject",
+    "configuration" : "compileClasspath",
+    "scope" : "Unknown"
+  }, ...
+```
+
+You would run the command:
+```
+./gradlew :my-subproject:dependencyInsight --configuration compileClasspath --dependency com.google.guava:guava:32.1.3-jre
+```
+
+#### Dealing with 'classpath' configuration
+
+If the configuration value in `dependency-resolution.json` is "classpath", or for some other reason the above instructions do not work,
+it is possible to recostruct the full resolution path using the generated `dependency-graph.json` file.
+
+Search for the exact dependency version in `dependency-graph.json`, and you'll see an "id" entry for that dependency as well as one or more
+"dependencies" entries. By tracing back through the dependencies you can determine the underlying source of the dependency.
+
 
 ## Building/Testing
 

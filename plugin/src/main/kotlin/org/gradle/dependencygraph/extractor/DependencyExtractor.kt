@@ -1,5 +1,6 @@
 package org.gradle.dependencygraph.extractor
 
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
@@ -230,7 +231,31 @@ abstract class DependencyExtractor :
     }
 
     private fun getResolvedDependencies(component: ResolvedComponentResult): List<ResolvedComponentResult> {
-        return component.dependencies.filterIsInstance<ResolvedDependencyResult>().map { it.selected }.filter { it != component }
+        return component.dependencies
+            .filterIsInstance<ResolvedDependencyResult>()
+            .map { it.selected }
+            .mapNotNull { traversePluginMarker(it) }
+            .filter { it != component }
+    }
+
+    /**
+     * If the rawComponent represents a plugin marker artifact, then use the target plugin dependency instead.
+     * For a plugin marker with no dependencies return null, so it can be filtered from the list.
+     */
+    private fun traversePluginMarker(rawComponent: ResolvedComponentResult): ResolvedComponentResult? {
+        if (rawComponent.id is ModuleComponentIdentifier) {
+            val componentId = rawComponent.id as ModuleComponentIdentifier
+            if (componentId.module == componentId.group + ".gradle.plugin") {
+                if (rawComponent.dependencies.isEmpty()) {
+                    return null
+                }
+                if (rawComponent.dependencies.size == 1) {
+                    val pluginDep = rawComponent.dependencies.iterator().next() as? ResolvedDependencyResult
+                    return pluginDep?.selected
+                }
+            }
+        }
+        return rawComponent
     }
 
     private fun createComponentNode(componentId: String, origin: DependencyOrigin, isDirectDependency: Boolean, component: ResolvedComponentResult, repositoryLookup: RepositoryUrlLookup): ResolvedDependency {

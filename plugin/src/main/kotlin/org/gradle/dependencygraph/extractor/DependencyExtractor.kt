@@ -163,9 +163,10 @@ abstract class DependencyExtractor :
         val configurationName = details.configurationName
 
         if (!configurationFilter.include(rootPath, configurationName)) {
-            LOGGER.debug("Ignoring resolved configuration: $rootPath - $configurationName")
+            LOGGER.info("Excluding resolved configuration from dependency graph: $rootPath - $configurationName")
             return
         }
+        LOGGER.info("Including resolved configuration in dependency graph: $rootPath - $configurationName")
 
         val scope = dependencyScope(rootPath, configurationName)
 
@@ -293,7 +294,12 @@ abstract class DependencyExtractor :
 
     private fun createRenderer(): DependencyGraphRenderer {
         LOGGER.lifecycle("Constructing renderer: ${getRendererClassName()}")
-        return Class.forName(getRendererClassName()).getDeclaredConstructor().newInstance() as DependencyGraphRenderer
+        val dependencyGraphRenderer =
+            Class.forName(getRendererClassName()).getDeclaredConstructor().newInstance() as DependencyGraphRenderer
+        if (LOGGER.isInfoEnabled) {
+            return LoggingDependencyGraphRenderer(dependencyGraphRenderer)
+        }
+        return dependencyGraphRenderer
     }
 
     private fun getOutputDir(): File {
@@ -331,6 +337,22 @@ abstract class DependencyExtractor :
             writeDependencyGraph()
         } catch (e: RuntimeException) {
             throw DefaultMultiCauseException("Failed to write dependency-graph to file", e)
+        }
+    }
+
+    private class LoggingDependencyGraphRenderer(private val delegate: DependencyGraphRenderer) : DependencyGraphRenderer {
+        override fun outputDependencyGraph(
+            pluginParameters: PluginParameters,
+            buildLayout: BuildLayout,
+            resolvedConfigurations: List<ResolvedConfiguration>,
+            outputDirectory: File
+        ) {
+            for (configuration in resolvedConfigurations) {
+                for (dependency in configuration.allDependencies) {
+                    LOGGER.info("Detected dependency '${dependency.id}': project = '${configuration.rootOrigin.path}', configuration = '${configuration.configurationName}'")
+                }
+            }
+            delegate.outputDependencyGraph(pluginParameters, buildLayout, resolvedConfigurations, outputDirectory)
         }
     }
 

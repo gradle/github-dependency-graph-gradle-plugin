@@ -186,5 +186,9 @@ class PluginDependencyExtractorTest extends BaseExtractorTest {
                 dependencies: []
             ]
         ])
+
+        def manifest = gitHubManifest()
+        manifest.sourceFile == "settings.gradle"
+        manifest.assertResolved(pluginDependencies)
     }
 }

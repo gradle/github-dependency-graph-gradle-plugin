@@ -85,4 +85,3 @@ jobs:
                 name: plugin-json
                 path: build/reports/dependency-graph-snapshots/plugin-self-test.json
                 if-no-files-found: error
-

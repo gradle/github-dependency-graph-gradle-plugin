@@ -5,6 +5,20 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.util.jar.JarFile
 
+// Upgrade transitive dependencies in plugin classpath
+buildscript {
+    repositories {
+        gradlePluginPortal()
+    }
+    dependencies {
+        constraints {
+            // The plugin com.github.breadmoirai.github-release:2.5.2 has dependency on com.squareup.okio:okio:3.0.0
+            // which has reported vulnerability CVE-2023-3635. Use a newer version.
+            classpath(libs.okio)
+        }
+    }
+}
+
 plugins {
     kotlin("jvm") version(libs.versions.kotlin)
     alias(libs.plugins.plugin.publish)

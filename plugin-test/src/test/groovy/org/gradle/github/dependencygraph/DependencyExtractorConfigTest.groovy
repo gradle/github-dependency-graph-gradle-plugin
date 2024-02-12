@@ -52,6 +52,17 @@ class DependencyExtractorConfigTest extends BaseExtractorTest {
         assert job.id == environmentVars.jobId
     }
 
+    def "fails gracefully if configuration values not set"() {
+        when:
+        def envVars = environmentVars.asEnvironmentMap()
+        envVars.remove("GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR")
+        executer.withEnvironmentVars(envVars)
+        def result = executer.runWithFailure()
+
+        then:
+        result.output.contains("> The configuration parameter 'GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR' must be set")
+    }
+
     @IgnoreIf({
         // There is an issue where BuildService is closed too early in Gradle 8.0,
         // resulting in empty dependency graph.
@@ -88,14 +99,38 @@ class DependencyExtractorConfigTest extends BaseExtractorTest {
         !dependencyGraphFile.exists()
     }
 
-    def "fails gracefully if configuration values not set"() {
+    def "does not generate dependency-graph on configuration failure"() {
+        given:
+        buildFile << """
+        throw new RuntimeException("Failure during configuration")
+        """
+
         when:
-        def envVars = environmentVars.asEnvironmentMap()
-        envVars.remove("GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR")
-        executer.withEnvironmentVars(envVars)
-        def result = executer.runWithFailure()
+        def buildResult = runAndFail()
 
         then:
-        result.output.contains("> The configuration parameter 'GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR' must be set")
+        buildResult.output.contains("Gradle Build did not complete successfully: Dependency Graph file will not be generated.")
+        !dependencyGraphFile.exists()
+    }
+
+    def "does not generate dependency-graph on task failure"() {
+        given:
+        buildFile << """
+            tasks.register("taskThatSucceeds") {
+              doLast {}
+            }
+            tasks.register("taskThatFails") {
+              doLast {
+                throw new RuntimeException("Failure in task")
+              }
+            }
+        """
+
+        when:
+        def buildResult = runAndFail("taskThatSucceeds", "taskThatFails")
+
+        then:
+        buildResult.output.contains("Gradle Build did not complete successfully: Dependency Graph file will not be generated.")
+        !dependencyGraphFile.exists()
     }
 }

@@ -10,7 +10,7 @@ import org.gradle.api.logging.Logging
 import org.gradle.dependencygraph.DependencyGraphRenderer
 import org.gradle.dependencygraph.model.*
 import org.gradle.dependencygraph.model.DependencyScope.*
-import org.gradle.dependencygraph.util.*
+import org.gradle.dependencygraph.util.PluginParameters
 import org.gradle.initialization.EvaluateSettingsBuildOperationType
 import org.gradle.initialization.LoadProjectsBuildOperationType
 import org.gradle.internal.exceptions.DefaultMultiCauseException
@@ -38,6 +38,8 @@ abstract class DependencyExtractor :
     private val pluginParameters = PluginParameters()
 
     private var settingsEvaluated = false
+    private var buildCompleted = false
+    private var buildFailed = false
 
     private val resolvedConfigurations = Collections.synchronizedList(mutableListOf<ResolvedConfiguration>())
 
@@ -70,6 +72,7 @@ abstract class DependencyExtractor :
     }
 
     override fun finished(buildOperation: BuildOperationDescriptor, finishEvent: OperationFinishEvent) {
+
         handleBuildOperationType<
             ResolveConfigurationDependenciesBuildOperationType.Details,
             ResolveConfigurationDependenciesBuildOperationType.Result
@@ -341,6 +344,13 @@ abstract class DependencyExtractor :
         )
     }
 
+    fun handleBuildCompletion(failure: Throwable?) {
+        buildCompleted = true
+        if (failure != null) {
+            buildFailed = true
+        }
+    }
+
     override fun close() {
         if (thrownExceptions.isNotEmpty()) {
             throw DefaultMultiCauseException(
@@ -355,6 +365,13 @@ abstract class DependencyExtractor :
             LOGGER.lifecycle(
                 "Gradle build state was reused from the configuration-cache: " +
                     "Dependency Graph file will not be generated."
+            )
+            return
+        }
+        // Do not write an incomplete graph when build didn't complete successfully
+        if (!buildCompleted || buildFailed) {
+            LOGGER.lifecycle(
+                "Gradle Build did not complete successfully: Dependency Graph file will not be generated."
             )
             return
         }

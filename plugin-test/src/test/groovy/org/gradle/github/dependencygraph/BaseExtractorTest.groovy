@@ -99,6 +99,16 @@ abstract class BaseExtractorTest extends Specification {
         return result
     }
 
+    protected BuildResult runAndFail() {
+        return runAndFail("ForceDependencyResolutionPlugin_resolveAllDependencies")
+    }
+
+    protected BuildResult runAndFail(String... names) {
+        executer.withTasks(names)
+        result = getExecuter().runWithFailure()
+        return result
+    }
+
     @CompileDynamic
     protected void applyDependencyGraphPlugin() {
         File pluginJar = TEST_CONFIG.asFile("extractorPlugin.jar.path")

@@ -89,9 +89,10 @@ abstract class AbstractDependencyExtractorPlugin : Plugin<Gradle> {
                 extractorServiceProvider: Provider<out DependencyExtractor>
             ) {
                 gradle.buildFinished {
-                    extractorServiceProvider.get().close()
-                    gradle.buildOperationListenerManager
-                        .removeListener(extractorServiceProvider.get())
+                    val extractorService = extractorServiceProvider.get()
+                    extractorService.handleBuildCompletion(it.failure)
+                    extractorService.close()
+                    gradle.buildOperationListenerManager.removeListener(extractorService)
                 }
             }
         }

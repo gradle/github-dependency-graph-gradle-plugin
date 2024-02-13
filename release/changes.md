@@ -1,2 +1,1 @@
-- [NEW] Log each resolved dependency and associated configuration path (#113)
-- [FIX] Exclude plugin marker dependencies from generated graph (#111)
+- [FIX] Only write dependency-graph on build success (#115)

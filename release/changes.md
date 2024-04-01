@@ -1,1 +1,1 @@
-- [FIX] Only write dependency-graph on build success (#115)
+- [FIX] Avoid resolving configurations that are excluded from graph (#126)

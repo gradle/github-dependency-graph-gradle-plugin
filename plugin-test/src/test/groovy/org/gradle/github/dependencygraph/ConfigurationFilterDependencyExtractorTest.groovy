@@ -284,4 +284,43 @@ class ConfigurationFilterDependencyExtractorTest extends BaseExtractorTest {
         ])
     }
 
+    def "does not attempt to resolve excluded configurations"() {
+        given:
+        settingsFile << "include 'a', 'b'"
+
+        buildFile << """
+            project(':a') {
+                apply plugin: 'java-library'
+                dependencies {
+                    api 'org.test:foo:1.0'
+                }
+                configurations.all {
+                    incoming.beforeResolve {
+                        throw new RuntimeException("Should not resolve project :a")
+                    }
+                }
+            }
+            project(':b') {
+                apply plugin: 'java-library'
+                dependencies {
+                    api 'org.test:bar:1.0'
+                    testImplementation 'org.test:baz:1.0'
+                }
+                configurations.testCompileClasspath {
+                    incoming.beforeResolve {
+                        throw new RuntimeException("Should not resolve configuration 'testCompileClasspath'")
+                    }
+                }
+            }
+        """
+
+        when:
+        executer.withArgument("-DDEPENDENCY_GRAPH_EXCLUDE_PROJECTS=:a")
+        executer.withArgument("-DDEPENDENCY_GRAPH_EXCLUDE_CONFIGURATIONS=test(Compile|Runtime)Classpath")
+        run()
+
+        then:
+        gitHubManifest().assertResolved(["org.test:bar:1.0"])
+    }
+
 }

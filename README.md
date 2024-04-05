@@ -98,6 +98,19 @@ Note that no dependency graph will be generated when configuration state is load
 | 8.0 - 8.0.2 | ✅ | :x: |
 | 8.1+ | ✅ | ✅ |
 
+### Dependency verification
+
+When using this plugin with [dependency signature verification enabled](https://docs.gradle.org/current/userguide/dependency_verification.html#sec:signature-verification), 
+the you should be able to update your `dependency-verification.xml` file using `--write-verification-metadata pgp,sha256`.
+
+However, if this doesn't work, you can add the following to your `dependency-verificaton.xml` file:
+
+```
+<trusted-keys>
+   <trusted-key id="7B79ADD11F8A779FE90FD3D0893A028475557671" group="org.gradle" name="github-dependency-graph-gradle-plugin"/>
+</trusted-keys>
+```
+
 ## Using the plugin to generate dependency reports
 
 As well as the `GitHubDependencyGraphPlugin`, which is tailored for use by the [gradle/actions/dependency-submission](https://github.com/gradle/actions/tree/main/dependency-submission) GitHub Action, this repository also provides the `SimpleDependencyGraphPlugin`, which generates dependency-graph outputs in simple text format.
@@ -172,3 +185,4 @@ To self-test this plugin and generate a dependency graph for this repository, ru
 The generated dependency graph will be submitted to GitHub only if you supply a
 [GitHub API token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
 via the environment variable `GITHUB_TOKEN`.
+

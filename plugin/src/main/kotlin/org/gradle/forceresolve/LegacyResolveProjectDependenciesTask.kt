@@ -5,12 +5,13 @@ import org.gradle.api.artifacts.Configuration
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
 import org.gradle.dependencygraph.extractor.ResolvedConfigurationFilter
-import org.gradle.internal.deprecation.DeprecatableConfiguration
 import org.gradle.work.DisableCachingByDefault
-
+import java.lang.reflect.Method
 
 @DisableCachingByDefault(because = "Not worth caching")
 abstract class LegacyResolveProjectDependenciesTask: DefaultTask() {
+    private val canSafelyBeResolvedMethod: Method? = getCanSafelyBeResolvedMethod()
+
     @Internal
     var configurationFilter: ResolvedConfigurationFilter? = null
 
@@ -20,17 +21,31 @@ abstract class LegacyResolveProjectDependenciesTask: DefaultTask() {
         }
     }
 
+    /**
+     * If `DeprecatableConfiguration.canSafelyBeResolve()` is available, use it.
+     * Else fall back to `Configuration.canBeResolved`.
+     */
+    private fun canBeResolved(configuration: Configuration): Boolean {
+        if (canSafelyBeResolvedMethod != null) {
+            return canSafelyBeResolvedMethod.invoke(configuration) as Boolean
+        }
+        return configuration.isCanBeResolved
+    }
+
     @TaskAction
     fun action() {
         for (configuration in getReportableConfigurations()) {
+            println("Resolving ${configuration.name}")
             configuration.incoming.resolutionResult.root
         }
     }
 
-    private fun canBeResolved(configuration: Configuration): Boolean {
-        if (configuration is DeprecatableConfiguration) {
-            return configuration.canSafelyBeResolved()
+    private fun getCanSafelyBeResolvedMethod(): Method? {
+        return try {
+            val dc = Class.forName("org.gradle.internal.deprecation.DeprecatableConfiguration")
+            dc.getMethod("canSafelyBeResolved")
+        } catch (e: ReflectiveOperationException) {
+            null
         }
-        return configuration.isCanBeResolved
     }
 }

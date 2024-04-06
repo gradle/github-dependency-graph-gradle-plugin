@@ -2,6 +2,7 @@ package org.gradle.github.dependencygraph
 
 import org.gradle.test.fixtures.PluginPublisher
 import org.gradle.test.fixtures.maven.MavenModule
+import org.gradle.util.GradleVersion
 import spock.lang.IgnoreIf
 
 class DependencyLockingDependencyExtractorTest extends BaseExtractorTest {
@@ -30,6 +31,41 @@ class DependencyLockingDependencyExtractorTest extends BaseExtractorTest {
     }
 
     def "extracts dependencies when dependency locking is enabled"() {
+        given:
+        buildFile << """
+        dependencies {
+            implementation "org.test:foo:+"
+        }
+        
+        dependencyLocking {
+            lockAllConfigurations()
+        }
+        """
+
+        // Write dependency lock file
+        run("dependencies", "--write-locks")
+        mavenRepo.module("org.test", "foo", "1.1").publish()
+
+        when:
+        applyDependencyGraphPlugin()
+        run()
+
+        then:
+        def manifest = gitHubManifest()
+        manifest.sourceFile == "settings.gradle"
+
+        manifest.assertResolved([
+            "org.test:foo:1.0": [
+                package_url: purlFor(foo)
+            ]
+        ])
+    }
+
+    @IgnoreIf({
+        // `LockMode.STRICT` was introduced in Gradle 6.1
+        GradleVersion.version(testGradleVersion) < GradleVersion.version("6.1")
+    })
+    def "extracts dependencies when Strict dependency locking is enabled"() {
         given:
         buildFile << """
         dependencies {

@@ -7,6 +7,7 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
 import org.gradle.dependencygraph.extractor.ResolvedConfigurationFilter
+import org.gradle.internal.deprecation.DeprecatableConfiguration
 import org.gradle.internal.serialization.Cached
 import org.gradle.work.DisableCachingByDefault
 
@@ -25,8 +26,15 @@ abstract class ResolveProjectDependenciesTask: DefaultTask() {
 
     private fun getReportableConfigurations(): List<Configuration> {
         return project.configurations.filter {
-            it.isCanBeResolved && configurationFilter!!.include(project.path, it.name)
+            canBeResolved(it) && configurationFilter!!.include(project.path, it.name)
         }
+    }
+
+    private fun canBeResolved(configuration: Configuration): Boolean {
+        if (configuration is DeprecatableConfiguration) {
+            return configuration.canSafelyBeResolved()
+        }
+        return configuration.isCanBeResolved
     }
 
     @TaskAction

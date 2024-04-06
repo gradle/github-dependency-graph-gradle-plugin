@@ -5,7 +5,9 @@ import org.gradle.api.artifacts.Configuration
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
 import org.gradle.dependencygraph.extractor.ResolvedConfigurationFilter
+import org.gradle.internal.deprecation.DeprecatableConfiguration
 import org.gradle.work.DisableCachingByDefault
+
 
 @DisableCachingByDefault(because = "Not worth caching")
 abstract class LegacyResolveProjectDependenciesTask: DefaultTask() {
@@ -14,7 +16,7 @@ abstract class LegacyResolveProjectDependenciesTask: DefaultTask() {
 
     private fun getReportableConfigurations(): List<Configuration> {
         return project.configurations.filter {
-            it.isCanBeResolved && configurationFilter!!.include(project.path, it.name)
+            canBeResolved(it) && configurationFilter!!.include(project.path, it.name)
         }
     }
 
@@ -23,5 +25,12 @@ abstract class LegacyResolveProjectDependenciesTask: DefaultTask() {
         for (configuration in getReportableConfigurations()) {
             configuration.incoming.resolutionResult.root
         }
+    }
+
+    private fun canBeResolved(configuration: Configuration): Boolean {
+        if (configuration is DeprecatableConfiguration) {
+            return configuration.canSafelyBeResolved()
+        }
+        return configuration.isCanBeResolved
     }
 }

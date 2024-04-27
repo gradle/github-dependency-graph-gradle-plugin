@@ -8,7 +8,7 @@ This plugin is designed to be used in a GitHub Actions workflow, an is tightly i
 For other uses, the [core plugin](https://plugins.gradle.org/plugin/org.gradle.github-dependency-graph-gradle-plugin) (`org.gradle.github.GitHubDependencyGraphPlugin`) 
 should be applied to the `Gradle` instance via a Gradle init script as follows:
 
-```
+```groovy
 import org.gradle.github.GitHubDependencyGraphPlugin
 initscript {
   repositories {
@@ -105,7 +105,7 @@ the you should be able to update your `dependency-verification.xml` file using `
 
 However, if this doesn't work, you can add the following to your `dependency-verificaton.xml` file:
 
-```
+```xml
 <trusted-keys>
    <trusted-key id="7B79ADD11F8A779FE90FD3D0893A028475557671" group="org.gradle" name="github-dependency-graph-gradle-plugin"/>
 </trusted-keys>
@@ -131,7 +131,7 @@ apply plugin: org.gradle.dependencygraph.simple.SimpleDependencyGraphPlugin
 
 and then execute the task to resolve all dependencies in your project:
 
-```
+```shell
 ./gradlew -I init.gradle --dependency-verification=off --no-configuration-cache --no-configure-on-demand :ForceDependencyResolutionPlugin_resolveAllDependencies
 ```
 
@@ -146,7 +146,7 @@ After generating the dependency reports as described, it is possible to determin
 3. Use the built-in [dependencyInsight](https://docs.gradle.org/current/userguide/viewing_debugging_dependencies.html#dependency_insights) task to determine exactly how the dependency was resolved. The `path` indicates the project where the task should be executed, and the `configuration` is an input to the task.
 
 For example, given the following from the `dependency-resolution.json` report:
-```
+```json
   "dependency" : "com.google.guava:guava:32.1.3-jre",
   "effectiveScope" : "Unknown",
   "resolvedBy" : [ {
@@ -157,7 +157,7 @@ For example, given the following from the `dependency-resolution.json` report:
 ```
 
 You would run the command:
-```
+```shell
 ./gradlew :my-subproject:dependencyInsight --configuration compileClasspath --dependency com.google.guava:guava:32.1.3-jre
 ```
 

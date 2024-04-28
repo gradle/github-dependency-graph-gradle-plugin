@@ -3,7 +3,8 @@
 A Gradle plugin for generating a GitHub dependency graph for a Gradle build, which can be uploaded to the [GitHub Dependency Submission API](https://docs.github.com/en/rest/dependency-graph/dependency-submission).
 
 ## Usage
-This plugin is designed to be used in a GitHub Actions workflow, an is tightly integrated into the [Gradle Build Action](https://github.com/gradle/gradle-build-action#github-dependency-graph-support).
+This plugin is designed to be used in a GitHub Actions workflow, and is tightly integrated into the 
+[gradle/actions/dependency-submission](https://github.com/gradle/actions/tree/main/dependency-submission) action.
 
 For other uses, the [core plugin](https://plugins.gradle.org/plugin/org.gradle.github-dependency-graph-gradle-plugin) (`org.gradle.github.GitHubDependencyGraphPlugin`) 
 should be applied to the `Gradle` instance via a Gradle init script as follows:

@@ -2,6 +2,8 @@ package org.gradle.github.dependencygraph
 
 
 import org.gradle.test.fixtures.maven.MavenModule
+import org.gradle.util.GradleVersion
+import spock.lang.IgnoreIf
 
 class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
     private MavenModule foo
@@ -248,6 +250,34 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         manifest.assertResolved([
             "org.test:bar:1.0": [package_url: purlFor(bar)],
             "org.test:foo:1.0": [package_url: purlFor(foo)]
+        ])
+    }
+
+    @IgnoreIf({
+        // `includeBuild('.')` is not possible with Gradle < 6.1
+        GradleVersion.version(testGradleVersion) < GradleVersion.version("6.1")
+    })
+    def "extracts dependencies from build that includes itself"() {
+        given:
+        settingsFile << """
+            includeBuild('.')
+"""
+        buildFile << """
+            apply plugin: 'java'
+            dependencies {
+                implementation 'org.test:bar:1.0'
+            }
+
+"""
+
+        when:
+        run(":ForceDependencyResolutionPlugin_resolveAllDependencies")
+
+        then:
+        def manifest = gitHubManifest()
+        manifest.sourceFile == "settings.gradle"
+        manifest.assertResolved([
+            "org.test:bar:1.0": [package_url: purlFor(bar)]
         ])
     }
 }

@@ -2,6 +2,8 @@ package org.gradle.github.dependencygraph
 
 
 import org.gradle.test.fixtures.maven.MavenModule
+import org.gradle.util.GradleVersion
+import spock.lang.IgnoreIf
 
 class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
     private MavenModule foo
@@ -251,6 +253,10 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
         ])
     }
 
+    @IgnoreIf({
+        // `includeBuild('.')` is not possible with Gradle < 6.1
+        GradleVersion.version(testGradleVersion) < GradleVersion.version("6.1")
+    })
     def "extracts dependencies from build that includes itself"() {
         given:
         settingsFile << """

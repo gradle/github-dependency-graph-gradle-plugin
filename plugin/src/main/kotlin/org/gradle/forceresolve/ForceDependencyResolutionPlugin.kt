@@ -39,8 +39,10 @@ class ForceDependencyResolutionPlugin : Plugin<Gradle> {
 
             // Depend on all 'resolveBuildDependencies' task in each included build
             gradle.includedBuilds.forEach { includedBuild ->
-                resolveAllDeps.configure {
-                    it.dependsOn(includedBuild.task(":$RESOLVE_ALL_TASK"))
+                if (includedBuild.projectDir != gradle.rootProject.projectDir) {
+                    resolveAllDeps.configure {
+                        it.dependsOn(includedBuild.task(":$RESOLVE_ALL_TASK"))
+                    }
                 }
             }
         }

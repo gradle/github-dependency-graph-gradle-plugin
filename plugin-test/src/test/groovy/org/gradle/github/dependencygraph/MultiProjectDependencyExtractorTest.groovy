@@ -250,4 +250,28 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
             "org.test:foo:1.0": [package_url: purlFor(foo)]
         ])
     }
+
+    def "extracts dependencies from build that includes itself"() {
+        given:
+        settingsFile << """
+            includeBuild('.')
+"""
+        buildFile << """
+            apply plugin: 'java'
+            dependencies {
+                implementation 'org.test:bar:1.0'
+            }
+
+"""
+
+        when:
+        run(":ForceDependencyResolutionPlugin_resolveAllDependencies")
+
+        then:
+        def manifest = gitHubManifest()
+        manifest.sourceFile == "settings.gradle"
+        manifest.assertResolved([
+            "org.test:bar:1.0": [package_url: purlFor(bar)]
+        ])
+    }
 }

@@ -1,1 +1,2 @@
-- [FIX] Avoid resolving configurations that are excluded from graph (#126)
+- [FIX] Avoid resolving configurations that are deprecated for resolving (#129)
+- [FIX] Avoid circular task dependency when build includes itself (#141)

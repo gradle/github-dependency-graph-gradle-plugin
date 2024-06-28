@@ -22,7 +22,7 @@ abstract class AbstractResolveProjectDependenciesTask : DefaultTask() {
     }
 
     /**
-     * If `DeprecatableConfiguration.canSafelyBeResolve()` is available, use it.
+     * If `DeprecatableConfiguration.canSafelyBeResolved()` is available, use it.
      * Else fall back to `Configuration.canBeResolved`.
      */
     private fun canSafelyBeResolved(configuration: Configuration): Boolean {

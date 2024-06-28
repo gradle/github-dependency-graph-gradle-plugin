@@ -31,9 +31,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Test earliest and latest supported version of 5.x, 6.x and 7.x, as well as all patched minor versions of 8.x
+        # Test earliest and latest supported version of 5.x, 6.x, 7.x, and 8.x
         # Latest 8.x is tested in 'quick-check' job using the wrapper
-        gradle-version: [ "5.2.1", "5.6.4", "6.0.1", "6.9.4", "7.1.1", "7.6.4", "8.0.2", "8.1.1", "8.2.1", "8.3", "8.4", "8.5", "8.6"]
+        gradle-version: [ "5.2.1", "5.6.4", "6.0.1", "6.9.4", "7.1.1", "7.6.4", "8.0.2", "8.8"]
     runs-on: ubuntu-latest
     env:
       GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
@@ -51,6 +51,30 @@ jobs:
 
       - name: Execute Gradle Build
         run: ./gradlew -S build -DtestGradleVersion=${{ matrix.gradle-version }}
+
+  test-jvm-version:
+    needs: quick-check
+    strategy:
+      fail-fast: false
+      matrix:
+        jvm-version: [ "8", "11", "17", "21", "22"]
+    runs-on: ubuntu-latest
+    env:
+      GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.jvm-version }}
+          distribution: temurin
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Execute Gradle Build
+        run: ./gradlew -S build -DtestGradleVersion=8.8
 
   self-test:
       needs: quick-check

@@ -16,3 +16,8 @@ updates:
       - gradle-plugin-portal
     schedule:
       interval: "weekly"
+    groups:
+      gradle-dependencies:
+        patterns:
+        - "*"
+

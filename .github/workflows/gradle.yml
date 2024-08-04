@@ -21,7 +21,7 @@ jobs:
             distribution: temurin
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Execute Gradle Build
         run: ./gradlew build
@@ -47,7 +47,7 @@ jobs:
           distribution: temurin
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Execute Gradle Build
         run: ./gradlew -S build -DtestGradleVersion=${{ matrix.gradle-version }}
@@ -71,7 +71,7 @@ jobs:
           distribution: temurin
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Execute Gradle Build
         run: ./gradlew -S build -DtestGradleVersion=8.8
@@ -91,7 +91,7 @@ jobs:
                 distribution: temurin
 
           - name: Setup Gradle
-            uses: gradle/actions/setup-gradle@v3
+            uses: gradle/actions/setup-gradle@v4
 
           - name: Self Test :plugin
             run: ./plugin-self-test ForceDependencyResolutionPlugin_resolveAllDependencies

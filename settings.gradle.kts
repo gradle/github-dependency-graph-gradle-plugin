@@ -1,16 +1,14 @@
 plugins {
-    id("com.gradle.enterprise").version("3.13")
-    id("com.gradle.common-custom-user-data-gradle-plugin").version("1.10")
+    id("com.gradle.develocity").version("3.18.1")
+    id("com.gradle.common-custom-user-data-gradle-plugin").version("2.0.2")
 }
 
 val isCI = !System.getenv("CI").isNullOrEmpty()
 
-gradleEnterprise {
+develocity {
     server = "https://ge.gradle.org"
     buildScan {
-        publishAlways()
-        capture { isTaskInputFiles = true }
-        isUploadInBackground = !isCI
+        uploadInBackground = !isCI
 
         obfuscation {
             ipAddresses { addresses -> addresses.map { _ -> "0.0.0.0" } }

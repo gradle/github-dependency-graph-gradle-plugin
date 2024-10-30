@@ -9,8 +9,6 @@ on:
 jobs:
   quick-check:
     runs-on: ubuntu-latest
-    env:
-      GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -22,6 +20,8 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          develocity-access-key: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
 
       - name: Execute Gradle Build
         run: ./gradlew build
@@ -35,8 +35,6 @@ jobs:
         # Latest 8.x is tested in 'quick-check' job using the wrapper
         gradle-version: [ "5.2.1", "5.6.4", "6.0.1", "6.9.4", "7.1.1", "7.6.4", "8.0.2", "8.8"]
     runs-on: ubuntu-latest
-    env:
-      GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -48,6 +46,8 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          develocity-access-key: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
 
       - name: Execute Gradle Build
         run: ./gradlew -S build -DtestGradleVersion=${{ matrix.gradle-version }}
@@ -59,8 +59,6 @@ jobs:
       matrix:
         jvm-version: [ "8", "11", "17", "21", "22"]
     runs-on: ubuntu-latest
-    env:
-      GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -72,40 +70,42 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          develocity-access-key: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
 
       - name: Execute Gradle Build
         run: ./gradlew -S build -DtestGradleVersion=8.8
 
   self-test:
-      needs: quick-check
-      runs-on: ubuntu-latest
-      env:
-          GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
-      steps:
-          - uses: actions/checkout@v4
+    needs: quick-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-          - name: Set up JDK
-            uses: actions/setup-java@v4
-            with:
-                java-version: 11
-                distribution: temurin
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+            java-version: 11
+            distribution: temurin
 
-          - name: Setup Gradle
-            uses: gradle/actions/setup-gradle@v4
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          develocity-access-key: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
 
-          - name: Self Test :plugin
-            run: ./plugin-self-test ForceDependencyResolutionPlugin_resolveAllDependencies
-            env:
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                GITHUB_DEPENDENCY_GRAPH_JOB_ID: ${{ github.run_id }}
-                GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR: "plugin-self-test"
-                GITHUB_DEPENDENCY_GRAPH_REF: ${{ github.ref }}
-                GITHUB_DEPENDENCY_GRAPH_SHA: ${{ github.sha }}
-                GITHUB_DEPENDENCY_GRAPH_WORKSPACE: ${{ github.workspace }}
+      - name: Self Test :plugin
+        run: ./plugin-self-test ForceDependencyResolutionPlugin_resolveAllDependencies
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            GITHUB_DEPENDENCY_GRAPH_JOB_ID: ${{ github.run_id }}
+            GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR: "plugin-self-test"
+            GITHUB_DEPENDENCY_GRAPH_REF: ${{ github.ref }}
+            GITHUB_DEPENDENCY_GRAPH_SHA: ${{ github.sha }}
+            GITHUB_DEPENDENCY_GRAPH_WORKSPACE: ${{ github.workspace }}
 
-          - name: Save plugin JSON report
-            uses: actions/upload-artifact@v4
-            with:
-                name: plugin-json
-                path: build/reports/dependency-graph-snapshots/plugin-self-test.json
-                if-no-files-found: error
+      - name: Save plugin JSON report
+        uses: actions/upload-artifact@v4
+        with:
+            name: plugin-json
+            path: build/reports/dependency-graph-snapshots/plugin-self-test.json
+            if-no-files-found: error

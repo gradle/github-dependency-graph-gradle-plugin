@@ -12,9 +12,10 @@ buildscript {
     }
     dependencies {
         constraints {
-            // The plugin com.github.breadmoirai.github-release:2.5.2 has dependency on com.squareup.okio:okio:3.0.0
-            // which has reported vulnerability CVE-2023-3635. Use a newer version.
+            // The plugin com.github.breadmoirai.github-release:2.5.2 depends on vulnerable library releases.
+            // We constrain these to newer, patched versions.
             classpath(libs.okio)
+            classpath(libs.apache.commons.io)
         }
     }
 }

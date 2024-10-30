@@ -26,7 +26,7 @@ class SampleProjectDependencyExtractorTest extends BaseExtractorTest {
         def manifestDependencies = manifest.resolved
 
         [   // plugin dependencies
-            "com.gradle:gradle-enterprise-gradle-plugin:3.12.6",
+            "com.gradle:develocity-gradle-plugin:3.18.1",
             "com.diffplug.spotless:spotless-plugin-gradle:4.5.1",
             "com.diffplug.durian:durian-core:1.2.0",
         ].forEach {

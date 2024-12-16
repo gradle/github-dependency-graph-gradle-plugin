@@ -8,7 +8,7 @@ jackson-databind = { group = "com.fasterxml.jackson.core", name = "jackson-datab
 jackson-parameter-names = { group = "com.fasterxml.jackson.module", name = "jackson-module-parameter-names" }
 jackson-kotlin = { group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin" }
 
-apache-commons-io = { group = "commons-io", name = "commons-io", version = "2.17.0" }
+apache-commons-io = { group = "commons-io", name = "commons-io", version = "2.18.0" }
 
 github-packageurl = { group = "com.github.package-url", name = "packageurl-java", version = "1.5.0" }
 okio = { group = "com.squareup.okio", name = "okio", version = "3.9.1" }
@@ -18,10 +18,10 @@ okio = { group = "com.squareup.okio", name = "okio", version = "3.9.1" }
 spock-core = { group = "org.spockframework", name = "spock-core", version.ref = "spock" }
 spock-junit4 = { group = "org.spockframework", name = "spock-junit4", version.ref = "spock" }
 junit-junit4 = { group = "junit", name = "junit", version = "4.13.2" }
-junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version = "5.11.3" }
+junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version = "5.11.4" }
 
 groovy-json = { group = "org.codehaus.groovy", name = "groovy-json", version = "3.0.23" }
-json-schema-validator = { group = "com.networknt", name = "json-schema-validator", version = "1.5.3" }
+json-schema-validator = { group = "com.networknt", name = "json-schema-validator", version = "1.5.4" }
 jetbrains-annotations = { group = "org.jetbrains", name = "annotations", version = "26.0.1" }
 google-gson = { group = "com.google.code.gson", name = "gson", version = "2.11.0" }
 

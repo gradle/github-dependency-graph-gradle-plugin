@@ -1,2 +1,2 @@
-- [FIX] Avoid resolving configurations that are deprecated for resolving (#129)
-- [FIX] Avoid circular task dependency when build includes itself (#141)
+This patch release updates a number of dependency versions. 
+No functional changes are included.

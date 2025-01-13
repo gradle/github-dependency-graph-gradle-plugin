@@ -11,7 +11,7 @@ jackson-kotlin = { group = "com.fasterxml.jackson.module", name = "jackson-modul
 apache-commons-io = { group = "commons-io", name = "commons-io", version = "2.18.0" }
 
 github-packageurl = { group = "com.github.package-url", name = "packageurl-java", version = "1.5.0" }
-okio = { group = "com.squareup.okio", name = "okio", version = "3.9.1" }
+okio = { group = "com.squareup.okio", name = "okio", version = "3.10.2" }
 
 ### Test dependencies
 

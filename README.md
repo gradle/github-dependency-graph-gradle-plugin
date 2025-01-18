@@ -116,7 +116,7 @@ However, if this doesn't work, you can add the following to your `dependency-ver
 
 As well as the `GitHubDependencyGraphPlugin`, which is tailored for use by the [gradle/actions/dependency-submission](https://github.com/gradle/actions/tree/main/dependency-submission) GitHub Action, this repository also provides the `SimpleDependencyGraphPlugin`, which generates dependency-graph outputs in simple text format.
 
-To use the `SimpleDependencyGraphPlugin` you'll need to create an `init-script.gradle` file to apply the plugin to your project:
+To use the `SimpleDependencyGraphPlugin` you'll need to create an `init.gradle` file to apply the plugin to your project:
 
 ```groovy
 initscript {
@@ -133,10 +133,10 @@ apply plugin: org.gradle.dependencygraph.simple.SimpleDependencyGraphPlugin
 and then execute the task to resolve all dependencies in your project:
 
 ```shell
-./gradlew -I init.gradle --dependency-verification=off --no-configuration-cache --no-configure-on-demand :ForceDependencyResolutionPlugin_resolveAllDependencies
+./gradlew -I init.gradle --dependency-verification=off --no-configuration-cache --no-zconfigure-on-demand :ForceDependencyResolutionPlugin_resolveAllDependencies
 ```
 
-You'll find the generated files in `build/dependency-graph-snapshots`.
+You'll find the generated files in `build/reports/dependency-graph-snapshots`.
 
 ### Using dependency reports to determine the underlying source of a dependency
 

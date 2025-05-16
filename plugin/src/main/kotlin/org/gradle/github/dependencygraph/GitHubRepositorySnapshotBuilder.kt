@@ -10,7 +10,13 @@ class GitHubRepositorySnapshotBuilder(
     private val snapshotParams: GitHubSnapshotParams
 ) {
 
-    private val detector by lazy { GitHubDetector() }
+    private val detector by lazy {
+        GitHubDetector(
+            name = snapshotParams.githubDetectorName,
+            version = snapshotParams.githubDetectorVersion,
+            url = snapshotParams.githubDetectorUrl
+        )
+    }
 
     private val job by lazy {
         GitHubJob(

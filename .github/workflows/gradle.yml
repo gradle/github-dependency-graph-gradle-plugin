@@ -10,7 +10,7 @@ jobs:
   quick-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -36,7 +36,7 @@ jobs:
         gradle-version: [ "5.2.1", "5.6.4", "6.0.1", "6.9.4", "7.1.1", "7.6.4", "8.0.2", "8.8"]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -60,7 +60,7 @@ jobs:
         jvm-version: [ "8", "11", "17", "21", "22"]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -80,7 +80,7 @@ jobs:
     needs: quick-check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up JDK
         uses: actions/setup-java@v4

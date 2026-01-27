@@ -35,6 +35,10 @@ class MultiProjectDependencyExtractorTest extends BaseExtractorTest {
                 }
             }
         """
+
+        ['a', 'b', 'c'].each { projectName ->
+            file("${projectName}").mkdirs()
+        }
     }
 
     def "extracts dependencies from multiple unrelated projects"() {

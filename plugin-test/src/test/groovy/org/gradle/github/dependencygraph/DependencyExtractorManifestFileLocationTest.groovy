@@ -16,6 +16,8 @@ class DependencyExtractorManifestFileLocationTest extends BaseExtractorTest {
             
             include("b", "c")
         """
+        file("b").mkdirs()
+        file("c").mkdirs()
 
         when:
         run()

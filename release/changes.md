@@ -1,1 +1,3 @@
-- [NEW] GitHub Detector can be customized with environment variables
+- Updated dependency versions
+- Bumped Gradle wrapper to 8.14.4
+- Test plugin with Gradle 9.x

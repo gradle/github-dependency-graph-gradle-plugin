@@ -33,6 +33,10 @@ class ConfigurationFilterDependencyExtractorTest extends BaseExtractorTest {
                 }
             }
         """
+
+        ['a', 'b', 'c'].each { projectName ->
+            file("${projectName}").mkdirs()
+        }
     }
 
     def "can filter projects to extract dependencies"() {

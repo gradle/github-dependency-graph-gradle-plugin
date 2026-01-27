@@ -246,12 +246,12 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
             }
             tasks.register("resolveCompileClasspath") {
               doLast {
-                println(configurations.compileClasspath.files())
+                println(configurations.compileClasspath.collect { it.name })
               }
             }
             tasks.register("resolveRuntimeClasspath") {
               doLast {
-                println(configurations.runtimeClasspath.files())
+                println(configurations.runtimeClasspath.collect { it.name })
               }
             }
         """

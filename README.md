@@ -104,9 +104,10 @@ Note that no dependency graph will be generated when configuration state is load
 | 5.2 - 5.6.4 | ✅ | :x: |
 | 6.0 - 6.9.4 | ✅ | :x: |
 | 7.0 - 7.0.2 | :x: | :x: |
-| 7.1 - 7.6.3 | ✅ | :x: |
+| 7.1 - 7.6.6 | ✅ | :x: |
 | 8.0 - 8.0.2 | ✅ | :x: |
-| 8.1+ | ✅ | ✅ |
+| 8.1 - 8.14.4 | ✅ | ✅ |
+| 9.0.0 - 9.4.1 | ✅ | ✅ |
 
 ### Dependency verification
 

@@ -90,8 +90,7 @@ is required for that dependency to be scoped 'runtime'.
 
 ### Gradle compatibility
 
-The plugin should be compatible with most versions of Gradle >= 5.2, and has been tested against 
-Gradle versions "5.2.1", "5.6.4", "6.0.1", "6.9.4", "7.1.1" and "7.6.3", as well as all patched versions of Gradle 8.x.
+The plugin is compatible with most versions of Gradle >= 5.2, and all changes are tested against a range of versions.
 
 The plugin is compatible with running Gradle with the configuration-cache enabled: this support is
 limited to Gradle "8.1.0" and later. Earlier Gradle versions will not work with `--configuration-cache`.

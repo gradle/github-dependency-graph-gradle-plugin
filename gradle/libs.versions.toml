@@ -21,11 +21,11 @@ junit-junit4 = { group = "junit", name = "junit", version = "4.13.2" }
 junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version = "5.14.3" }
 
 groovy-json = { group = "org.codehaus.groovy", name = "groovy-json", version = "3.0.25" }
-json-schema-validator = { group = "com.networknt", name = "json-schema-validator", version = "1.5.9" }
+json-schema-validator = { group = "com.networknt", name = "json-schema-validator", version = "2.0.1" }
 jetbrains-annotations = { group = "org.jetbrains", name = "annotations", version = "26.1.0" }
 google-gson = { group = "com.google.code.gson", name = "gson", version = "2.13.2" }
 
 [plugins]
 shadow-jar = { id = "com.github.johnrengelman.shadow", version = "8.1.1"}
-plugin-publish = { id = "com.gradle.plugin-publish", version = "2.1.0" }
+plugin-publish = { id = "com.gradle.plugin-publish", version = "2.1.1" }
 github-release = { id = "com.github.breadmoirai.github-release", version = "2.5.2"}

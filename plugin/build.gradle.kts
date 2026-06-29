@@ -49,10 +49,10 @@ dependencies {
     shadowImplementation(libs.jackson.databind)
     shadowImplementation(libs.jackson.kotlin) {
         version {
-            strictly("2.12.3")
+            strictly("2.18.8")
         }
         exclude(group = "org.jetbrains.kotlin")
-        because("kotlin std lib is bundled with Gradle. 2.12.3 because higher versions depend upon Kotlin 1.5")
+        because("kotlin std lib is bundled with Gradle; pinned to match jackson-databind")
     }
     shadowImplementation(libs.github.packageurl)
 
@@ -93,6 +93,8 @@ tasks.withType<PluginUnderTestMetadata>().configureEach {
 
 val shadowJarTask = tasks.named<ShadowJar>("shadowJar") {
     archiveClassifier = ""
+    exclude("META-INF/versions/17/**")
+    exclude("META-INF/versions/21/**")
     configurations = listOf(shadowImplementation)
     val projectGroup = project.group
     doFirst {

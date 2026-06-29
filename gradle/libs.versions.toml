@@ -3,7 +3,7 @@ spock = "2.4-groovy-3.0"
 kotlin = "1.8.10"
 
 [libraries]
-jackson-platform = { group = "com.fasterxml.jackson", name = "jackson-bom", version = "2.14.2" } # Cannot upgrade to 2.15.x, due to https://github.com/gradle/gradle/issues/24390
+jackson-platform = { group = "com.fasterxml.jackson", name = "jackson-bom", version = "2.18.8" } # Java 17/21 multi-release classes are stripped from the shaded jar so old Gradle can load it
 jackson-databind = { group = "com.fasterxml.jackson.core", name = "jackson-databind" }
 jackson-parameter-names = { group = "com.fasterxml.jackson.module", name = "jackson-module-parameter-names" }
 jackson-kotlin = { group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin" }
@@ -26,6 +26,6 @@ jetbrains-annotations = { group = "org.jetbrains", name = "annotations", version
 google-gson = { group = "com.google.code.gson", name = "gson", version = "2.13.2" }
 
 [plugins]
-shadow-jar = { id = "com.github.johnrengelman.shadow", version = "8.1.1"}
+shadow-jar = { id = "com.gradleup.shadow", version = "8.3.6"}
 plugin-publish = { id = "com.gradle.plugin-publish", version = "2.1.0" }
 github-release = { id = "com.github.breadmoirai.github-release", version = "2.5.2"}

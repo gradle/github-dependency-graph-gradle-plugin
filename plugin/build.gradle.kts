@@ -12,10 +12,13 @@ buildscript {
     }
     dependencies {
         constraints {
-            // The plugin com.github.breadmoirai.github-release:2.5.2 depends on vulnerable library releases.
+            // Several plugins on the buildscript classpath (com.github.breadmoirai.github-release:2.5.2,
+            // com.gradleup.shadow) depend on vulnerable library releases.
             // We constrain these to newer, patched versions.
             classpath(libs.okio)
             classpath(libs.apache.commons.io)
+            classpath(libs.apache.tika.core)
+            classpath(libs.apache.log4j.core)
         }
     }
 }

@@ -80,15 +80,14 @@ jobs:
           develocity-access-key: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
 
       # -PtestJavaVersion runs the :plugin-test module (and thus the Gradle version under test) on
-      # the matrix JDK via a Gradle toolchain. That JDK is already installed on the runner and
-      # exposed as JAVA_HOME_<version>_X64; org.gradle.java.installations.fromEnv points Gradle's
-      # toolchain detection at it (auto-detection does not scan the runner tool cache on its own).
+      # the matrix JDK via a Gradle toolchain. The matrix JDKs are preinstalled on the runner;
+      # relying here on Gradle toolchain auto-detection to locate them (auto-download is disabled,
+      # so a missing toolchain fails the build rather than provisioning one).
       - name: Execute Gradle Build
         run: >
           ./gradlew -S build
           -DtestGradleVersion=${{ matrix.gradle-version }}
           -PtestJavaVersion=${{ matrix.java-version }}
-          -Dorg.gradle.java.installations.fromEnv=JAVA_HOME_${{ matrix.java-version }}_X64
 
   # Aggregates the test-gradle-version matrix into a single status check.
   # Enable "merge when checks pass" / branch protection against this job rather than

@@ -6,6 +6,9 @@ on:
     - 'release/**'
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   quick-check:
     runs-on: ubuntu-latest
@@ -74,6 +77,8 @@ jobs:
   self-test:
     needs: quick-check
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Required to submit the dependency graph snapshot to GitHub
     steps:
       - uses: actions/checkout@v6
 

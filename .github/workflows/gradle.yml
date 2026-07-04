@@ -15,7 +15,7 @@ jobs:
   quick-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up JDK
         uses: actions/setup-java@v5
@@ -63,7 +63,7 @@ jobs:
             java-version: "21"        
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       # Fixed build JDK: compiles the plugin and builds the shadow fatjar. Must satisfy the build
       # tooling's own JDK requirement (the shadow plugin needs Java 17+), independent of the older
@@ -109,7 +109,7 @@ jobs:
     permissions:
       contents: write # Required to submit the dependency graph snapshot to GitHub
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up JDK
         uses: actions/setup-java@v5

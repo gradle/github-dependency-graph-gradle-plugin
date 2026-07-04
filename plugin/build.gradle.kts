@@ -12,12 +12,9 @@ buildscript {
     }
     dependencies {
         constraints {
-            // Several plugins on the buildscript classpath (com.github.breadmoirai.github-release:2.5.2,
-            // com.gradleup.shadow) depend on vulnerable library releases.
+            // The com.gradleup.shadow plugin depends on vulnerable library releases.
             // We constrain these to newer, patched versions.
-            classpath(libs.okio)
             classpath(libs.apache.commons.io)
-            classpath(libs.apache.tika.core)
             classpath(libs.apache.log4j.core)
         }
     }
@@ -26,7 +23,6 @@ buildscript {
 plugins {
     kotlin("jvm") version(libs.versions.kotlin)
     alias(libs.plugins.plugin.publish)
-    alias(libs.plugins.github.release)
     signing
     groovy
     alias(libs.plugins.shadow.jar)
@@ -210,17 +206,11 @@ val createReleaseTag = tasks.register<CreateGitTag>("createReleaseTag") {
     tagName = releaseTag
 }
 
-githubRelease {
-    setToken(System.getenv("GITHUB_DEPENDENCY_GRAPH_GIT_TOKEN") ?: "")
-    owner = "gradle"
-    repo = "github-dependency-graph-gradle-plugin"
-    releaseName = releaseVersion
-    tagName = releaseTag
-    body = releaseNotes
-}
-
-tasks.named("githubRelease").configure {
+tasks.register<CreateGitHubRelease>("githubRelease") {
     dependsOn(createReleaseTag)
+    tagName = releaseTag
+    releaseName = releaseVersion
+    notesFile = rootProject.layout.projectDirectory.file("release/changes.md")
 }
 
 tasks.withType(PublishTask::class).configureEach {
@@ -241,6 +231,32 @@ abstract class CreateGitTag : DefaultTask() {
         }
         execOperations.exec {
             commandLine("git", "push", "origin", "-f", "--tags")
+        }
+    }
+}
+
+abstract class CreateGitHubRelease : DefaultTask() {
+
+    @get:Input abstract val tagName: Property<String>
+
+    @get:Input abstract val releaseName: Property<String>
+
+    @get:InputFile abstract val notesFile: RegularFileProperty
+
+    @get:Inject abstract val execOperations: ExecOperations
+
+    @TaskAction
+    fun action() {
+        val tag = tagName.get()
+        logger.info("Creating GitHub release ${releaseName.get()} for tag $tag")
+        execOperations.exec {
+            commandLine(
+                "gh", "release", "create", tag,
+                "--title", releaseName.get(),
+                "--notes-file", notesFile.get().asFile.absolutePath
+            )
+            // The github-release workflow provides the token via this environment variable.
+            environment("GH_TOKEN", System.getenv("GITHUB_DEPENDENCY_GRAPH_GIT_TOKEN") ?: "")
         }
     }
 }

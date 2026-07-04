@@ -4,21 +4,6 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-// Upgrade transitive dependencies in plugin classpath
-buildscript {
-    repositories {
-        gradlePluginPortal()
-    }
-    dependencies {
-        constraints {
-            // The com.gradleup.shadow plugin depends on vulnerable library releases.
-            // We constrain these to newer, patched versions.
-            classpath(libs.apache.commons.io)
-            classpath(libs.apache.log4j.core)
-        }
-    }
-}
-
 plugins {
     kotlin("jvm") version(libs.versions.kotlin)
     alias(libs.plugins.plugin.publish)

@@ -76,6 +76,20 @@ jobs:
       - name: Execute Gradle Build
         run: ./gradlew -S build -DtestGradleVersion=${{ matrix.gradle-version }}
 
+  # Aggregates the test-gradle-version matrix into a single status check.
+  # Enable "merge when checks pass" / branch protection against this job rather than
+  # the individual matrix jobs, whose names change whenever the matrix is edited.
+  test-gradle-versions:
+    needs: test-gradle-version
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify all matrix jobs succeeded
+        if: ${{ needs.test-gradle-version.result != 'success' }}
+        run: |
+          echo "test-gradle-version matrix result: ${{ needs.test-gradle-version.result }}"
+          exit 1
+
   self-test:
     needs: quick-check
     runs-on: ubuntu-latest

@@ -1,13 +1,12 @@
 package org.gradle.dependencygraph.util
 
-import com.fasterxml.jackson.module.kotlin.jsonMapper
-import com.fasterxml.jackson.module.kotlin.kotlinModule
+import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.databind.json.JsonMapper
 
 object JacksonJsonSerializer {
-    private val mapper = jsonMapper {
-        serializationInclusion(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
-        addModule(kotlinModule())
-    }
+    private val mapper = JsonMapper.builder()
+        .serializationInclusion(JsonInclude.Include.NON_NULL)
+        .build()
 
     fun serializeToJson(dependencyGraph: Any): String {
         return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(dependencyGraph)

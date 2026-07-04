@@ -46,13 +46,6 @@ dependencies {
     compileOnly(kotlin("reflect"))
     shadowImplementation(platform(libs.jackson.platform))
     shadowImplementation(libs.jackson.databind)
-    shadowImplementation(libs.jackson.kotlin) {
-        version {
-            strictly("2.12.3")
-        }
-        exclude(group = "org.jetbrains.kotlin")
-        because("kotlin std lib is bundled with Gradle. 2.12.3 because higher versions depend upon Kotlin 1.5")
-    }
     shadowImplementation(libs.github.packageurl)
 
     // Use JUnit Jupiter for testing.
@@ -92,6 +85,12 @@ tasks.withType<PluginUnderTestMetadata>().configureEach {
 
 val shadowJarTask = tasks.named<ShadowJar>("shadowJar") {
     archiveClassifier = ""
+    // Strip multi-release class files (Jackson ships JDK 11/17/21 optimized variants under
+    // META-INF/versions). Older Gradle versions bundle an ASM that cannot read these newer
+    // class file versions when they instrument the plugin classpath, failing with
+    // "Unsupported class file major version". The Java 8 base classes work on all supported
+    // Gradle versions. See https://github.com/gradle/gradle/issues/24390
+    exclude("META-INF/versions/**")
     configurations = listOf(shadowImplementation)
     val projectGroup = project.group
     doFirst {

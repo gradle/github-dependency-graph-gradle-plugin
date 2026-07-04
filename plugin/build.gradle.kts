@@ -3,7 +3,6 @@ import com.gradle.publish.PublishTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import java.util.jar.JarFile
 
 // Upgrade transitive dependencies in plugin classpath
 buildscript {
@@ -92,25 +91,11 @@ val shadowJarTask = tasks.named<ShadowJar>("shadowJar") {
     // Gradle versions. See https://github.com/gradle/gradle/issues/24390
     exclude("META-INF/versions/**")
     configurations = listOf(shadowImplementation)
-    val projectGroup = project.group
-    doFirst {
-        configurations.forEach { configuration ->
-            configuration.files.forEach { jar ->
-                JarFile(jar).use { jf ->
-                    jf.entries().iterator().forEach { entry ->
-                        if (entry.name.endsWith(".class") && entry.name != "module-info.class") {
-                            val packageName =
-                                entry
-                                    .name
-                                    .substring(0..entry.name.lastIndexOf('/'))
-                                    .replace('/', '.')
-                            relocate(packageName, "${projectGroup}.shadow.$packageName")
-                        }
-                    }
-                }
-            }
-        }
-    }
+    // Relocate every bundled package under `<group>.shadow.` so the plugin's own dependencies can
+    // never clash with those of the build it is applied to. shadow 9.x does this natively via
+    // auto-relocation, replacing the manual per-package relocation loop we maintained previously.
+    enableAutoRelocation = true
+    relocationPrefix = "${project.group}.shadow"
 }
 
 configurations.archives.get().artifacts.clear()

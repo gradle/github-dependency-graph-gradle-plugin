@@ -38,6 +38,24 @@ sourceSets.test {
     resources.srcDir(writeTestConfig.map { it.generatedResourceDirectory })
 }
 
+// Compile and run this module (and thus the Gradle version under test) on a specific JDK with
+// -PtestJavaVersion=8, decoupled from the JDK used to build the :plugin fatjar. This lets the
+// plugin be built with a fixed, modern JDK (as required by newer build tooling such as the
+// shadow plugin) while still exercising older Gradle versions on the older JDKs they require.
+// Test classes must be *compiled* for the test JDK too, not just executed on it, so we set a
+// project-wide toolchain rather than only the test task's launcher. When unset, the module uses
+// the JDK that is building the project.
+val testJavaVersion = providers.gradleProperty("testJavaVersion")
+    .map { JavaLanguageVersion.of(it.toInt()) }
+
+if (testJavaVersion.isPresent) {
+    java {
+        toolchain {
+            languageVersion = testJavaVersion.get()
+        }
+    }
+}
+
 tasks.withType<Test>().configureEach {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()

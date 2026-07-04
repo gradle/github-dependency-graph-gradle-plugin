@@ -20,7 +20,7 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v5
         with:
-            java-version: 11
+            java-version: 17
             distribution: temurin
 
       - name: Setup Gradle
@@ -35,7 +35,10 @@ jobs:
     needs: quick-check
     strategy:
       fail-fast: false
-      # Test earliest and latest supported version of 5.x, 6.x, 7.x, and 8.x
+      # Test earliest and latest supported version of 5.x, 6.x, 7.x, and 8.x.
+      # The plugin fatjar is always built with a fixed, modern JDK (see "Set up JDK" below);
+      # java-version here is only the JDK that each Gradle version under test runs on, selected
+      # via a Gradle toolchain (-PtestJavaVersion). Older Gradle versions require older JDKs.
       matrix:
         include:
           - gradle-version: "5.2.1"
@@ -62,10 +65,13 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      # Fixed build JDK: compiles the plugin and builds the shadow fatjar. Must satisfy the build
+      # tooling's own JDK requirement (the shadow plugin needs Java 17+), independent of the older
+      # JDK the Gradle version under test runs on.
       - name: Set up JDK
         uses: actions/setup-java@v5
         with:
-          java-version: ${{ matrix.java-version }}
+          java-version: 17
           distribution: temurin
 
       - name: Setup Gradle
@@ -73,8 +79,16 @@ jobs:
         with:
           develocity-access-key: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
 
+      # -PtestJavaVersion runs the :plugin-test module (and thus the Gradle version under test) on
+      # the matrix JDK via a Gradle toolchain. That JDK is already installed on the runner and
+      # exposed as JAVA_HOME_<version>_X64; org.gradle.java.installations.fromEnv points Gradle's
+      # toolchain detection at it (auto-detection does not scan the runner tool cache on its own).
       - name: Execute Gradle Build
-        run: ./gradlew -S build -DtestGradleVersion=${{ matrix.gradle-version }}
+        run: >
+          ./gradlew -S build
+          -DtestGradleVersion=${{ matrix.gradle-version }}
+          -PtestJavaVersion=${{ matrix.java-version }}
+          -Dorg.gradle.java.installations.fromEnv=JAVA_HOME_${{ matrix.java-version }}_X64
 
   # Aggregates the test-gradle-version matrix into a single status check.
   # Enable "merge when checks pass" / branch protection against this job rather than
@@ -101,7 +115,7 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v5
         with:
-            java-version: 11
+            java-version: 17
             distribution: temurin
 
       - name: Setup Gradle

@@ -1,3 +1,4 @@
-- Updated dependency versions
-- Bumped Gradle wrapper to 8.14.4
-- Test plugin with Gradle 9.x
+- Updated dependency versions (Jackson 2.18.8, Shadow 9.4.3)
+- Dropped the jackson-module-kotlin dependency
+- Fixed dependency vulnerabilities in the buildscript classpath
+- Verified and documented compatibility with Gradle 9.x (through 9.4.1)

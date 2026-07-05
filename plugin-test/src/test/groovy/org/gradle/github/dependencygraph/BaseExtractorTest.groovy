@@ -2,7 +2,11 @@ package org.gradle.github.dependencygraph
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.networknt.schema.*
+import com.networknt.schema.Error
+import com.networknt.schema.Schema
+import com.networknt.schema.SchemaException
+import com.networknt.schema.SchemaRegistry
+import com.networknt.schema.SpecificationVersion
 import groovy.json.JsonSlurper
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
@@ -251,15 +255,15 @@ abstract class BaseExtractorTest extends Specification {
         protected Map jsonRepositorySnapshot() {
             def jsonSlurper = new JsonSlurper()
             println(dependencyGraphFile.text)
-            JsonSchema schema = createSchemaValidator()
+            Schema schema = createSchemaValidator()
             ObjectMapper mapper = new ObjectMapper()
             JsonNode node = mapper.readTree(dependencyGraphFile)
             validateAgainstJsonSchema(schema, node)
             return jsonSlurper.parse(dependencyGraphFile) as Map
         }
 
-        private static void validateAgainstJsonSchema(JsonSchema schema, JsonNode json) {
-            final Set<ValidationMessage> validationMessages = schema.validate(json)
+        private static void validateAgainstJsonSchema(Schema schema, JsonNode json) {
+            final List<Error> validationMessages = schema.validate(json)
             if (!validationMessages.isEmpty()) {
                 final String newline = System.lineSeparator()
                 final String violationMessage = createViolationMessage(newline, validationMessages)
@@ -270,24 +274,22 @@ abstract class BaseExtractorTest extends Specification {
         }
 
         @CompileDynamic
-        private static String createViolationMessage(String newline, Set<ValidationMessage> validationMessages) {
+        private static String createViolationMessage(String newline, List<Error> validationMessages) {
             return validationMessages
                 .stream()
-                .map(ValidationMessage::getMessage)
+                .map(Error::getMessage)
                 .collect(Collectors.joining(newline + "  - ", "  - ", ""))
         }
 
-        private static JsonSchema createSchemaValidator() {
-            final JsonSchemaFactory factory =
-                JsonSchemaFactory
-                    .builder(JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4))
-                    .build()
+        private static Schema createSchemaValidator() {
+            final SchemaRegistry registry =
+                SchemaRegistry.withDefaultDialect(SpecificationVersion.DRAFT_4)
             try {
-                return factory
+                return registry
                     .getSchema(
                         JsonRepositorySnapshotLoader.class.classLoader.getResourceAsStream(SCHEMA)
                     )
-            } catch (JsonSchemaException ex) {
+            } catch (SchemaException ex) {
                 throw new RuntimeException(
                     "Unable to load dependency constraints schema (resource: " + SCHEMA + ")",
                     ex

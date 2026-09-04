@@ -15,6 +15,7 @@ import org.gradle.initialization.EvaluateSettingsBuildOperationType
 import org.gradle.initialization.LoadProjectsBuildOperationType
 import org.gradle.internal.exceptions.DefaultMultiCauseException
 import org.gradle.internal.operations.*
+import org.gradle.util.GradleVersion
 import java.io.File
 import java.net.URI
 import java.util.*
@@ -47,7 +48,7 @@ abstract class DependencyExtractor :
 
     var rootProjectBuildDirectory: File? = null
 
-    private val buildLayout = BuildLayout()
+    private val buildLayout = BuildLayout(GradleVersion.current().version)
 
     // Properties are lazily initialized so that System Properties are initialized by the time
     // the values are used. This is required due to a bug in older Gradle versions. (https://github.com/gradle/gradle/issues/6825)

@@ -4,7 +4,11 @@ import org.gradle.dependencygraph.model.ResolvedDependency
 import org.gradle.dependencygraph.model.ResolvedConfiguration
 import org.gradle.dependencygraph.model.BuildLayout
 import org.gradle.dependencygraph.model.DependencyScope
+import org.gradle.dependencygraph.model.GRADLE_BUILD_TOOL_GROUP
+import org.gradle.dependencygraph.model.GRADLE_BUILD_TOOL_MODULE
+import org.gradle.dependencygraph.model.gradleBuildToolId
 import org.gradle.github.dependencygraph.model.*
+import com.github.packageurl.PackageURLBuilder
 
 class GitHubRepositorySnapshotBuilder(
     private val snapshotParams: GitHubSnapshotParams
@@ -39,10 +43,30 @@ class GitHubRepositorySnapshotBuilder(
 
         return GitHubManifest(
             manifestName,
-            dependencyCollector.getDependencies(),
+            dependencyCollector.getDependencies() + buildToolDependency(buildLayout.gradleVersion),
             getManifestFile(buildLayout)
         )
     }
+
+    private fun buildToolDependency(gradleVersion: String): Pair<String, GitHubDependency> {
+        val dependency = GitHubDependency(
+            package_url = buildToolPackageUrl(gradleVersion),
+            relationship = GitHubDependency.Relationship.direct,
+            scope = GitHubDependency.Scope.development,
+            dependencies = emptyList()
+        )
+        return gradleBuildToolId(gradleVersion) to dependency
+    }
+
+    private fun buildToolPackageUrl(gradleVersion: String) =
+        PackageURLBuilder
+            .aPackageURL()
+            .withType("maven")
+            .withNamespace(GRADLE_BUILD_TOOL_GROUP)
+            .withName(GRADLE_BUILD_TOOL_MODULE)
+            .withVersion(gradleVersion)
+            .build()
+            .toString()
 
     private fun determineGitHubScope(configuration: ResolvedConfiguration): GitHubDependency.Scope? {
         return when(configuration.scope) {

@@ -5,7 +5,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.ConcurrentHashMap
 
-class BuildLayout {
+class BuildLayout(val gradleVersion: String) {
     private val buildPathToSettingsFile = ConcurrentHashMap<String, String>()
     private val projectPathToBuildFile = ConcurrentHashMap<String, String>()
 

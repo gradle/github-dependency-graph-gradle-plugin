@@ -4,6 +4,7 @@ import org.gradle.dependencygraph.DependencyGraphRenderer
 import org.gradle.dependencygraph.model.BuildLayout
 import org.gradle.dependencygraph.model.ResolvedConfiguration
 import org.gradle.dependencygraph.model.DependencyScope
+import org.gradle.dependencygraph.model.gradleBuildToolId
 import org.gradle.dependencygraph.util.JacksonJsonSerializer
 import org.gradle.dependencygraph.util.PluginParameters
 import java.io.File
@@ -24,7 +25,7 @@ class SimpleDependencyGraphRenderer : DependencyGraphRenderer {
     ) {
         outputDependencyGraph(outputDirectory, resolvedConfigurations)
         outputDependencyScopes(outputDirectory, resolvedConfigurations)
-        outputDependencyList(outputDirectory, resolvedConfigurations)
+        outputDependencyList(outputDirectory, resolvedConfigurations, buildLayout)
     }
 
     private fun outputDependencyGraph(
@@ -66,14 +67,17 @@ class SimpleDependencyGraphRenderer : DependencyGraphRenderer {
 
     private fun outputDependencyList(
         outputDirectory: File,
-        resolvedConfigurations: List<ResolvedConfiguration>
+        resolvedConfigurations: List<ResolvedConfiguration>,
+        buildLayout: BuildLayout
     ) {
         val outputFile = File(outputDirectory, "dependency-list.txt")
         val dependencyList = resolvedConfigurations.flatMap { config ->
             config.allDependencies.map {
                 "${it.coordinates.group}:${it.coordinates.module}:${it.coordinates.version}"
             }
-        }.distinct().sorted()
+        }.plus(gradleBuildToolId(buildLayout.gradleVersion))
+        .distinct()
+        .sorted()
 
         val listTxt = dependencyList.joinToString(separator = "\n")
         outputFile.writeText(listTxt)

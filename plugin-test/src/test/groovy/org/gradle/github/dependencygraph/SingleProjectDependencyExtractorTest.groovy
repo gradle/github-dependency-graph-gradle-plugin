@@ -63,6 +63,18 @@ class SingleProjectDependencyExtractorTest extends BaseExtractorTest {
         ])
     }
 
+    def "reports the Gradle version running the build as org.gradle:gradle-core"() {
+        when:
+        run()
+
+        then:
+        def buildTool = gitHubManifest().resolved[buildToolComponentId()]
+        buildTool.package_url == "pkg:maven/org.gradle/gradle-core@${testGradleVersion}".toString()
+        buildTool.relationship == "direct"
+        buildTool.scope == "development"
+        buildTool.dependencies == []
+    }
+
     def "extracts only those dependencies resolved during project execution"() {
         given:
         buildFile << """

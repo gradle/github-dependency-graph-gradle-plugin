@@ -197,6 +197,10 @@ abstract class BaseExtractorTest extends Specification {
         return new GitHubManifest(jsonManifest)
     }
 
+    static String buildToolComponentId() {
+        return "org.gradle:gradle-core:${testGradleVersion}".toString()
+    }
+
     protected static class GitHubManifest {
         Map manifestData
 
@@ -214,12 +218,19 @@ abstract class BaseExtractorTest extends Specification {
 
         def assertResolved(List<String> expectedResolved) {
             def resolved = manifestData.resolved as Map<String, Map>
-            assert resolved.keySet() == expectedResolved as Set
+            assert resolved.keySet() == (expectedResolved + [buildToolComponentId()]) as Set
             return true
         }
 
         def assertResolved(Map<String, Map> expectedResolved = [:]) {
             def resolved = manifestData.resolved as Map<String, Map>
+            expectedResolved = expectedResolved + [
+                (buildToolComponentId()): [
+                    package_url : "pkg:maven/org.gradle/gradle-core@${testGradleVersion}".toString(),
+                    relationship: "direct",
+                    scope       : "development"
+                ]
+            ]
 
             assert resolved.keySet() == expectedResolved.keySet()
 

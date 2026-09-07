@@ -117,9 +117,17 @@ However, if this doesn't work, you can add the following to your `dependency-ver
 
 ```xml
 <trusted-keys>
-   <trusted-key id="7B79ADD11F8A779FE90FD3D0893A028475557671" group="org.gradle" name="github-dependency-graph-gradle-plugin"/>
+   <trusted-key id="E2879931BCA1A42E55F2D64DD9B2DFBD9F3298BA" group="org.gradle" name="github-dependency-graph-gradle-plugin"/>
 </trusted-keys>
 ```
+
+Releases from 1.5.0 onward are signed with the `Gradle Inc. <info@gradle.com>` signing subkey
+`E2879931BCA1A42E55F2D64DD9B2DFBD9F3298BA`, belonging to primary key `15D543CA40743FFA47654C16622DE19DC011B9BE`.
+This key is published to `keys.openpgp.org`.
+
+Releases up to and including 1.4.2 were signed with the previous key `7B79ADD11F8A779FE90FD3D0893A028475557671`,
+which was revoked on 2026-08-17 as superseded. If you verify one of those releases, you will need to trust
+that key instead.
 
 ## Using the plugin to generate dependency reports
 

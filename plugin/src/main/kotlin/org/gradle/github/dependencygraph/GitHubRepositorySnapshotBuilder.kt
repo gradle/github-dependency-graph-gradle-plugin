@@ -43,19 +43,33 @@ class GitHubRepositorySnapshotBuilder(
 
         return GitHubManifest(
             manifestName,
-            dependencyCollector.getDependencies() + buildToolDependency(buildLayout.gradleVersion),
+            withBuildTool(dependencyCollector.getDependencies(), buildLayout.gradleVersion),
             getManifestFile(buildLayout)
         )
     }
 
-    private fun buildToolDependency(gradleVersion: String): Pair<String, GitHubDependency> {
-        val dependency = GitHubDependency(
+    /**
+     * Reports the Gradle Build Tool running the build as a dependency.
+     *
+     * In the unlikely case that the build also resolved these exact coordinates, the resolved dependency
+     * is retained: it carries the actual repository, scope and transitive dependencies.
+     */
+    private fun withBuildTool(
+        dependencies: Map<String, GitHubDependency>,
+        gradleVersion: String
+    ): Map<String, GitHubDependency> {
+        val buildToolId = gradleBuildToolId(gradleVersion)
+        if (dependencies.containsKey(buildToolId)) return dependencies
+        return dependencies + (buildToolId to buildToolDependency(gradleVersion))
+    }
+
+    private fun buildToolDependency(gradleVersion: String): GitHubDependency {
+        return GitHubDependency(
             package_url = buildToolPackageUrl(gradleVersion),
             relationship = GitHubDependency.Relationship.direct,
             scope = GitHubDependency.Scope.development,
             dependencies = emptyList()
         )
-        return gradleBuildToolId(gradleVersion) to dependency
     }
 
     private fun buildToolPackageUrl(gradleVersion: String) =

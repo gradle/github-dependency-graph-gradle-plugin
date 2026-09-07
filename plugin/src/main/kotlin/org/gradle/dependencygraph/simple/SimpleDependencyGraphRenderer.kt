@@ -12,7 +12,7 @@ import java.io.File
 /**
  * An example `DependencyGraphRenderer` that outputs the dependency graph in 2 files:
  * - `dependency-graph.json` contains the raw structure of the extracted `ResolvedConfiguration` instances.
- * - `dependency-list.txt` contains a list of coordinates of all resolved dependencies.
+ * - `dependency-list.txt` contains a list of coordinates of all dependencies.
  *
  * Note that the structure of `ResolvedConfiguration` is not stable and is subject to change.
  */

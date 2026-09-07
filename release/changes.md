@@ -1,4 +1,2 @@
-- Updated dependency versions (Jackson 2.18.8, Shadow 9.4.3)
-- Dropped the jackson-module-kotlin dependency
-- Fixed dependency vulnerabilities in the buildscript classpath
-- Verified and documented compatibility with Gradle 9.x (through 9.4.1)
+- Report the Gradle Build Tool running the build as an `org.gradle:gradle-core` development dependency,
+  so that GitHub can surface known vulnerabilities in the Gradle version being used

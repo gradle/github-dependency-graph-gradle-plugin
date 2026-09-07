@@ -88,6 +88,21 @@ at least one of these parameters must be configured.
 For dependencies that are resolved in multiple projects and/or multiple configurations, only a single 'runtime' scoped resolution
 is required for that dependency to be scoped 'runtime'.
 
+### Reporting the Gradle Build Tool
+
+As well as the dependencies resolved by the build, the plugin reports the Gradle Build Tool that is running the build.
+This allows GitHub to report known vulnerabilities in the Gradle version being used.
+
+Gradle is reported using the coordinates that GitHub advisories for the Gradle Build Tool are published against,
+with the version of Gradle that executed the build:
+
+```
+org.gradle:gradle-core:<gradle-version>
+```
+
+This entry is always reported as a 'direct' dependency with 'development' scope, and is not affected by the project,
+configuration or scope filtering parameters described above.
+
 ### Gradle compatibility
 
 The plugin is compatible with most versions of Gradle >= 5.2, and all changes are tested against a range of versions.

@@ -4,6 +4,7 @@ import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
+import org.gradle.api.artifacts.result.UnresolvedDependencyResult
 import org.gradle.api.internal.artifacts.DefaultProjectComponentIdentifier
 import org.gradle.api.internal.artifacts.configurations.ResolveConfigurationDependenciesBuildOperationType
 import org.gradle.api.logging.Logging
@@ -13,6 +14,7 @@ import org.gradle.dependencygraph.model.DependencyScope.*
 import org.gradle.dependencygraph.util.PluginParameters
 import org.gradle.initialization.EvaluateSettingsBuildOperationType
 import org.gradle.initialization.LoadProjectsBuildOperationType
+import org.gradle.internal.exceptions.Contextual
 import org.gradle.internal.exceptions.DefaultMultiCauseException
 import org.gradle.internal.operations.*
 import org.gradle.util.GradleVersion
@@ -24,6 +26,7 @@ const val PARAM_INCLUDE_PROJECTS = "DEPENDENCY_GRAPH_INCLUDE_PROJECTS"
 const val PARAM_INCLUDE_CONFIGURATIONS = "DEPENDENCY_GRAPH_INCLUDE_CONFIGURATIONS"
 const val PARAM_EXCLUDE_PROJECTS = "DEPENDENCY_GRAPH_EXCLUDE_PROJECTS"
 const val PARAM_EXCLUDE_CONFIGURATIONS = "DEPENDENCY_GRAPH_EXCLUDE_CONFIGURATIONS"
+const val PARAM_FAIL_ON_UNRESOLVED = "DEPENDENCY_GRAPH_FAIL_ON_UNRESOLVED"
 const val PARAM_RUNTIME_INCLUDE_PROJECTS = "DEPENDENCY_GRAPH_RUNTIME_INCLUDE_PROJECTS"
 const val PARAM_RUNTIME_INCLUDE_CONFIGURATIONS = "DEPENDENCY_GRAPH_RUNTIME_INCLUDE_CONFIGURATIONS"
 const val PARAM_RUNTIME_EXCLUDE_PROJECTS = "DEPENDENCY_GRAPH_RUNTIME_EXCLUDE_PROJECTS"
@@ -45,6 +48,7 @@ abstract class DependencyExtractor :
     private val resolvedConfigurations = Collections.synchronizedList(mutableListOf<ResolvedConfiguration>())
 
     private val thrownExceptions = Collections.synchronizedList(mutableListOf<Throwable>())
+    private val unresolvedConfigurations = Collections.synchronizedList(mutableListOf<Throwable>())
 
     var rootProjectBuildDirectory: File? = null
 
@@ -58,6 +62,14 @@ abstract class DependencyExtractor :
 
     private val dependencyGraphReportDir by lazy {
         pluginParameters.loadOptional(PARAM_REPORT_DIR)
+    }
+
+    private val failOnUnresolved by lazy {
+        when (pluginParameters.load(PARAM_FAIL_ON_UNRESOLVED, "false")) {
+            "true" -> true
+            "false" -> false
+            else -> throw IllegalArgumentException("The configuration parameter '$PARAM_FAIL_ON_UNRESOLVED' must be 'true' or 'false'.")
+        }
     }
 
     abstract fun getRendererClassName(): String
@@ -173,6 +185,10 @@ abstract class DependencyExtractor :
         }
         LOGGER.info("Including resolved configuration in dependency graph: $rootPath - $configurationName")
 
+        if (failOnUnresolved) {
+            checkUnresolvedDependencies(rootComponent, rootPath, configurationName)
+        }
+
         val scope = dependencyScope(rootPath, configurationName)
 
         val rootId = if (projectIdentityPath == null) "build $rootPath" else componentId(rootComponent)
@@ -194,6 +210,38 @@ abstract class DependencyExtractor :
 
         resolvedConfigurations.add(resolvedConfiguration)
     }
+
+    private fun checkUnresolvedDependencies(rootComponent: ResolvedComponentResult, rootPath: String, configurationName: String) {
+        val failures = mutableListOf<Throwable>()
+        val visited = mutableSetOf<ResolvedComponentResult>()
+        val remaining = ArrayDeque<ResolvedComponentResult>()
+        remaining.add(rootComponent)
+
+        while (remaining.isNotEmpty()) {
+            val component = remaining.removeFirst()
+            if (!visited.add(component)) continue
+
+            for (dependency in component.dependencies) {
+                when (dependency) {
+                    is UnresolvedDependencyResult -> failures.add(dependency.failure)
+                    is ResolvedDependencyResult -> remaining.add(dependency.selected)
+                }
+            }
+        }
+
+        if (failures.isNotEmpty()) {
+            unresolvedConfigurations.add(
+                DependencyGraphResolutionException(
+                    "Unresolved dependencies in project '$rootPath', configuration '$configurationName'.",
+                    failures
+                )
+            )
+        }
+    }
+
+    @Contextual
+    private class DependencyGraphResolutionException(message: String, causes: Iterable<Throwable>) :
+        DefaultMultiCauseException(message, causes)
 
     private fun dependencyScope(
         rootPath: String,
@@ -353,6 +401,14 @@ abstract class DependencyExtractor :
     }
 
     override fun close() {
+        if (failOnUnresolved && unresolvedConfigurations.isNotEmpty()) {
+            throw DependencyGraphResolutionException(
+                "Dependency Graph file will not be generated because selected dependencies could not be resolved. " +
+                    "Check dependency declarations, repositories and access, or exclude configurations not required for the graph.",
+                unresolvedConfigurations
+            )
+        }
+
         if (thrownExceptions.isNotEmpty()) {
             throw DefaultMultiCauseException(
                 "The dependency-graph extractor plugin encountered errors while extracting dependencies. " +

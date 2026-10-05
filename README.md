@@ -68,18 +68,15 @@ Each of these is a regular expression value, and can set either as an environmen
 ### Failing on unresolved dependencies
 
 By default, unresolved dependencies are omitted while resolved dependencies are still reported.
-This allows optional configurations, such as source or documentation variants, to fail without
-preventing a snapshot. A dependency unresolved in one configuration may still be reported through another.
+Optional source or documentation variants can fail even when another configuration reports the package.
 
-Set `DEPENDENCY_GRAPH_FAIL_ON_UNRESOLVED=true` as an environment variable, or pass
-`-DDEPENDENCY_GRAPH_FAIL_ON_UNRESOLVED=true`, to fail collection without writing a graph when a
-selected configuration contains an unresolved direct or transitive dependency. The default is `false`;
-only `true` and `false` are accepted. A system property takes precedence over an environment variable.
+Set `DEPENDENCY_GRAPH_FAIL_ON_UNRESOLVED=true`, or pass `-DDEPENDENCY_GRAPH_FAIL_ON_UNRESOLVED=true`,
+to fail without writing a graph when an included configuration has unresolved direct or transitive
+dependencies. The default is `false`; only `true` and `false` are accepted. System properties take precedence.
 
-The project and configuration filters above apply before this check. If an optional configuration
-cannot resolve, exclude it only when its dependencies are not required for the graph. Strict mode
-checks configurations resolved during the build; it does not resolve additional configurations,
-validate downloaded artifacts, or guarantee coverage of excluded or unvisited configurations.
+The [project and configuration filters](#filtering-which-gradle-configurations-contribute-to-the-dependency-graph)
+apply before this check. Exclude optional configurations only when their dependencies are not needed.
+The check covers configurations resolved during the build, not downloaded artifacts or excluded or unvisited configurations.
 
 ### Controlling the scope of dependencies in the dependency graph
 

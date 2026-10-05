@@ -48,7 +48,7 @@ class StrictDependencyResolutionTest extends BaseExtractorTest {
         setting << [null, "false"]
     }
 
-    def "strict collection rejects an unresolved #kind dependency without a snapshot"() {
+    def "strict collection rejects an unresolved #kind dependency enabled by #source without a snapshot"() {
         given:
         def dependency = "org.test:missing:1.0"
         if (kind == "transitive") {
@@ -65,7 +65,12 @@ class StrictDependencyResolutionTest extends BaseExtractorTest {
                 implementation '$dependency'
             }
         """
-        executer.withArgument("-DDEPENDENCY_GRAPH_FAIL_ON_UNRESOLVED=true")
+        if (source == "environment") {
+            executer.withEnvironmentVars(environmentVars.asEnvironmentMap() +
+                ["DEPENDENCY_GRAPH_FAIL_ON_UNRESOLVED": "true"])
+        } else {
+            executer.withArgument("-DDEPENDENCY_GRAPH_FAIL_ON_UNRESOLVED=true")
+        }
 
         when:
         def result = runAndFail()
@@ -76,25 +81,11 @@ class StrictDependencyResolutionTest extends BaseExtractorTest {
         !dependencyGraphFile.exists()
 
         where:
-        kind << ["direct", "transitive", "plugin marker"]
-    }
-
-    def "strict collection can be enabled by environment variable"() {
-        given:
-        buildFile << """
-            dependencies {
-                implementation 'org.test:missing:1.0'
-            }
-        """
-        executer.withEnvironmentVars(environmentVars.asEnvironmentMap() +
-            ["DEPENDENCY_GRAPH_FAIL_ON_UNRESOLVED": "true"])
-
-        when:
-        def result = runAndFail()
-
-        then:
-        result.output.contains("org.test:missing:1.0")
-        !dependencyGraphFile.exists()
+        kind            | source
+        "direct"        | "system property"
+        "transitive"    | "system property"
+        "plugin marker" | "system property"
+        "direct"        | "environment"
     }
 
     def "system property can disable strict collection enabled by environment"() {

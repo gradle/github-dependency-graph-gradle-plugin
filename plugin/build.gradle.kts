@@ -3,14 +3,6 @@ import com.gradle.publish.PublishTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-buildscript {
-    dependencies {
-        constraints {
-            classpath(libs.log4j.core)
-        }
-    }
-}
-
 plugins {
     kotlin("jvm") version(libs.versions.kotlin)
     alias(libs.plugins.plugin.publish)
@@ -28,7 +20,7 @@ val pluginArtifactId = "github-dependency-graph-gradle-plugin"
 group = pluginGroup
 version = releaseVersion
 
-val shadowImplementation: Configuration by configurations.creating
+val shadowImplementation = configurations.create("shadowImplementation")
 configurations["compileOnly"].extendsFrom(shadowImplementation)
 configurations["testImplementation"].extendsFrom(shadowImplementation)
 
@@ -88,13 +80,15 @@ val shadowJarTask = tasks.named<ShadowJar>("shadowJar") {
     relocationPrefix = "${project.group}.shadow"
 }
 
-configurations.archives.get().artifacts.clear()
 configurations {
     artifacts {
         runtimeElements(shadowJarTask)
         apiElements(shadowJarTask)
-        archives(tasks.shadowJar)
     }
+}
+
+tasks.assemble {
+    dependsOn(shadowJarTask)
 }
 
 // Add the shadow JAR to the runtime consumable configuration

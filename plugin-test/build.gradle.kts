@@ -3,7 +3,7 @@ plugins {
     groovy
 }
 
-val extractorPlugin: Configuration by configurations.creating
+val extractorPlugin = configurations.create("extractorPlugin")
 
 dependencies {
     extractorPlugin(project(":plugin", "shadowJar"))
@@ -14,6 +14,7 @@ dependencies {
     testImplementation(libs.apache.commons.io)
 
     testRuntimeOnly(project(":plugin", "shadowJar"))
+    testRuntimeOnly(libs.junit.platform.launcher)
 
     testFixturesApi(gradleTestKit())
     testFixturesApi(libs.spock.core)
@@ -26,7 +27,7 @@ dependencies {
     testFixturesImplementation(libs.apache.commons.io)
 }
 
-val writeTestConfig by tasks.registering(WriteConfigTask::class) {
+val writeTestConfig = tasks.register<WriteConfigTask>("writeTestConfig") {
     dependsOn(extractorPlugin)
     generatedResourceDirectory.convention(project.layout.buildDirectory.dir("generated-test-resources"))
     properties.putAll(

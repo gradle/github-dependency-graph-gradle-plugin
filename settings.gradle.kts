@@ -1,6 +1,6 @@
 plugins {
-    id("com.gradle.develocity").version("3.19")
-    id("com.gradle.common-custom-user-data-gradle-plugin").version("2.0.2")
+    id("com.gradle.develocity").version("4.6.1")
+    id("com.gradle.common-custom-user-data-gradle-plugin").version("2.8.0")
 }
 
 val isCI = !System.getenv("CI").isNullOrEmpty()

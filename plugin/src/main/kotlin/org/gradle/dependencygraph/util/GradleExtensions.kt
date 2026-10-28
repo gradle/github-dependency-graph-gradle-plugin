@@ -14,5 +14,5 @@ internal abstract class GradleExtensions {
         get() = service()
 }
 
-internal inline fun <reified T> Gradle.service(): T =
+internal inline fun <reified T : Any> Gradle.service(): T =
     (this as GradleInternal).services.get(T::class.java)

@@ -1,16 +1,7 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import com.gradle.publish.PublishTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
-buildscript {
-    dependencies {
-        constraints {
-            classpath(libs.log4j.core)
-        }
-    }
-}
 
 plugins {
     kotlin("jvm") version(libs.versions.kotlin)
@@ -29,13 +20,13 @@ val pluginArtifactId = "github-dependency-graph-gradle-plugin"
 group = pluginGroup
 version = releaseVersion
 
-val shadowImplementation: Configuration by configurations.creating
+val shadowImplementation = configurations.create("shadowImplementation")
 configurations["compileOnly"].extendsFrom(shadowImplementation)
 configurations["testImplementation"].extendsFrom(shadowImplementation)
 
 dependencies {
-    compileOnly(kotlin("stdlib-jdk8"))
-    compileOnly(kotlin("reflect"))
+    // Bundle (and relocate) the Kotlin stdlib rather than relying on the version embedded in Gradle
+    shadowImplementation(kotlin("stdlib"))
     shadowImplementation(platform(libs.jackson.platform))
     shadowImplementation(libs.jackson.databind)
     shadowImplementation(libs.github.packageurl)
@@ -52,8 +43,6 @@ java {
 
 tasks.withType<KotlinCompile>().configureEach {
     compilerOptions {
-        apiVersion = KotlinVersion.KOTLIN_1_3
-        languageVersion = KotlinVersion.KOTLIN_1_3
         jvmTarget = JvmTarget.JVM_1_8
     }
 }
@@ -91,13 +80,15 @@ val shadowJarTask = tasks.named<ShadowJar>("shadowJar") {
     relocationPrefix = "${project.group}.shadow"
 }
 
-configurations.archives.get().artifacts.clear()
 configurations {
     artifacts {
         runtimeElements(shadowJarTask)
         apiElements(shadowJarTask)
-        archives(tasks.shadowJar)
     }
+}
+
+tasks.assemble {
+    dependsOn(shadowJarTask)
 }
 
 // Add the shadow JAR to the runtime consumable configuration

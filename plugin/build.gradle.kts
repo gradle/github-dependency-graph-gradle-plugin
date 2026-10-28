@@ -4,6 +4,14 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
+buildscript {
+    dependencies {
+        constraints {
+            classpath(libs.log4j.core)
+        }
+    }
+}
+
 plugins {
     kotlin("jvm") version(libs.versions.kotlin)
     alias(libs.plugins.plugin.publish)

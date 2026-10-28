@@ -64,7 +64,9 @@ class PluginPublisher {
 
         def pluginDir = rootDir.file(pluginModule)
 
-        def executer = new SimpleGradleExecuter(pluginDir, rootDir.file("test-kit"), GradleVersion.current().version)
+        // Publish with the Gradle version under test, which is known to run on the test JVM
+        def gradleVersion = System.getProperty("testGradleVersion", GradleVersion.current().version)
+        def executer = new SimpleGradleExecuter(pluginDir, rootDir.file("test-kit"), gradleVersion)
         executer.withTasks("publish").run()
         pluginDir.forceDeleteDir()
 

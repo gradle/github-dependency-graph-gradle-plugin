@@ -1,6 +1,6 @@
 [versions]
 spock = "2.4-groovy-3.0"
-kotlin = "1.8.10"
+kotlin = "2.4.21"
 
 [libraries]
 jackson-platform = { group = "com.fasterxml.jackson", name = "jackson-bom", version = "2.18.12" }

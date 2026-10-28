@@ -1,7 +1,6 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import com.gradle.publish.PublishTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 buildscript {
@@ -34,8 +33,8 @@ configurations["compileOnly"].extendsFrom(shadowImplementation)
 configurations["testImplementation"].extendsFrom(shadowImplementation)
 
 dependencies {
-    compileOnly(kotlin("stdlib-jdk8"))
-    compileOnly(kotlin("reflect"))
+    // Bundle (and relocate) the Kotlin stdlib rather than relying on the version embedded in Gradle
+    shadowImplementation(kotlin("stdlib"))
     shadowImplementation(platform(libs.jackson.platform))
     shadowImplementation(libs.jackson.databind)
     shadowImplementation(libs.github.packageurl)
@@ -52,8 +51,6 @@ java {
 
 tasks.withType<KotlinCompile>().configureEach {
     compilerOptions {
-        apiVersion = KotlinVersion.KOTLIN_1_3
-        languageVersion = KotlinVersion.KOTLIN_1_3
         jvmTarget = JvmTarget.JVM_1_8
     }
 }

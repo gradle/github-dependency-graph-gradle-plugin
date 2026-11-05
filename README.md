@@ -65,6 +65,19 @@ Each of these is a regular expression value, and can set either as an environmen
 | DEPENDENCY_GRAPH_INCLUDE_CONFIGURATIONS | Configurations to include | All configurations are included |
 | DEPENDENCY_GRAPH_EXCLUDE_CONFIGURATIONS | Configurations to exclude | No configurations are excluded  |
 
+### Failing on unresolved dependencies
+
+By default, unresolved dependencies are omitted while resolved dependencies are still reported.
+Optional source or documentation variants can fail even when another configuration reports the package.
+
+Set `DEPENDENCY_GRAPH_FAIL_ON_UNRESOLVED=true`, or pass `-DDEPENDENCY_GRAPH_FAIL_ON_UNRESOLVED=true`,
+to fail without writing a graph when an included configuration has unresolved direct or transitive
+dependencies. The default is `false`; only `true` and `false` are accepted. System properties take precedence.
+
+The [project and configuration filters](#filtering-which-gradle-configurations-contribute-to-the-dependency-graph)
+apply before this check. Exclude optional configurations only when their dependencies are not needed.
+The check covers configurations resolved during the build, not downloaded artifacts or excluded or unvisited configurations.
+
 ### Controlling the scope of dependencies in the dependency graph
 
 The GitHub dependency graph allows a scope to be assigned to each reported dependency.
@@ -218,4 +231,3 @@ To self-test this plugin and generate a dependency graph for this repository, ru
 The generated dependency graph will be submitted to GitHub only if you supply a
 [GitHub API token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
 via the environment variable `GITHUB_TOKEN`.
-

@@ -1,15 +1,10 @@
 plugins {
-    id("com.gradle.develocity").version("3.19")
-    id("com.gradle.common-custom-user-data-gradle-plugin").version("2.0.2")
+    id("com.gradle.develocity").version("4.6.1")
+    id("io.github.gradle.develocity-conventions-plugin").version("0.16.0")
 }
 
-val isCI = !System.getenv("CI").isNullOrEmpty()
-
 develocity {
-    server = "https://ge.gradle.org"
     buildScan {
-        uploadInBackground = !isCI
-
         obfuscation {
             ipAddresses { addresses -> addresses.map { _ -> "0.0.0.0" } }
         }

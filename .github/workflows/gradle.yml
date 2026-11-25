@@ -65,13 +65,17 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # Fixed build JDK: compiles the plugin and builds the shadow fatjar. Must satisfy the build
-      # tooling's own JDK requirement (the shadow plugin needs Java 17+), independent of the older
-      # JDK the Gradle version under test runs on.
+      # Installs the matrix JDK (used as the toolchain for the Gradle version under test) plus a fixed
+      # build JDK 17, which compiles the plugin and builds the shadow fatjar (the shadow plugin needs
+      # Java 17+). The last version listed becomes the default JAVA_HOME, so 17 must stay last; every
+      # version is also exported as JAVA_HOME_<version>_X64 for Gradle toolchain auto-detection.
+      # Don't rely on runner-preinstalled JDKs: ubuntu-26.04 no longer ships JDK 8.
       - name: Set up JDK
         uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
-          java-version: 17
+          java-version: |
+            ${{ matrix.java-version }}
+            17
           distribution: temurin
 
       - name: Setup Gradle
@@ -80,8 +84,8 @@ jobs:
           develocity-access-key: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
 
       # -PtestJavaVersion runs the :plugin-test module (and thus the Gradle version under test) on
-      # the matrix JDK via a Gradle toolchain. The matrix JDKs are preinstalled on the runner;
-      # relying here on Gradle toolchain auto-detection to locate them (auto-download is disabled,
+      # the matrix JDK via a Gradle toolchain. The matrix JDK is installed by setup-java above;
+      # Gradle toolchain auto-detection locates it via JAVA_HOME_<version>_X64 (auto-download is disabled,
       # so a missing toolchain fails the build rather than provisioning one).
       - name: Execute Gradle Build
         run: >
